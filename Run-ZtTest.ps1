@@ -193,7 +193,11 @@ function Write-Banner {
         Write-Host "  Environment: Headless/SSH (device code auth auto-enabled)" -ForegroundColor DarkGray
     }
     if (-not $IsWindows) {
-        Write-Host "  Note: SPO/AIP tests require Windows. Some tests may be skipped." -ForegroundColor DarkGray
+        Write-Host "  ⚠ Limited functionality on $($platform.OS):" -ForegroundColor Yellow
+        Write-Host "    ✗ AipService - Azure Information Protection (Windows-only module)" -ForegroundColor DarkGray
+        Write-Host "    ✗ SharePointOnline - SPO Management Shell (Windows-only module)" -ForegroundColor DarkGray
+        Write-Host "    Tests requiring these services will be skipped." -ForegroundColor DarkGray
+        Write-Host "    Run on Windows for full assessment coverage." -ForegroundColor DarkGray
     }
     Write-Host ""
 }
@@ -446,30 +450,103 @@ function Step-Disconnect {
 
 # ── Interactive Menu ─────────────────────────────────────────────────────────
 
+function Get-ConnectionState {
+    # Returns a hashtable with connection info for menu display
+    $state = @{ IsConnected = $false; Account = $null; Tenant = $null; Services = @() }
+    try {
+        if (Get-Module ZeroTrustAssessment) {
+            $context = Get-MgContext -ErrorAction Ignore
+            if ($null -ne $context) {
+                $state.IsConnected = $true
+                $state.Account = $context.Account
+                $state.Tenant = $context.TenantId
+            }
+        }
+    }
+    catch { }
+    return $state
+}
+
 function Show-Menu {
-    Write-Host "  ── Setup ──" -ForegroundColor DarkCyan
-    Write-Host "  [1]  Install / Import module from source" -ForegroundColor White
-    Write-Host "  [2]  Connect to tenant" -ForegroundColor White
-    Write-Host "  [3]  Check connection status" -ForegroundColor White
+    $conn = Get-ConnectionState
+
+    # ── Connection status bar ──
+    if ($conn.IsConnected) {
+        Write-Host "  ✅ Connected: $($conn.Account) (tenant: $($conn.Tenant))" -ForegroundColor Green
+    }
+    else {
+        Write-Host "  ○  Not connected" -ForegroundColor DarkGray
+    }
     Write-Host ""
-    Write-Host "  ── Assessment ──" -ForegroundColor DarkCyan
-    Write-Host "  [4]  List available tests" -ForegroundColor White
-    Write-Host "  [5]  Run FULL assessment (all pillars)" -ForegroundColor White
-    Write-Host "  [6]  Run a specific PILLAR (Identity/Devices/Network/Data)" -ForegroundColor White
-    Write-Host "  [7]  Run specific TEST(s) by ID" -ForegroundColor White
-    Write-Host "  [8]  Resume previous assessment" -ForegroundColor White
-    Write-Host ""
-    Write-Host "  ── Code Tests (offline) ──" -ForegroundColor DarkCyan
-    Write-Host "  [9]  Run ALL Pester tests (general + commands + assessments)" -ForegroundColor White
-    Write-Host "  [10] Run Pester - General tests only" -ForegroundColor White
-    Write-Host "  [11] Run Pester - Command tests only" -ForegroundColor White
-    Write-Host "  [12] Run Pester - Assessment tests only" -ForegroundColor White
-    Write-Host ""
-    Write-Host "  ── Maintenance ──" -ForegroundColor DarkCyan
-    Write-Host "  [13] Update test Service metadata (Update-ZtTestService)" -ForegroundColor White
-    Write-Host "  [D]  Disconnect from tenant" -ForegroundColor White
+
+    if (-not $conn.IsConnected) {
+        # ── Setup ──
+        Write-Host "  ── Setup ──" -ForegroundColor DarkCyan
+        Write-Host "  [1]  Connect to tenant (install, connect, show status)" -ForegroundColor White
+        Write-Host ""
+
+        # ── Code Tests (offline) ──
+        Write-Host "  ── Code Tests (offline) ──" -ForegroundColor DarkCyan
+        Write-Host "  [7]  Run Pester tests (All/General/Commands/Assessments)" -ForegroundColor White
+        Write-Host ""
+
+        # ── Maintenance ──
+        Write-Host "  ── Maintenance ──" -ForegroundColor DarkCyan
+        Write-Host "  [8]  Update test Service metadata (Update-ZtTestService)" -ForegroundColor White
+    }
+    else {
+        # ── Assessment ──
+        Write-Host "  ── Assessment ──" -ForegroundColor DarkCyan
+        Write-Host "  [2]  List available tests" -ForegroundColor White
+        Write-Host "  [3]  Run FULL assessment (all pillars)" -ForegroundColor White
+        Write-Host "  [4]  Run a specific PILLAR (Identity/Devices/Network/Data)" -ForegroundColor White
+        Write-Host "  [5]  Run specific TEST(s) by ID" -ForegroundColor White
+        Write-Host "  [6]  Resume previous assessment" -ForegroundColor White
+        Write-Host ""
+
+        # ── Maintenance ──
+        Write-Host "  ── Maintenance ──" -ForegroundColor DarkCyan
+        Write-Host "  [P]  Check permissions" -ForegroundColor White
+        Write-Host "  [R]  Reconnect to tenant" -ForegroundColor White
+        Write-Host "  [D]  Disconnect from tenant" -ForegroundColor White
+    }
     Write-Host "  [Q]  Quit" -ForegroundColor White
     Write-Host ""
+}
+
+function Step-CheckPermissions {
+    Write-MenuHeader "Permission Check"
+
+    try {
+        $context = Get-MgContext -ErrorAction Stop
+        if (-not $context) {
+            Write-Host "  Not connected to Microsoft Graph." -ForegroundColor Yellow
+            return
+        }
+
+        Write-Host "  Account   : $($context.Account)" -ForegroundColor Gray
+        Write-Host "  Tenant    : $($context.TenantId)" -ForegroundColor Gray
+        Write-Host "  Auth Type : $($context.AuthType)" -ForegroundColor Gray
+        Write-Host ""
+
+        $requiredScopes = Get-ZtGraphScope
+        $grantedCount = ($requiredScopes | Where-Object { $context.Scopes -contains $_ }).Count
+        $missing = $requiredScopes | Where-Object { $context.Scopes -notcontains $_ }
+
+        Write-Host "  Graph Scopes: $grantedCount / $($requiredScopes.Count) granted" -ForegroundColor Gray
+        if ($missing) {
+            Write-Host "  ⚠ Missing scopes:" -ForegroundColor Yellow
+            $missing | ForEach-Object { Write-Host "    - $_" -ForegroundColor Red }
+            Write-Host ""
+            Write-Host "  Reconnect with [1] to request missing scopes." -ForegroundColor Yellow
+        }
+        else {
+            Write-Host "  ✅ All required Graph scopes are present." -ForegroundColor Green
+        }
+    }
+    catch {
+        Write-Host "  Cannot determine permissions: $_" -ForegroundColor Yellow
+    }
 }
 
 function Invoke-InteractiveMenu {
@@ -480,44 +557,95 @@ function Invoke-InteractiveMenu {
         $choice = Read-Host "Select an option"
 
         switch ($choice.Trim().ToUpper()) {
-            '1'  { Step-Install }
-            '2'  { Step-Connect }
-            '3'  { Step-Status }
-            '4'  {
-                $filterPillar = Read-Host "Filter by pillar? (Identity/Devices/Network/Data or Enter for all)"
-                if ($filterPillar -and $filterPillar -in 'Identity', 'Devices', 'Network', 'Data') {
-                    $script:Pillar = $filterPillar
-                }
-                else { $script:Pillar = $null }
-                Step-ListTests
-            }
-            '5'  { Step-RunAssessment }
-            '6'  {
-                $p = Read-Host "Which pillar? (Identity/Devices/Network/Data)"
-                if ($p -in 'Identity', 'Devices', 'Network', 'Data') {
-                    Step-RunAssessment -RunPillar $p
+            '1'  { Step-Install; Step-Connect; Step-Status }
+            '2'  {
+                if ((Get-ConnectionState).IsConnected) {
+                    $script:Pillar = $null
+                    Step-ListTests
                 }
                 else {
-                    Write-Host "Invalid pillar: $p" -ForegroundColor Red
+                    Write-Host "Not connected. Use [1] to connect first." -ForegroundColor Yellow
+                }
+            }
+            '3'  {
+                if ((Get-ConnectionState).IsConnected) {
+                    Step-RunAssessment
+                }
+                else {
+                    Write-Host "Not connected. Use [1] to connect first." -ForegroundColor Yellow
+                }
+            }
+            '4'  {
+                if ((Get-ConnectionState).IsConnected) {
+                    $p = Read-Host "Which pillar? (Identity/Devices/Network/Data)"
+                    if ($p -in 'Identity', 'Devices', 'Network', 'Data') {
+                        Step-RunAssessment -RunPillar $p
+                    }
+                    else {
+                        Write-Host "Invalid pillar: $p" -ForegroundColor Red
+                    }
+                }
+                else {
+                    Write-Host "Not connected. Use [1] to connect first." -ForegroundColor Yellow
+                }
+            }
+            '5'  {
+                if ((Get-ConnectionState).IsConnected) {
+                    $ids = Read-Host "Enter test ID(s), comma-separated (e.g. 21770,21771)"
+                    $testIds = $ids -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+                    if ($testIds) {
+                        Step-RunAssessment -RunTests $testIds
+                    }
+                    else {
+                        Write-Host "No test IDs entered." -ForegroundColor Red
+                    }
+                }
+                else {
+                    Write-Host "Not connected. Use [1] to connect first." -ForegroundColor Yellow
+                }
+            }
+            '6'  {
+                if ((Get-ConnectionState).IsConnected) {
+                    Step-RunAssessment -Resume
+                }
+                else {
+                    Write-Host "Not connected. Use [1] to connect first." -ForegroundColor Yellow
                 }
             }
             '7'  {
-                $ids = Read-Host "Enter test ID(s), comma-separated (e.g. 21770,21771)"
-                $testIds = $ids -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
-                if ($testIds) {
-                    Step-RunAssessment -RunTests $testIds
-                }
-                else {
-                    Write-Host "No test IDs entered." -ForegroundColor Red
+                $pesterChoice = Read-Host "Which tests? (A=All, G=General, C=Commands, S=Assessments) [A]"
+                switch ($pesterChoice.Trim().ToUpper()) {
+                    'G' { Step-Pester -General $true -Commands $false -Assessments $false }
+                    'C' { Step-Pester -General $false -Commands $true -Assessments $false }
+                    'S' { Step-Pester -General $false -Commands $false -Assessments $true }
+                    default { Step-Pester -General $true -Commands $true -Assessments $true }
                 }
             }
-            '8'  { Step-RunAssessment -Resume }
-            '9'  { Step-Pester -General $true -Commands $true -Assessments $true }
-            '10' { Step-Pester -General $true -Commands $false -Assessments $false }
-            '11' { Step-Pester -General $false -Commands $true -Assessments $false }
-            '12' { Step-Pester -General $false -Commands $false -Assessments $true }
-            '13' { Step-UpdateTestServices }
-            'D'  { Step-Disconnect }
+            '8'  { Step-UpdateTestServices }
+            'P'  {
+                if ((Get-ConnectionState).IsConnected) {
+                    Step-CheckPermissions
+                }
+                else {
+                    Write-Host "Not connected. Use [1] to connect first." -ForegroundColor Yellow
+                }
+            }
+            'R'  {
+                if ((Get-ConnectionState).IsConnected) {
+                    Step-Install; Step-Connect; Step-Status
+                }
+                else {
+                    Write-Host "Not connected. Use [1] to connect first." -ForegroundColor Yellow
+                }
+            }
+            'D'  {
+                if ((Get-ConnectionState).IsConnected) {
+                    Step-Disconnect
+                }
+                else {
+                    Write-Host "Not connected." -ForegroundColor Yellow
+                }
+            }
             'Q'  {
                 Write-Host "Bye!" -ForegroundColor Cyan
                 return

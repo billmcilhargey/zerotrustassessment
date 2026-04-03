@@ -115,6 +115,25 @@ fi
 
 echo -e "${CYAN}Using PowerShell: $PWSH ($($PWSH --version 2>/dev/null || echo 'unknown'))${NC}"
 
+# ── Platform compatibility notice ────────────────────────────────────────────
+if [[ "$(uname -s)" != MINGW* && "$(uname -s)" != CYGWIN* && "$(uname -s)" != MSYS* ]]; then
+    echo ""
+    echo -e "${YELLOW}────────────────────────────────────────────────────────────────${NC}"
+    echo -e "${YELLOW}  Platform notice: Running on $(uname -s) (non-Windows)${NC}"
+    echo -e "${YELLOW}────────────────────────────────────────────────────────────────${NC}"
+    echo -e "  The following services require Windows and will be unavailable:"
+    echo -e "    ${RED}✗${NC} AipService (Azure Information Protection)"
+    echo -e "    ${RED}✗${NC} SharePointOnline (SharePoint Online Management Shell)"
+    echo ""
+    echo -e "  Tests depending on these services (~5 Data pillar tests) will be"
+    echo -e "  skipped. All other services work cross-platform:"
+    echo -e "    ${GREEN}✓${NC} Graph  ${GREEN}✓${NC} Azure  ${GREEN}✓${NC} ExchangeOnline  ${GREEN}✓${NC} SecurityCompliance"
+    echo ""
+    echo -e "  For full coverage, run on Windows or use a Windows-based CI agent."
+    echo -e "${YELLOW}────────────────────────────────────────────────────────────────${NC}"
+    echo ""
+fi
+
 if [ ! -f "$PS_SCRIPT" ]; then
     echo -e "${RED}Run-ZtTest.ps1 not found at: $PS_SCRIPT${NC}"
     exit 1

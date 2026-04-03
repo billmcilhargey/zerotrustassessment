@@ -55,6 +55,7 @@ function Resolve-ZtServiceRequiredModule {
         }
     }
 
+    $resolvedRequiredModuleByService['ServiceInvalidForOS'] = $requiredModuleSpecsByService.ServiceInvalidForOS
     $resolvedRequiredModuleByService['ServiceUnavailable'] = $requiredModuleSpecsByService.ServiceInvalidForOS + $resolvedRequiredModuleByService['Errors'].Service | Select-Object -Unique
     $resolvedRequiredModuleByService['ServiceAvailable'] = $Service.Where{ $_ -notin $resolvedRequiredModuleByService['ServiceUnavailable'] } |
         Sort-Object { [array]::IndexOf($requiredModuleSpecsByService.ServiceAvailable, $_) }

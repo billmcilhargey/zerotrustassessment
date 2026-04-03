@@ -125,7 +125,11 @@ function Connect-ZtAssessment {
 
 	$resolvedRequiredModules.ServiceUnavailable.ForEach{
 		$serviceName = $_
-		Write-Host -Object (' ⚠️ Service "{0}" is not available due to missing required modules: {1}.' -f $serviceName, ($resolvedRequiredModules.Errors.Where({ $_.Service -eq $serviceName }).ModuleSpecification -join ', ')) -ForegroundColor Yellow
+		if ($serviceName -in $resolvedRequiredModules.ServiceInvalidForOS) {
+			Write-Host -Object (' ⚠️ Service "{0}" is not available because it requires Windows.' -f $serviceName) -ForegroundColor Yellow
+		} else {
+			Write-Host -Object (' ⚠️ Service "{0}" is not available due to missing required modules: {1}.' -f $serviceName, ($resolvedRequiredModules.Errors.Where({ $_.Service -eq $serviceName }).ModuleSpecification -join ', ')) -ForegroundColor Yellow
+		}
 	}
 
 	#endregion
@@ -140,6 +144,7 @@ function Connect-ZtAssessment {
 			try {
 				#region loading graph modules
 				Write-PSFMessage -Message ('Loading graph required modules: {0}' -f ($resolvedRequiredModules.Graph.Name -join ', ')) -Level Verbose
+				Write-Host -Object ('   Loading modules: {0} (this may take a moment)...' -f ($resolvedRequiredModules.Graph.Name -join ', ')) -ForegroundColor DarkGray
 				$loadedGraphModules = $resolvedRequiredModules.Graph.ForEach{
 					$_ | Import-Module -Global -ErrorAction Stop -PassThru
 				}
@@ -240,7 +245,13 @@ function Connect-ZtAssessment {
 				}
 
 				Write-PSFMessage -Message "Connecting to Microsoft Graph with params: $($connectMgGraphParams | Out-String)" -Level Verbose
-				$null = Connect-MgGraph @connectMgGraphParams -ErrorAction Stop
+				if ($connectMgGraphParams.UseDeviceCode) {
+					Write-Host -Object '   Requesting device code (watch for the sign-in prompt below)...' -ForegroundColor DarkGray
+					Connect-MgGraph @connectMgGraphParams -ErrorAction Stop
+				}
+				else {
+					$null = Connect-MgGraph @connectMgGraphParams -ErrorAction Stop
+				}
 				$contextTenantId = (Get-MgContext).TenantId
 				Write-Host -Object "   ✅ Connected" -ForegroundColor Green
 				Add-ZtConnectedService -Service 'Graph'
@@ -288,6 +299,7 @@ function Connect-ZtAssessment {
 			try {
 				#region Load Azure Modules
 				Write-PSFMessage -Message ('Loading Azure required modules: {0}' -f ($resolvedRequiredModules.Azure.Name -join ', ')) -Level Verbose
+				Write-Host -Object ('   Loading modules: {0} (this may take a moment)...' -f ($resolvedRequiredModules.Azure.Name -join ', ')) -ForegroundColor DarkGray
 				$loadedAzureModules = $resolvedRequiredModules.Azure.ForEach{
 					$_ | Import-Module -Global -ErrorAction Stop -PassThru
 				}
@@ -384,7 +396,13 @@ function Connect-ZtAssessment {
 				}
 
 				Write-Verbose -Message ("Connecting to Azure with parameters: {0}" -f ($azParams | Out-String))
-				$null = Connect-AzAccount @azParams -ErrorAction Stop
+				if ($azParams.UseDeviceAuthentication) {
+					Write-Host -Object '   Requesting device code (watch for the sign-in prompt below)...' -ForegroundColor DarkGray
+					Connect-AzAccount @azParams -ErrorAction Stop
+				}
+				else {
+					$null = Connect-AzAccount @azParams -ErrorAction Stop
+				}
 				Write-Host -Object "   ✅ Connected" -ForegroundColor Green
 				Add-ZtConnectedService -Service 'Azure'
 			}
@@ -443,6 +461,7 @@ function Connect-ZtAssessment {
 			Write-Host -Object "`nConnecting to Exchange Online" -ForegroundColor Cyan
 			try {
 				Write-PSFMessage -Message ('Loading Exchange Online required modules: {0}' -f ($resolvedRequiredModules.ExchangeOnline.Name -join ', ')) -Level Verbose
+				Write-Host -Object ('   Loading modules: {0} (this may take a moment)...' -f ($resolvedRequiredModules.ExchangeOnline.Name -join ', ')) -ForegroundColor DarkGray
 				$loadedExoModules = $resolvedRequiredModules.ExchangeOnline.ForEach{
 					#TODO: only add -UseWindowsPowerShell for the modules in WindowsRequiredModules based on module manifest.
 					$_ | Import-Module -Global -ErrorAction Stop -PassThru -WarningAction SilentlyContinue
