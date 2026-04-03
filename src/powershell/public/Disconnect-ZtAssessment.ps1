@@ -93,12 +93,18 @@
                     $svcArgs = $svc.Args
                     $null = & $svc.Command @svcArgs -ErrorAction Stop
                     Write-Host "Successfully disconnected from $($svc.Name)" -ForegroundColor Green
+                    Remove-ZtConnectedService -Service $svc.Key
+                    # ExchangeOnline disconnect also covers SecurityCompliance
+                    if ($svc.Key -eq 'ExchangeOnline') {
+                        Remove-ZtConnectedService -Service 'SecurityCompliance'
+                    }
                 }
                 catch [System.MissingMethodException] {
                     # Known MSAL DLL conflict between Graph SDK and Az modules.
                     # The session is process-scoped so it will be cleaned up on exit regardless.
                     $resultStatus = 'Succeeded'
                     Write-Host "Disconnected from $($svc.Name) (with MSAL compatibility warning suppressed)" -ForegroundColor Green
+                    Remove-ZtConnectedService -Service $svc.Key
                     Write-PSFMessage -Message ("MSAL DLL conflict during disconnect from {0}: {1}" -f $svc.Name, $_.Exception.Message) -Level Debug
                 }
                 catch {

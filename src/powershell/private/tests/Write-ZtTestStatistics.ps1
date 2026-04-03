@@ -11,7 +11,7 @@
 		Should nclude the Test ID, all messages, duration, errors, etc.
 
 	.EXAMPLE
-		PS C:\> Write-ZtTestStatistics -Result $result
+		PS> Write-ZtTestStatistics -Result $result
 
 		Writes the execution statistics of the specified test to the process-wide cache.
 	#>

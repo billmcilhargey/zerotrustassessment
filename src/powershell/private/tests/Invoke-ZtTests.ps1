@@ -41,7 +41,7 @@
 		this is a best-effort interruption rather than a guaranteed hard stop.
 
 	.EXAMPLE
-		PS C:\> Invoke-ZtTests -Database $database -Tests $Tests -Pillar $Pillar -ThrottleLimit $TestThrottleLimit
+		PS> Invoke-ZtTests -Database $database -Tests $Tests -Pillar $Pillar -ThrottleLimit $TestThrottleLimit
 
 		Executes all tests specified.
 	#>

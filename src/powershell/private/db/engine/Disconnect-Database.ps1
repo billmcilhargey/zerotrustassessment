@@ -13,12 +13,12 @@
 		The database connection to close, instead of the default, module-managed one.
 
 	.EXAMPLE
-		PS C:\> Disconnect-Database
+		PS> Disconnect-Database
 
 		Closes the connection managed by the module.
 
 	.EXAMPLE
-		PS C:\> Disconnect-Database -Database $db
+		PS> Disconnect-Database -Database $db
 
 		Closes the connection specified.
 	#>

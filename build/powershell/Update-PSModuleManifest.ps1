@@ -18,7 +18,7 @@ param
 )
 
 ## Initialize
-Import-Module "$PSScriptRoot\CommonFunctions.psm1" -Force -WarningAction SilentlyContinue -ErrorAction Stop
+Import-Module (Join-Path $PSScriptRoot 'CommonFunctions.psm1') -Force -WarningAction SilentlyContinue -ErrorAction Stop
 [hashtable] $paramUpdateModuleManifest = @{ }
 
 [System.IO.FileInfo] $ModuleManifestFileInfo = Get-PathInfo $ModuleManifestPath -DefaultFilename "*.psd1" -ErrorAction Stop

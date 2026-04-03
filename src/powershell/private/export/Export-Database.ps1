@@ -17,7 +17,7 @@ function Export-Database {
 		Defaults to "All".
 
 	.EXAMPLE
-		PS C:\> Export-Database -ExportPath .
+		PS> Export-Database -ExportPath .
 
 		Creates the database from the exported data found in the current folder.
 	#>

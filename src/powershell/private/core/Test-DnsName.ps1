@@ -10,7 +10,7 @@ function Test-DnsName {
 		The dns name to resolve.
 
 	.EXAMPLE
-		PS C:\> Test-DnsName -Name microsoft.com
+		PS> Test-DnsName -Name microsoft.com
 
 		Returns, whether the name "microsoft.com" can be resolved using the DNS system.
 	#>

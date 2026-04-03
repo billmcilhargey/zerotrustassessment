@@ -9,6 +9,19 @@ function Connect-ZtAssessment {
 		for the Zero Trust Assessment.
 		This cmdlet will import the necessary modules and establish connections based on the specified parameters.
 
+		Authentication methods (use only one at a time):
+		  Interactive  — Default on Windows. Opens a browser for sign-in.
+		  Device code  — Use -UseDeviceCode. Works in headless/SSH/Codespaces environments.
+		  Certificate  — Use -Certificate or -CertificateThumbprint with -ClientId and -TenantId.
+		                  App-only (application permissions). Requires admin consent.
+		  Client secret — Use -ClientSecret with -ClientId and -TenantId.
+		                  App-only (application permissions). Requires admin consent.
+		  Managed identity — Use -ManagedIdentity. For Azure-hosted automation (Functions, Automation, VMs).
+
+		For unattended/automated execution the app registration must have the required
+		Application permissions (not Delegated) with admin consent granted. Use
+		Get-ZtGraphScope to see the Graph permissions needed.
+
 	.PARAMETER UseDeviceCode
 		If specified, the cmdlet will use the device code flow to authenticate to Graph and Azure.
 		This will open a browser window to prompt for authentication and is useful for non-interactive sessions and on Windows when SSO is not desired.
@@ -21,9 +34,12 @@ function Connect-ZtAssessment {
 
 	.PARAMETER TenantId
 		The tenant ID to connect to. If not specified, the default tenant will be used.
+		Required for service principal authentication (-ClientSecret, -Certificate, -CertificateThumbprint).
 
 	.PARAMETER ClientId
-		If specified, connects using a custom application identity. See https://learn.microsoft.com/powershell/microsoftgraph/authentication-commands
+		If specified, connects using a custom application identity.
+		Required for service principal and managed identity (user-assigned) authentication.
+		See https://learn.microsoft.com/powershell/microsoftgraph/authentication-commands
 
 	.PARAMETER Certificate
 		The certificate to use for the connection(s).
@@ -31,46 +47,95 @@ function Connect-ZtAssessment {
 		The application will need to be configured to have the matching Application scopes, compared to the Delegate scopes and may need to be added into roles.
 		If this certificate is also used for connecting to Azure, it must come from a certificate store on the local computer.
 
+	.PARAMETER ClientSecret
+		A SecureString containing the client secret for service principal (app-only) authentication.
+		Requires -ClientId and -TenantId. The app registration must have the required Application
+		permissions with admin consent. Do not embed secrets in scripts; pass via parameter or
+		environment variable (e.g. $env:ZT_CLIENT_SECRET | ConvertTo-SecureString -AsPlainText -Force).
+
+	.PARAMETER CertificateThumbprint
+		The thumbprint of a certificate installed in the current user or local machine certificate store.
+		Simpler alternative to -Certificate when you only need the thumbprint.
+		Requires -ClientId and -TenantId. The corresponding public key must be uploaded to the app registration.
+
+	.PARAMETER ManagedIdentity
+		Use managed identity authentication for Azure-hosted environments (Azure Functions, Automation, VMs).
+		Uses the system-assigned managed identity by default. For user-assigned, also specify -ClientId.
 
 	.EXAMPLE
-		PS C:\> Connect-ZtAssessment
+		PS> Connect-ZtAssessment
 
 		Connects to Microsoft Graph and other services using Connect-MgGraph with the required scopes and other services.
 		By default, on Windows, this connects to Graph, Azure, Exchange Online, Security & Compliance, SharePoint Online, and Azure Information Protection.
 		On other platforms, this connects to Graph, Azure, Exchange and Security & Compliance (where supported).
 
 	.EXAMPLE
-		PS C:\> Connect-ZtAssessment -UseDeviceCode
+		PS> Connect-ZtAssessment -UseDeviceCode
 
 		Connects to Microsoft Graph and Azure using the device code flow. This will open a browser window to prompt for authentication.
 
 	.EXAMPLE
-		PS C:\> Connect-ZtAssessment -ClientID $clientID -TenantID $tenantID -Certificate 'CN=ZeroTrustAssessment' -Service Graph,Azure
+		PS> Connect-ZtAssessment -ClientID $clientID -TenantID $tenantID -Certificate 'CN=ZeroTrustAssessment' -Service Graph,Azure
 
 		Connects to Microsoft Graph and Azure using the specified client/application ID & tenant ID, using the latest, valid certificate available with the subject 'CN=ZeroTrustAssessment'.
 		This assumes the correct scopes and permissions are assigned to the application used.
+
+	.EXAMPLE
+		PS> $secret = $env:ZT_CLIENT_SECRET | ConvertTo-SecureString -AsPlainText -Force
+		PS> Connect-ZtAssessment -ClientId $appId -TenantId $tenantId -ClientSecret $secret
+
+		Connects using client credentials with a secret. For CI/CD automation and unattended runs.
+		The app registration must have Application permissions with admin consent.
+
+	.EXAMPLE
+		PS> Connect-ZtAssessment -ClientId $appId -TenantId $tenantId -CertificateThumbprint 'A1B2C3D4E5F6...'
+
+		Connects using a certificate thumbprint for app-only authentication.
+		The certificate must be installed locally and its public key uploaded to the app registration.
+
+	.EXAMPLE
+		PS> Connect-ZtAssessment -ManagedIdentity
+
+		Connects using the system-assigned managed identity of the Azure host (e.g. Azure Automation, Azure Functions).
+
+	.EXAMPLE
+		PS> Connect-ZtAssessment -ManagedIdentity -ClientId $userAssignedMiClientId
+
+		Connects using a user-assigned managed identity.
 	#>
 	[CmdletBinding()]
 	param (
 		[switch]
-		$UseDeviceCode,
+		$UseDeviceCode = (Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Connection.UseDeviceCode' -Fallback $false),
 
 		[ValidateSet('China', 'Germany', 'Global', 'USGov', 'USGovDoD')]
 		[string]
-		$Environment = 'Global',
+		$Environment = (Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Connection.Environment' -Fallback 'Global'),
 
-		[Parameter(DontShow)]
 		[switch]
-		$UseTokenCache,
+		$UseTokenCache = (Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Connection.UseTokenCache' -Fallback $true),
 
 		[string]
-		$TenantId,
+		$TenantId = (Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Connection.TenantId' -Fallback ''),
 
 		[string]
-		$ClientId,
+		$ClientId = (Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Connection.ClientId' -Fallback ''),
 
 		[PSFramework.Parameter.CertificateParameter]
 		$Certificate,
+
+		# Client secret for service principal (app-only) authentication.
+		# Never embed secrets in scripts; pass via parameter or $env:ZT_CLIENT_SECRET.
+		[SecureString]
+		$ClientSecret,
+
+		# Certificate thumbprint — simpler alternative to -Certificate for app-only auth.
+		[string]
+		$CertificateThumbprint,
+
+		# Managed identity authentication for Azure-hosted automation.
+		[switch]
+		$ManagedIdentity,
 
 		# The services to connect to such as Azure and ExchangeOnline. Default is All.
 		[ValidateSet('All', 'Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePointOnline')]
@@ -101,6 +166,38 @@ function Connect-ZtAssessment {
 		return
 	}
 
+	# ── Authentication method validation ──
+	# Only one credential type may be specified at a time.
+	$credentialMethods = @(
+		$PSBoundParameters.ContainsKey('ClientSecret'),
+		($PSBoundParameters.ContainsKey('Certificate') -or $PSBoundParameters.ContainsKey('CertificateThumbprint')),
+		$ManagedIdentity.IsPresent
+	).Where({ $_ }).Count
+
+	if ($credentialMethods -gt 1) {
+		Stop-PSFFunction -Message "Specify only one authentication method: -ClientSecret, -Certificate/-CertificateThumbprint, or -ManagedIdentity." -EnableException $true -Cmdlet $PSCmdlet
+		return
+	}
+
+	if ($PSBoundParameters.ContainsKey('Certificate') -and $PSBoundParameters.ContainsKey('CertificateThumbprint')) {
+		Stop-PSFFunction -Message "Specify either -Certificate or -CertificateThumbprint, not both." -EnableException $true -Cmdlet $PSCmdlet
+		return
+	}
+
+	$isAppOnlyAuth = $PSBoundParameters.ContainsKey('ClientSecret') -or
+		$PSBoundParameters.ContainsKey('Certificate') -or
+		$PSBoundParameters.ContainsKey('CertificateThumbprint')
+
+	if ($isAppOnlyAuth -and -not $TenantId) {
+		Stop-PSFFunction -Message "-TenantId is required for service principal authentication (-ClientSecret, -Certificate, -CertificateThumbprint)." -EnableException $true -Cmdlet $PSCmdlet
+		return
+	}
+
+	if ($isAppOnlyAuth -and -not $ClientId) {
+		Stop-PSFFunction -Message "-ClientId is required for service principal authentication (-ClientSecret, -Certificate, -CertificateThumbprint)." -EnableException $true -Cmdlet $PSCmdlet
+		return
+	}
+
 	if ($Service -contains 'All') {
 		$Service = [string[]]@('Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePointOnline')
 	}
@@ -115,7 +212,13 @@ function Connect-ZtAssessment {
 	$Service = $Service | Select-Object -Unique
 	$resolvedRequiredModules = Resolve-ZtServiceRequiredModule -Service $Service
 	Write-Host -Object ('🔑 Authentication to {0}.' -f ($Service -join ', ')) -ForegroundColor DarkGray
-	if ($UseDeviceCode) {
+	if ($ManagedIdentity) {
+		Write-Host -Object 'Using managed identity authentication (no interactive prompts).' -ForegroundColor DarkGray
+	}
+	elseif ($isAppOnlyAuth) {
+		Write-Host -Object 'Using service principal (app-only) authentication (no interactive prompts).' -ForegroundColor DarkGray
+	}
+	elseif ($UseDeviceCode) {
 		$deviceCodeServices = @($resolvedRequiredModules.ServiceAvailable) -notmatch 'SecurityCompliance'
 		Write-Host -Object ("Each service requires a separate device code. You will be prompted {0} time(s)." -f $deviceCodeServices.Count) -ForegroundColor DarkGray
 	}
@@ -224,26 +327,40 @@ function Connect-ZtAssessment {
 				}
 
 				$connectMgGraphParams = @{
-					NoWelcome = $true
-					UseDeviceCode = $UseDeviceCode.IsPresent
+					NoWelcome   = $true
 					Environment = $Environment
-					# TenantId = $TenantId
-					# ClientId = $ClientId
 				}
 
-				if ($ClientId) {
-					$connectMgGraphParams.ClientId = $ClientId
+				# ── Build auth-method-specific parameters ──
+				if ($ManagedIdentity) {
+					# Managed identity (system-assigned; user-assigned when ClientId specified)
+					$connectMgGraphParams.Identity = $true
+					if ($ClientId) { $connectMgGraphParams.ClientId = $ClientId }
 				}
-
-				if ($TenantId) {
+				elseif ($ClientSecret) {
+					# Client credentials with secret — app-only permissions from app registration
+					$credential = [PSCredential]::new($ClientId, $ClientSecret)
+					$connectMgGraphParams.ClientSecretCredential = $credential
 					$connectMgGraphParams.TenantId = $TenantId
 				}
-
-				if ($Certificate) {
+				elseif ($CertificateThumbprint) {
+					# Client credentials with certificate thumbprint — app-only
+					$connectMgGraphParams.ClientId = $ClientId
+					$connectMgGraphParams.TenantId = $TenantId
+					$connectMgGraphParams.CertificateThumbprint = $CertificateThumbprint
+				}
+				elseif ($Certificate) {
+					# Client credentials with certificate object — app-only
 					$connectMgGraphParams.Certificate = $Certificate
+					if ($ClientId) { $connectMgGraphParams.ClientId = $ClientId }
+					if ($TenantId) { $connectMgGraphParams.TenantId = $TenantId }
 				}
 				else {
+					# Delegated (interactive or device code) — request scopes at sign-in
+					$connectMgGraphParams.UseDeviceCode = [bool]$UseDeviceCode
 					$connectMgGraphParams.Scopes = Get-ZtGraphScope
+					if ($ClientId) { $connectMgGraphParams.ClientId = $ClientId }
+					if ($TenantId) { $connectMgGraphParams.TenantId = $TenantId }
 				}
 
 				if (-not $UseTokenCache) {
@@ -251,9 +368,13 @@ function Connect-ZtAssessment {
 				}
 
 				Write-PSFMessage -Message "Connecting to Microsoft Graph with params: $($connectMgGraphParams | Out-String)" -Level Verbose
-				if ($connectMgGraphParams.UseDeviceCode) {
+				if ($connectMgGraphParams.ContainsKey('UseDeviceCode') -and $connectMgGraphParams.UseDeviceCode) {
 					Write-Host -Object '   Requesting device code (watch for the sign-in prompt below)...' -ForegroundColor DarkGray
 					Connect-MgGraph @connectMgGraphParams -ErrorAction Stop
+				}
+				elseif ($ManagedIdentity -or $ClientSecret -or $CertificateThumbprint -or $Certificate) {
+					Write-Host -Object '   Authenticating (app-only)...' -ForegroundColor DarkGray
+					$null = Connect-MgGraph @connectMgGraphParams -ErrorAction Stop
 				}
 				else {
 					$null = Connect-MgGraph @connectMgGraphParams -ErrorAction Stop
@@ -334,9 +455,8 @@ function Connect-ZtAssessment {
 					Write-PSFMessage -Message "No existing connection to Azure found." -Level Debug
 				}
 
-				# Determine whether Azure will use service principal authentication
-				# (both ClientId and Certificate supplied).
-				$useAzureServicePrincipalAuth = $PSBoundParameters.ContainsKey('ClientId') -and $PSBoundParameters.ContainsKey('Certificate')
+				# Determine whether Azure will use service principal or managed identity authentication.
+				$useAzureServicePrincipalAuth = $isAppOnlyAuth -or $ManagedIdentity
 
 				# Azure might be connected, but:
 				#   - with the wrong ClientId,
@@ -386,25 +506,45 @@ function Connect-ZtAssessment {
 				}
 
 				$azParams = @{
-					UseDeviceAuthentication = $UseDeviceCode
-					Environment             = $azEnvironment
-					# Tenant                  = $tenantParam
+					Environment = $azEnvironment
 				}
 
-				if ($tenantParam) {
-					Write-Verbose -Message ("Using tenant ID '{0}' for Azure connection." -f $tenantParam)
-					$azParams.Tenant = $tenantParam
+				# ── Build auth-method-specific parameters for Azure ──
+				if ($ManagedIdentity) {
+					$azParams.Identity = $true
+					if ($ClientId) { $azParams.AccountId = $ClientId }
 				}
-
-				if ($ClientId -and $Certificate) {
+				elseif ($ClientSecret) {
+					$azCredential = [PSCredential]::new($ClientId, $ClientSecret)
+					$azParams.ServicePrincipal = $true
+					$azParams.Credential = $azCredential
+					$azParams.Tenant = $TenantId
+				}
+				elseif ($CertificateThumbprint) {
+					$azParams.ServicePrincipal = $true
+					$azParams.ApplicationId = $ClientId
+					$azParams.CertificateThumbprint = $CertificateThumbprint
+					if ($tenantParam) { $azParams.Tenant = $tenantParam }
+				}
+				elseif ($Certificate -and $ClientId) {
+					$azParams.ServicePrincipal = $true
 					$azParams.ApplicationId = $ClientId
 					$azParams.CertificateThumbprint = $Certificate.Certificate.Thumbprint
+					if ($tenantParam) { $azParams.Tenant = $tenantParam }
+				}
+				else {
+					$azParams.UseDeviceAuthentication = [bool]$UseDeviceCode
+					if ($tenantParam) { $azParams.Tenant = $tenantParam }
 				}
 
 				Write-Verbose -Message ("Connecting to Azure with parameters: {0}" -f ($azParams | Out-String))
-				if ($azParams.UseDeviceAuthentication) {
+				if ($azParams.ContainsKey('UseDeviceAuthentication') -and $azParams.UseDeviceAuthentication) {
 					Write-Host -Object '   Requesting device code (watch for the sign-in prompt below)...' -ForegroundColor DarkGray
 					Connect-AzAccount @azParams -ErrorAction Stop
+				}
+				elseif ($ManagedIdentity -or $ClientSecret -or $CertificateThumbprint -or $Certificate) {
+					Write-Host -Object '   Authenticating (app-only)...' -ForegroundColor DarkGray
+					$null = Connect-AzAccount @azParams -ErrorAction Stop
 				}
 				else {
 					$null = Connect-AzAccount @azParams -ErrorAction Stop
@@ -425,10 +565,11 @@ function Connect-ZtAssessment {
 			Write-Host -Object "`nConnecting to Azure Information Protection" -ForegroundColor Cyan
 			Write-PSFMessage -Message 'Connecting to Azure Information Protection' -Level Verbose
 			try {
-				Write-PSFMessage -Message ('Loading Azure Information Protection required modules: {0}' -f ($resolvedRequiredModules.AipService.Name -join ', ')) -Level Verbose
+			Write-PSFMessage -Message ('Loading Azure Information Protection required modules: {0}' -f ($resolvedRequiredModules.AipService.Name -join ', ')) -Level Verbose
 				$loadedAipServiceModules = $resolvedRequiredModules.AipService.ForEach{
-					#TODO: only add -UseWindowsPowerShell for the modules in WindowsRequiredModules based on module manifest.
-					$_ | Import-Module -Global -ErrorAction Stop -PassThru -UseWindowsPowerShell -WarningAction SilentlyContinue
+					$importParams = @{ Global = $true; ErrorAction = 'Stop'; PassThru = $true; WarningAction = 'SilentlyContinue' }
+					if ($IsWindows) { $importParams['UseWindowsPowerShell'] = $true }
+					$_ | Import-Module @importParams
 				}
 
 				$loadedAipServiceModules.ForEach{
@@ -469,7 +610,6 @@ function Connect-ZtAssessment {
 				Write-PSFMessage -Message ('Loading Exchange Online required modules: {0}' -f ($resolvedRequiredModules.ExchangeOnline.Name -join ', ')) -Level Verbose
 				Write-Host -Object ('   Loading modules: {0} (this may take a moment)...' -f ($resolvedRequiredModules.ExchangeOnline.Name -join ', ')) -ForegroundColor DarkGray
 				$loadedExoModules = $resolvedRequiredModules.ExchangeOnline.ForEach{
-					#TODO: only add -UseWindowsPowerShell for the modules in WindowsRequiredModules based on module manifest.
 					$_ | Import-Module -Global -ErrorAction Stop -PassThru -WarningAction SilentlyContinue
 				}
 
@@ -502,7 +642,50 @@ function Connect-ZtAssessment {
 				#endregion
 
 				Write-Verbose -Message 'Connecting to Microsoft Exchange Online'
-				if ($UseDeviceCode) {
+				# Resolve the organization domain needed for app-only / managed identity connections
+				$exoOrgDomain = $null
+				if ($isAppOnlyAuth -or $ManagedIdentity) {
+					try {
+						$org = Invoke-ZtGraphRequest -RelativeUri 'organization' -ErrorAction Stop
+						$exoOrgDomain = ($org.verifiedDomains | Where-Object { $_.isInitial }).name
+					}
+					catch {
+						Write-PSFMessage -Message "Unable to resolve organization domain for EXO app-only: $_" -Level Debug
+					}
+				}
+
+				if ($ManagedIdentity) {
+					# Managed identity — Connect-ExchangeOnline -ManagedIdentity
+					$exoParams = @{ ShowBanner = $false; ErrorAction = 'Stop' }
+					$exoParams.ManagedIdentity = $true
+					if ($ClientId) { $exoParams.ManagedIdentityAccountId = $ClientId }
+					if ($exoOrgDomain) { $exoParams.Organization = $exoOrgDomain }
+					if ($ExchangeEnvironmentName -ne 'O365Default') { $exoParams.ExchangeEnvironmentName = $ExchangeEnvironmentName }
+					Write-Host -Object '   Authenticating (managed identity)...' -ForegroundColor DarkGray
+					Connect-ExchangeOnline @exoParams
+				}
+				elseif (($CertificateThumbprint -or $Certificate) -and $ClientId) {
+					# App-only with certificate — Connect-ExchangeOnline -AppId -CertificateThumbprint -Organization
+					$exoThumbprint = if ($CertificateThumbprint) { $CertificateThumbprint } else { $Certificate.Certificate.Thumbprint }
+					$exoParams = @{
+						AppId                  = $ClientId
+						CertificateThumbprint  = $exoThumbprint
+						ShowBanner             = $false
+						ErrorAction            = 'Stop'
+					}
+					if ($exoOrgDomain) { $exoParams.Organization = $exoOrgDomain }
+					if ($ExchangeEnvironmentName -ne 'O365Default') { $exoParams.ExchangeEnvironmentName = $ExchangeEnvironmentName }
+					Write-Host -Object '   Authenticating (app-only certificate)...' -ForegroundColor DarkGray
+					$null = Connect-ExchangeOnline @exoParams
+				}
+				elseif ($ClientSecret) {
+					# EXO does not support client secret for app-only auth
+					Write-Host -Object "   ⚠️ Exchange Online does not support client-secret app-only auth." -ForegroundColor Yellow
+					Write-Host -Object "      Use -CertificateThumbprint or -ManagedIdentity for unattended EXO access." -ForegroundColor Yellow
+					Remove-ZtConnectedService -Service 'ExchangeOnline'
+					continue
+				}
+				elseif ($UseDeviceCode) {
 					Write-Host -Object '   Requesting device code (each service requires separate authentication)...' -ForegroundColor DarkGray
 					Connect-ExchangeOnline -ShowBanner:$false -Device:$UseDeviceCode -ExchangeEnvironmentName $ExchangeEnvironmentName -ErrorAction Stop
 				}
@@ -562,7 +745,6 @@ function Connect-ZtAssessment {
 			$exoSnCModulesLoaded = $false
 			try {
 				$loadedExoSnCModules = $resolvedRequiredModules.SecurityCompliance.ForEach{
-					#TODO: only add -UseWindowsPowerShell for the modules in WindowsRequiredModules based on module manifest.
 					$_ | Import-Module -Global -ErrorAction Stop -PassThru -WarningAction SilentlyContinue
 				}
 
@@ -580,7 +762,13 @@ function Connect-ZtAssessment {
 				Write-PSFMessage -Message "Failed to load required modules for Security & Compliance: $_" -Level Debug -ErrorRecord $_
 			}
 
-			if ($UseDeviceCode) {
+			if ($ClientSecret -and -not ($CertificateThumbprint -or $Certificate)) {
+				# S&C does not support client secrets for app-only auth
+				Write-Host -Object "   ⚠️ Security & Compliance does not support client-secret app-only auth." -ForegroundColor Yellow
+				Write-Host -Object "      Use -CertificateThumbprint or interactive auth. Tests requiring S&C will be skipped." -ForegroundColor Yellow
+				Remove-ZtConnectedService -Service 'SecurityCompliance'
+			}
+			elseif ($UseDeviceCode -and -not ($CertificateThumbprint -or $Certificate -or $ManagedIdentity)) {
 				Write-Host -Object "   ⚠️ Skipped: Security & Compliance does not support device code flow." -ForegroundColor Yellow
 				Write-Host -Object "      Tests requiring Security & Compliance will be skipped." -ForegroundColor Yellow
 				Write-Host -Object "      To connect, use interactive auth on Windows or app registration with certificate." -ForegroundColor DarkGray
@@ -588,43 +776,72 @@ function Connect-ZtAssessment {
 			}
 			elseif ($exoSnCModulesLoaded) {
 				try {
-					# Get UPN from Exchange connection or Graph context
-					#TODO: is that a nice to have or a hard dependency?
-					$ExoUPN = $UserPrincipalName
-
-					# Attempt to resolve UPN before any connection to avoid token acquisition failures without identity
-					$connectionInformation = $null
-					try {
-						$connectionInformation = Get-ConnectionInformation
-					}
-					catch {
-						# Intentionally swallow errors here; fall back to provided UPN if any
-						$connectionInfoError = $_
-						Write-Verbose -Message "Get-ConnectionInformation failed; falling back to provided UserPrincipalName if available. Error: $($connectionInfoError.Exception.Message)"
-					}
-
-					if (-not $ExoUPN) {
-						$ExoUPN = $connectionInformation | Where-Object { $_.IsEopSession -ne $true -and $_.State -eq 'Connected' } | Select-Object -ExpandProperty UserPrincipalName -First 1 -ErrorAction SilentlyContinue
-					}
-
-					if (-not $ExoUPN) {
-						throw "`nUnable to determine a UserPrincipalName for Security & Compliance. Please supply -UserPrincipalName or connect to Exchange Online first."
+					# Resolve org domain for app-only/MI if not already resolved by the EXO block
+					if (($isAppOnlyAuth -or $ManagedIdentity) -and -not $exoOrgDomain) {
+						try {
+							$org = Invoke-ZtGraphRequest -RelativeUri 'organization' -ErrorAction Stop
+							$exoOrgDomain = ($org.verifiedDomains | Where-Object { $_.isInitial }).name
+						}
+						catch {
+							Write-PSFMessage -Message "Unable to resolve organization domain for S&C app-only: $_" -Level Debug
+						}
 					}
 
 					$ippSessionParams = @{
-						BypassMailboxAnchoring = $true
-						UserPrincipalName      = $ExoUPN
-						ShowBanner             = $false
-						ErrorAction            = 'Stop'
+						ShowBanner  = $false
+						ErrorAction = 'Stop'
 					}
 
-					# Only override endpoints for non-default clouds to reduce token acquisition failures in Default
-					if ($ExchangeEnvironmentName -ne 'O365Default') {
-						$ippSessionParams.ConnectionUri = $Environments[$ExchangeEnvironmentName].ConnectionUri
-						$ippSessionParams.AzureADAuthorizationEndpointUri = $Environments[$ExchangeEnvironmentName].AuthZEndpointUri
+					if ($ManagedIdentity) {
+						# S&C via managed identity (same EXO module)
+						$ippSessionParams.ManagedIdentity = $true
+						if ($ClientId) { $ippSessionParams.ManagedIdentityAccountId = $ClientId }
+						if ($exoOrgDomain) { $ippSessionParams.Organization = $exoOrgDomain }
+						Write-Host -Object '   Authenticating (managed identity)...' -ForegroundColor DarkGray
+					}
+					elseif (($CertificateThumbprint -or $Certificate) -and $ClientId) {
+						# S&C via certificate (app-only)
+						$sncThumbprint = if ($CertificateThumbprint) { $CertificateThumbprint } else { $Certificate.Certificate.Thumbprint }
+						$ippSessionParams.AppId = $ClientId
+						$ippSessionParams.CertificateThumbprint = $sncThumbprint
+						if ($exoOrgDomain) { $ippSessionParams.Organization = $exoOrgDomain }
+						Write-Host -Object '   Authenticating (app-only certificate)...' -ForegroundColor DarkGray
+					}
+					else {
+						# Interactive (delegated) — needs UPN
+						# Get UPN from Exchange connection or Graph context
+						$ExoUPN = $UserPrincipalName
+
+						# Attempt to resolve UPN before any connection to avoid token acquisition failures without identity
+						$connectionInformation = $null
+						try {
+							$connectionInformation = Get-ConnectionInformation
+						}
+						catch {
+							# Intentionally swallow errors here; fall back to provided UPN if any
+							$connectionInfoError = $_
+							Write-Verbose -Message "Get-ConnectionInformation failed; falling back to provided UserPrincipalName if available. Error: $($connectionInfoError.Exception.Message)"
+						}
+
+						if (-not $ExoUPN) {
+							$ExoUPN = $connectionInformation | Where-Object { $_.IsEopSession -ne $true -and $_.State -eq 'Connected' } | Select-Object -ExpandProperty UserPrincipalName -First 1 -ErrorAction SilentlyContinue
+						}
+
+						if (-not $ExoUPN) {
+							throw "`nUnable to determine a UserPrincipalName for Security & Compliance. Please supply -UserPrincipalName or connect to Exchange Online first."
+						}
+
+						$ippSessionParams.BypassMailboxAnchoring = $true
+						$ippSessionParams.UserPrincipalName = $ExoUPN
+
+						# Only override endpoints for non-default clouds to reduce token acquisition failures in Default
+						if ($ExchangeEnvironmentName -ne 'O365Default') {
+							$ippSessionParams.ConnectionUri = $Environments[$ExchangeEnvironmentName].ConnectionUri
+							$ippSessionParams.AzureADAuthorizationEndpointUri = $Environments[$ExchangeEnvironmentName].AuthZEndpointUri
+						}
 					}
 
-					Write-Verbose -Message "Connecting to Security & Compliance with UPN: $ExoUPN"
+					Write-Verbose -Message "Connecting to Security & Compliance"
 					Connect-IPPSSession @ippSessionParams
 					Write-Host -Object "   ✅ Connected" -ForegroundColor Green
 
@@ -669,9 +886,9 @@ function Connect-ZtAssessment {
 			try {
 				Write-PSFMessage -Message ('Loading SharePoint Online required modules: {0}' -f ($resolvedRequiredModules.SharePointOnline.Name -join ', ')) -Level Verbose
 				$loadedSharePointOnlineModules = $resolvedRequiredModules.SharePointOnline.ForEach{
-					#TODO: only add -UseWindowsPowerShell for the modules in WindowsRequiredModules based on module manifest.
-					$_ | Import-Module -Global -ErrorAction Stop -PassThru -UseWindowsPowerShell -WarningAction SilentlyContinue
-					# Import-Module Microsoft.Online.SharePoint.PowerShell -UseWindowsPowerShell -WarningAction SilentlyContinue -ErrorAction Stop -Global
+					$importParams = @{ Global = $true; ErrorAction = 'Stop'; PassThru = $true; WarningAction = 'SilentlyContinue' }
+					if ($IsWindows) { $importParams['UseWindowsPowerShell'] = $true }
+					$_ | Import-Module @importParams
 				}
 
 				$loadedSharePointOnlineModules.ForEach{

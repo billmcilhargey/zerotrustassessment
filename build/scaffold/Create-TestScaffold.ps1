@@ -15,7 +15,7 @@ function Get-DefaultLevel
 }
 
 # Import the CSV file
-$csv = Import-Csv -Path "$PSScriptRoot\ado-tests.csv"
+$csv = Import-Csv -Path (Join-Path $PSScriptRoot 'ado-tests.csv')
 
 # go through each row in the CSV file, check if the test exists in the ./src/private/tests directory ending with the same .id.ps1 format
 # if it does not exist, create the file with the test scaffold
@@ -36,7 +36,7 @@ $createdTests = foreach ($row in $csv) {
     if (-not (Test-Path $testFile)) {
         Write-Host "Creating test file $testFile"
 
-        $testContent = Get-Content -Path "$PSScriptRoot\Test-Template.ps1"
+        $testContent = Get-Content -Path (Join-Path $PSScriptRoot 'Test-Template.ps1')
         $testContent = $testContent -replace "%testid%", $testId
         $testContent = $testContent -replace "%testTitle%", $testTitle
         $testContent = $testContent -replace "%risk%", $risk
@@ -49,7 +49,7 @@ $createdTests = foreach ($row in $csv) {
         $testContent | Set-Content -Path $testPsFile
 
         $markdownFile = "../../src/powershell/tests/$fileName.md"
-        $markdownContent = Get-Content -Path "$PSScriptRoot\Test-Template.md"
+        $markdownContent = Get-Content -Path (Join-Path $PSScriptRoot 'Test-Template.md')
         $markdownContent | Set-Content -Path $markdownFile
 
 		"Test-Assessment-$testId"

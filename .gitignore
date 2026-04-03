@@ -401,9 +401,47 @@ FodyWeavers.xsd
 .idea
 
 .DS_Store
-/output
-ZeroTrustReport
-/src/report/dist
-/src/powershell/export
-ZeroTrustReport
-/code-tests/TestResults
+
+# ── Project-specific ─────────────────────────────────────────────────────────
+
+# Assessment output / report directories
+/output/
+/ZeroTrustReport/
+
+# PowerShell module build & export output
+/src/powershell/export/
+
+# Pester / code-test results
+/code-tests/TestResults/
+testResults*.xml
+TestResults/
+
+# DuckDB runtime databases
+*.duckdb
+*.duckdb.wal
+
+# DuckDB native libraries — auto-downloaded by Install-DuckDbNativeLibrary
+# Only the managed .NET bindings (DuckDB.NET.*.dll) are committed.
+/src/powershell/lib/duckdb.dll
+/src/powershell/lib/libduckdb.so
+/src/powershell/lib/libduckdb.dylib
+
+# MSAL / Graph token cache (created by -UseTokenCache)
+msal_*_cache.*
+.token-cache/
+
+# Node.js (root-level)
+/node_modules/
+
+# Docusaurus site (src/react) — build & cache
+/src/react/build/
+/src/react/.docusaurus/
+/src/react/node_modules/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# DevProxy output
+/devproxy/*.log

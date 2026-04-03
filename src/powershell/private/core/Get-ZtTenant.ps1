@@ -13,7 +13,7 @@
 		ID of the tenant to lookup.
 
 	.EXAMPLE
-		PS C:\> Get-ZtTenant -TenantId $myTenant
+		PS> Get-ZtTenant -TenantId $myTenant
 
 		Retrieves the tenant information for $myTenant
 	#>

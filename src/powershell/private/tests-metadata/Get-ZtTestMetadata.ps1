@@ -25,7 +25,7 @@ function Get-ZtTestMetadata {
 		- AST of the test code (the PowerShell Parser view of the test code)
 
 	.EXAMPLE
-		PS C:\> Get-ZtTestMetadata -Test 21770
+		PS> Get-ZtTestMetadata -Test 21770
 
 		Returns the metadata for the test with ID "21770"
 	#>

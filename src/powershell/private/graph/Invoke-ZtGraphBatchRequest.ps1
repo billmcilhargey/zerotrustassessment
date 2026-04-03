@@ -89,35 +89,35 @@
 		If not specified, all batches that has more data will automatically page through all pages, until there is no more data.
 
 	.EXAMPLE
-		PS C:\> Invoke-ZtGraphBatchRequest -Path 'users/{0}/authentication/methods' -ArgumentList $users.id
+		PS> Invoke-ZtGraphBatchRequest -Path 'users/{0}/authentication/methods' -ArgumentList $users.id
 
 		Retrieves the authentication methods for all users in $users
 
 	.EXAMPLE
-		PS C:\> Invoke-ZtGraphBatchRequest -Path 'users/{0}/authentication/methods' -ArgumentList $users.id -Matched
+		PS> Invoke-ZtGraphBatchRequest -Path 'users/{0}/authentication/methods' -ArgumentList $users.id -Matched
 
 		Retrieves the authentication methods for all users in $users.
 		Will return a set of objects, matching the authentication methods to the ID of the user.
 
 	.EXAMPLE
-		PS C:\> Invoke-ZtGraphBatchRequest -Path 'users/{0}/authentication/methods' -ArgumentList $users -Properties id -Matched
+		PS> Invoke-ZtGraphBatchRequest -Path 'users/{0}/authentication/methods' -ArgumentList $users -Properties id -Matched
 
 		Retrieves the authentication methods for all users in $users.
 		Will return a set of objects, matching the authentication methods to the user object.
 
 	.EXAMPLE
-		PS C:\> Invoke-ZtGraphBatchRequest -Path 'users/{0}/authentication/methods' -ArgumentList $users -Properties id -ServiceMap GraphBeta
+		PS> Invoke-ZtGraphBatchRequest -Path 'users/{0}/authentication/methods' -ArgumentList $users -Properties id -ServiceMap GraphBeta
 
 		Retrieves the authentication methods for all users in $users while using the GraphBeta EntraAuth service.
 
 	.EXAMPLE
-		PS C:\> Invoke-ZtGraphBatchRequest -Path 'sites/{0}/lists/{1}/items?expand=fields' -ArgumentList $lists -Properties SiteID, ListID
+		PS> Invoke-ZtGraphBatchRequest -Path 'sites/{0}/lists/{1}/items?expand=fields' -ArgumentList $lists -Properties SiteID, ListID
 
 		Retrieves all the items from all lists in $lists.
 		Assumes that each object in $lists has the properties "SiteID" and "ListID" (not case sensitive).
 
 	.EXAMPLE
-		PS C:\> $requests = @(
+		PS> $requests = @(
 			@{
 				url    = "users"
 				method = "GET"
@@ -170,17 +170,17 @@
 				}
 			}
 		)
-		PS C:\> Invoke-ZtGraphBatchRequest -Request $requests -Method GET -Header @{ 'Content-Type' = 'application/json' }
+		PS> Invoke-ZtGraphBatchRequest -Request $requests -Method GET -Header @{ 'Content-Type' = 'application/json' }
 
 		Executes all the requests provided in $requests, defaulting to the method "GET" and providing the content-type via header,
 		unless otherwise specified in individual requests.
 
 	.EXAMPLE
-		PS C:\> $requests = @(
+		PS> $requests = @(
 			@{ url = 'users/12345'; method = 'GET' },
 			@{ url = 'users/67890'; method = 'GET' }
 		)
-		PS C:\> Invoke-ZtGraphBatchRequest -Request $requests -Method GET -Raw
+		PS> Invoke-ZtGraphBatchRequest -Request $requests -Method GET -Raw
 
 		Executes both requests in one batch, returning the raw response as provided.
 
@@ -259,7 +259,7 @@
 				Needs to be tracked to prevent accidentally assigning the same id multiple times.
 
 			.EXAMPLE
-				PS C:\> ConvertFrom-PathRequest -Path $pathItem -Argument $argumentItem -Parameters $parameters -TaskList $allTasks -Tracking $idTracking
+				PS> ConvertFrom-PathRequest -Path $pathItem -Argument $argumentItem -Parameters $parameters -TaskList $allTasks -Tracking $idTracking
 
 				Combines $pathItem and $argumentItem into a batch request task.
 			#>
@@ -365,7 +365,7 @@
 				Needs to be tracked to prevent accidentally assigning the same id multiple times.
 
 			.EXAMPLE
-				PS C:\> ConvertTo-BatchRequest -Request $requestItem -Parameters $parameters -TaskList $allTasks -Tracking $idTracking
+				PS> ConvertTo-BatchRequest -Request $requestItem -Parameters $parameters -TaskList $allTasks -Tracking $idTracking
 
 				Converts the specified request item into a task object and adds it to $allTasks.
 			#>
@@ -556,7 +556,7 @@
 				and hence respect the ErrorActionPreference of the same.
 
 			.EXAMPLE
-				PS C:\> Invoke-GraphBatch -Tasks $tasks -TaskList $allTasks -ServiceMap $services -Cmdlet $PSCmdlet
+				PS> Invoke-GraphBatch -Tasks $tasks -TaskList $allTasks -ServiceMap $services -Cmdlet $PSCmdlet
 
 				Executes all tasks in $tasks
 			#>

@@ -14,7 +14,7 @@
 		The total value the current value is part of.
 
 	.EXAMPLE
-		PS C:\> Get-ZtPercentLabel -Value 64 -Total 80
+		PS> Get-ZtPercentLabel -Value 64 -Total 80
 
 		Will return "80%"
 	#>

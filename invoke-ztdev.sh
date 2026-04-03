@@ -1,21 +1,24 @@
 #!/usr/bin/env bash
-# Bash launcher for Run-ZtTest.ps1
+# Bash launcher for Invoke-ZtDev.ps1 (developer test runner)
 # Works in Codespaces, dev containers, and any Linux/macOS environment.
 # Ensures PowerShell 7+ is available, then delegates to the PowerShell script.
 #
 # Usage:
-#   ./run-zt-test.sh                          # Interactive menu
-#   ./run-zt-test.sh -Action Connect          # Direct action
-#   ./run-zt-test.sh -Action RunPillar -Pillar Identity -Days 7
-#   ./run-zt-test.sh -Action Pester
-#   ./run-zt-test.sh -Action UpdateTestServices
+#   ./invoke-ztdev.sh                          # Interactive developer menu
+#   ./invoke-ztdev.sh -Action Connect          # Direct action
+#   ./invoke-ztdev.sh -Action RunPillar -Pillar Identity -Days 7
+#   ./invoke-ztdev.sh -Action Pester
+#   ./invoke-ztdev.sh -Action UpdateTestServices
 #
-# All arguments are passed through to Run-ZtTest.ps1.
+# All arguments are passed through to Invoke-ZtDev.ps1.
+#
+# For end-user usage (PSGallery install), use Start-ZtAssessment directly
+# in PowerShell — this script is for contributors and developers only.
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PS_SCRIPT="$SCRIPT_DIR/Run-ZtTest.ps1"
+PS_SCRIPT="$SCRIPT_DIR/Invoke-ZtDev.ps1"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -30,7 +33,6 @@ find_pwsh() {
         echo "pwsh"
         return 0
     fi
-    # Check common install locations
     for p in /usr/bin/pwsh /usr/local/bin/pwsh /snap/bin/pwsh ~/.dotnet/tools/pwsh; do
         if [ -x "$p" ]; then
             echo "$p"
@@ -43,7 +45,6 @@ find_pwsh() {
 install_pwsh() {
     echo -e "${YELLOW}PowerShell (pwsh) not found. Installing...${NC}"
 
-    # Detect OS
     if [ -f /etc/os-release ]; then
         . /etc/os-release
         OS_ID="${ID:-unknown}"
@@ -56,11 +57,9 @@ install_pwsh() {
     case "$OS_ID" in
         ubuntu|debian)
             echo -e "${CYAN}Installing via Microsoft package repository (Debian/Ubuntu)...${NC}"
-            # Use the dotnet global tool as simplest cross-distro approach
             if command -v dotnet &>/dev/null; then
                 dotnet tool install --global PowerShell
             else
-                # Direct package install
                 sudo apt-get update -qq
                 sudo apt-get install -y -qq wget apt-transport-https software-properties-common
                 source /etc/os-release
@@ -81,7 +80,6 @@ install_pwsh() {
             fi
             ;;
         *)
-            # Generic: try dotnet tool, then snap
             if command -v dotnet &>/dev/null; then
                 echo -e "${CYAN}Installing via dotnet global tool...${NC}"
                 dotnet tool install --global PowerShell
@@ -135,8 +133,28 @@ if [[ "$(uname -s)" != MINGW* && "$(uname -s)" != CYGWIN* && "$(uname -s)" != MS
 fi
 
 if [ ! -f "$PS_SCRIPT" ]; then
-    echo -e "${RED}Run-ZtTest.ps1 not found at: $PS_SCRIPT${NC}"
+    echo -e "${RED}Invoke-ZtDev.ps1 not found at: $PS_SCRIPT${NC}"
     exit 1
 fi
 
-exec "$PWSH" -NoLogo -NoProfile -File "$PS_SCRIPT" "$@"
+"$PWSH" -NoLogo -NoProfile -File "$PS_SCRIPT" "$@"
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -eq 143 ]; then
+    echo ""
+    echo -e "${YELLOW}────────────────────────────────────────────────────────────────${NC}"
+    echo -e "${YELLOW}  ⚠ Process received SIGTERM (exit code 143)${NC}"
+    echo -e "${YELLOW}────────────────────────────────────────────────────────────────${NC}"
+    echo -e "  ${CYAN}Resume: ./invoke-ztdev.sh -Action Resume${NC}"
+    echo ""
+elif [ $EXIT_CODE -eq 130 ]; then
+    echo ""
+    echo -e "${YELLOW}  Interrupted (Ctrl+C). Use -Action Resume to continue.${NC}"
+    echo ""
+elif [ $EXIT_CODE -ne 0 ]; then
+    echo ""
+    echo -e "${RED}  Exited with code $EXIT_CODE${NC}"
+    echo ""
+fi
+
+exit $EXIT_CODE

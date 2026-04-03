@@ -14,7 +14,7 @@ function Test-ZtRetryableError {
 		The ErrorRecord from a catch block to inspect.
 
 	.EXAMPLE
-		PS C:\> try { Invoke-MgGraphRequest ... } catch { if (Test-ZtRetryableError $_) { # retry } }
+		PS> try { Invoke-MgGraphRequest ... } catch { if (Test-ZtRetryableError $_) { # retry } }
 
 		Returns $true for transient errors (429, 5xx, network errors) and $false for client errors (4xx).
 	#>

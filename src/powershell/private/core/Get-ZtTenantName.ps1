@@ -11,7 +11,7 @@
 		The ID of the tenant to get the name for
 
 	.EXAMPLE
-		PS C:\> Get-ZtTenantName -TenantId $myTenant
+		PS> Get-ZtTenantName -TenantId $myTenant
 
 		Retrieves the displayname of the tenant in $myTenant
 	#>

@@ -10,7 +10,7 @@ function Get-ZtAssessmentResults {
 		Can be used independently after the assessment command has completed to review the last results.
 
 	.EXAMPLE
-		PS C:\> Get-ZtAssessmentResults
+		PS> Get-ZtAssessmentResults
 
 		Gets the results of all the Zero Trust Assessment tests
 	#>

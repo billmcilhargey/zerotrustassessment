@@ -25,7 +25,7 @@
 		Passed through to Invoke-ZtTest for per-test timeout enforcement.
 
 	.EXAMPLE
-		PS C:\> Start-ZtTestExecution -Tests $testsToRun -DbPath $Database.Database -ThrottleLimit $ThrottleLimit
+		PS> Start-ZtTestExecution -Tests $testsToRun -DbPath $Database.Database -ThrottleLimit $ThrottleLimit
 
 		Starts parallel processing of the tests specified in $testsToRun.
 	#>
@@ -103,7 +103,43 @@
 			$script:ModuleRoot = $moduleRoot
 			$global:database = Connect-Database -Path $databasePath -PassThru
 		} -ScriptBlock {
-			Invoke-ZtTest -Test $_ -Database $global:database -LogsPath $logsPath -TestTimeout $testTimeout
+			$currentTest = $_
+			try {
+				Invoke-ZtTest -Test $currentTest -Database $global:database -LogsPath $logsPath -TestTimeout $testTimeout
+			}
+			catch {
+				# Worker protection: prevent a single fatal test error from killing the
+				# entire worker thread. Without this, an unhandled exception terminates
+				# the runspace worker, which stops processing all remaining queued tests.
+				$testId = if ($currentTest.TestID) { $currentTest.TestID } else { 'unknown' }
+				Write-PSFMessage -Level Warning -Message "Worker caught fatal error for test {0}: {1}" -StringValues $testId, $_.Exception.Message -ErrorRecord $_
+				if ($logsPath) {
+					try {
+						$logFile = Join-Path $logsPath "$testId.md"
+						$errorText = "# Test: $testId - Fatal worker error`n`n``````$($_.Exception.Message)``````"
+						[System.IO.File]::WriteAllText($logFile, $errorText)
+					} catch { }
+					try {
+						$progressFile = Join-Path $logsPath '_progress.log'
+						$entry = "{0}  {1,-12}{2}  {3}  {4}`n" -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss.fff'), 'FAILED', $testId, '00:00:00.000', 'WorkerError'
+						[System.IO.File]::AppendAllText($progressFile, $entry)
+					} catch { }
+				}
+				# Return a minimal result so the Results queue count stays accurate
+				[PSCustomObject]@{
+					PSTypeName = 'ZeroTrustAssessment.TestStatistics'
+					TestID     = $testId
+					Test       = $currentTest
+					Start      = Get-Date
+					End        = Get-Date
+					Duration   = [timespan]::Zero
+					Success    = $false
+					Error      = $_
+					Messages   = $null
+					TimedOut   = $false
+					Output     = $null
+				}
+			}
 		} -End {
 			Disconnect-Database -Database $global:database
 		}

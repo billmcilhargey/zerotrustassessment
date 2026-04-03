@@ -56,7 +56,7 @@ RequiredModules = @(
 )
 
 # Assemblies that must be loaded prior to importing this module
-RequiredAssemblies = 'lib\DuckDB.NET.Data.dll'
+RequiredAssemblies = 'lib/DuckDB.NET.Data.dll'
 
 # Script files (.ps1) that are run in the caller's environment prior to importing this module.
 ScriptsToProcess = @('Initialize-Dependencies.ps1')
@@ -73,7 +73,7 @@ FormatsToProcess = 'ZeroTrustAssessment.format.ps1xml'
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
 FunctionsToExport = 'Connect-ZtAssessment', 'Disconnect-ZtAssessment',
                'Get-ZtExportStatistics', 'Get-ZtGraphScope', 'Get-ZtTest',
-               'Get-ZtTestStatistics', 'Invoke-ZtAssessment',
+               'Get-ZtTestStatistics', 'Invoke-ZtAssessment', 'Start-ZtAssessment',
                'Invoke-ZtGraphRequest', 'Invoke-ZtAzureRequest',
                'Invoke-ZtAzureResourceGraphRequest', 'Clear-ZtRequiredModule',
                'Get-ZtCurrentLicense'
@@ -85,7 +85,7 @@ CmdletsToExport = @()
 # VariablesToExport = @()
 
 # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-AliasesToExport = 'Invoke-ZeroTrustAssessment'
+AliasesToExport = 'Invoke-ZeroTrustAssessment', 'Start-ZeroTrustAssessment'
 
 # DSC resources to export from this module
 # DscResourcesToExport = @()

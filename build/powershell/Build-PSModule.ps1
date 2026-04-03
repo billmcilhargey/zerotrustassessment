@@ -31,10 +31,10 @@
 )
 
 ## Initialize
-Import-Module "$PSScriptRoot\CommonFunctions.psm1" -Force -WarningAction SilentlyContinue -ErrorAction Stop
+Import-Module (Join-Path $PSScriptRoot 'CommonFunctions.psm1') -Force -WarningAction SilentlyContinue -ErrorAction Stop
 
 ## Increment the build number
-&$PSScriptRoot\Set-Version.ps1 -preview:(!$ProductionBuild)
+& (Join-Path $PSScriptRoot 'Set-Version.ps1') -preview:(!$ProductionBuild)
 
 [System.IO.DirectoryInfo] $BaseDirectoryInfo = Get-PathInfo $BaseDirectory -InputPathType Directory -ErrorAction Stop
 [System.IO.DirectoryInfo] $OutputDirectoryInfo = Get-PathInfo $OutputDirectory -InputPathType Directory -DefaultDirectory $BaseDirectoryInfo.FullName -ErrorAction SilentlyContinue
@@ -51,11 +51,11 @@ $ModuleManifest = Import-PowerShellDataFile $ModuleManifestFileInfo.FullName
 
 ## Copy Source Module Code to Module Output Directory
 Assert-DirectoryExists $ModuleOutputDirectoryInfo -ErrorAction Stop | Out-Null
-Copy-Item ("{0}\*" -f $SourceDirectoryInfo.FullName) -Destination $ModuleOutputDirectoryInfo.FullName -Recurse -Force
+Copy-Item (Join-Path $SourceDirectoryInfo.FullName '*') -Destination $ModuleOutputDirectoryInfo.FullName -Recurse -Force
 
 if (!$SkipMergingNestedModuleScripts) {
     [System.IO.FileInfo] $OutputRootModuleFileInfo = (Join-Path $ModuleOutputDirectoryInfo.FullName $ModuleManifest['RootModule'])
-    &$PSScriptRoot\Merge-PSModuleNestedModuleScripts.ps1 -ModuleManifestPath $OutputModuleManifestFileInfo.FullName -OutputModulePath $OutputRootModuleFileInfo.FullName -MergeWithRootModule -RemoveNestedModuleScriptFiles
+    &(Join-Path $PSScriptRoot 'Merge-PSModuleNestedModuleScripts.ps1') -ModuleManifestPath $OutputModuleManifestFileInfo.FullName -OutputModulePath $OutputRootModuleFileInfo.FullName -MergeWithRootModule -RemoveNestedModuleScriptFiles
 }
 if ($LicenseFileInfo.Exists) {
     Copy-Item $LicenseFileInfo.FullName -Destination (Join-Path $ModuleOutputDirectoryInfo.FullName License.txt) -Force
@@ -63,7 +63,7 @@ if ($LicenseFileInfo.Exists) {
 
 if ($PackagesConfigFileInfo.Exists) {
     ## NuGet Restore
-    &$PSScriptRoot\Restore-NugetPackages.ps1 -PackagesConfigPath $PackagesConfigFileInfo.FullName -OutputDirectory $PackagesDirectoryInfo.FullName
+    &(Join-Path $PSScriptRoot 'Restore-NugetPackages.ps1') -PackagesConfigPath $PackagesConfigFileInfo.FullName -OutputDirectory $PackagesDirectoryInfo.FullName
 
     ## Read Packages Configuration
     $xmlPackagesConfig = New-Object xml
@@ -74,11 +74,11 @@ if ($PackagesConfigFileInfo.Exists) {
         [string[]] $targetFrameworks = $package.targetFramework
         if (!$targetFrameworks) { [string[]] $targetFrameworks = "net45", "netcoreapp2.1" }
         foreach ($targetFramework in $targetFrameworks) {
-            [System.IO.DirectoryInfo] $PackageDirectory = Join-Path $PackagesDirectoryInfo.FullName ("{0}.{1}\lib\{2}" -f $package.id, $package.version, $targetFramework)
-            [System.IO.DirectoryInfo] $PackageOutputDirectory = "{0}\{1}.{2}\{3}" -f $ModuleOutputDirectoryInfo.FullName, $package.id, $package.version, $targetFramework
+            [System.IO.DirectoryInfo] $PackageDirectory = Join-Path $PackagesDirectoryInfo.FullName ('{0}.{1}' -f $package.id, $package.version) -AdditionalChildPath 'lib', $targetFramework
+            [System.IO.DirectoryInfo] $PackageOutputDirectory = Join-Path $ModuleOutputDirectoryInfo.FullName ('{0}.{1}' -f $package.id, $package.version) -AdditionalChildPath $targetFramework
             $PackageOutputDirectory
             Assert-DirectoryExists $PackageOutputDirectory -ErrorAction Stop | Out-Null
-            Copy-Item ("{0}\*" -f $PackageDirectory) -Destination $PackageOutputDirectory.FullName -Recurse -Force
+            Copy-Item (Join-Path $PackageDirectory.FullName '*') -Destination $PackageOutputDirectory.FullName -Recurse -Force
         }
     }
 }
@@ -88,9 +88,9 @@ if ($PackagesConfigFileInfo.Exists) {
 #$ModuleManifestOutputFileInfo = $ModuleFileListFileInfo | Where-Object Name -EQ $ModuleManifestFileInfo.Name
 
 ## Update Module Manifest in Module Output Directory
-&$PSScriptRoot\Update-PSModuleManifest.ps1 -ModuleManifestPath $OutputModuleManifestFileInfo.FullName
+&(Join-Path $PSScriptRoot 'Update-PSModuleManifest.ps1') -ModuleManifestPath $OutputModuleManifestFileInfo.FullName
 if (!$SkipMergingNestedModuleScripts) {
-    &$PSScriptRoot\Add-PSModuleHeader.ps1 -ModuleManifestPath $OutputModuleManifestFileInfo.FullName
+    &(Join-Path $PSScriptRoot 'Add-PSModuleHeader.ps1') -ModuleManifestPath $OutputModuleManifestFileInfo.FullName
 }
 
 Write-Host "Module built successfully: $($OutputModuleManifestFileInfo.FullName)" -ForegroundColor Green

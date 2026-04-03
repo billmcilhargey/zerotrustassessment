@@ -5,7 +5,7 @@ Param(
 )
 
 ## Initialize
-Import-Module "$PSScriptRoot\CommonFunctions.psm1" -Force -WarningAction SilentlyContinue -ErrorAction Stop
+Import-Module (Join-Path $PSScriptRoot 'CommonFunctions.psm1') -Force -WarningAction SilentlyContinue -ErrorAction Stop
 
 $ModuleRoot = "./src/powershell"
 $ModuleManifestPath = "./src/powershell/*.psd1"

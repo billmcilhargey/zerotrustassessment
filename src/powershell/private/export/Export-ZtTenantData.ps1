@@ -30,7 +30,7 @@ function Export-ZtTenantData {
 		Defaults to 5.
 
 	.EXAMPLE
-		PS C:\> Export-ZtTenantData -ExportPath $exportPath -Days $Days -MaximumSignInLogQueryTime $MaximumSignInLogQueryTime -Pillar $Pillar
+		PS> Export-ZtTenantData -ExportPath $exportPath -Days $Days -MaximumSignInLogQueryTime $MaximumSignInLogQueryTime -Pillar $Pillar
 
 		Exports all the required tenant information onto disk.
 	#>

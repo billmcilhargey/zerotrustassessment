@@ -13,7 +13,7 @@
 		The IDs of tests for which to retrieve their statistics.
 
 	.EXAMPLE
-		PS C:\> Get-ZtTestStatistics
+		PS> Get-ZtTestStatistics
 
 		List all processing statistics for all tests.
 	#>

@@ -1,2 +1,51 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# ── Shell scripts — always LF (breaks on Windows with CRLF) ─────────────────
+*.sh text eol=lf
+
+# ── PowerShell ───────────────────────────────────────────────────────────────
+*.ps1 text
+*.psm1 text
+*.psd1 text
+*.ps1xml text
+
+# ── Web / config ─────────────────────────────────────────────────────────────
+*.json text
+*.js text
+*.jsx text
+*.ts text
+*.tsx text
+*.css text
+*.md text
+*.yml text
+*.yaml text
+*.csv text
+
+# ── Managed .NET bindings (tracked in src/powershell/lib/) ────────────────────
+# Only the managed DuckDB.NET.*.dll bindings are committed.
+# Native platform libs (duckdb.dll, libduckdb.so, libduckdb.dylib) are
+# auto-downloaded by Install-DuckDbNativeLibrary and excluded via .gitignore.
+*.dll binary
+*.so binary
+*.dylib binary
+
+# ── Images ───────────────────────────────────────────────────────────────────
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.svg text
+
+# ── Documents / Office ───────────────────────────────────────────────────────
+*.xlsx binary
+*.docx binary
+*.pdf binary
+
+# ── Fonts ────────────────────────────────────────────────────────────────────
+*.woff binary
+*.woff2 binary
+*.eot binary
+*.ttf binary

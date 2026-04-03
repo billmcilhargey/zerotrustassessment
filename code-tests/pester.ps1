@@ -31,12 +31,12 @@ Write-Host "Starting Tests"
 $global:__testData = @{
 	TestRoot = $PSScriptRoot
 	ModuleName = $ModuleName
-	ModuleRoot = (Get-Item -Path "$PSScriptRoot\..\src\powershell").FullName
+	ModuleRoot = (Get-Item -Path (Join-Path $PSScriptRoot '..' -AdditionalChildPath 'src', 'powershell')).FullName
 	Tests = @{ }
 }
 
 Write-Host "Importing Tools"
-foreach ($file in Get-ChildItem -Path "$PSScriptRoot\tools" -Recurse -Filter *.ps1) {
+foreach ($file in Get-ChildItem -Path (Join-Path $PSScriptRoot 'tools') -Recurse -Filter *.ps1) {
 	. $file.FullName
 }
 
@@ -46,8 +46,8 @@ if (-not $NoImport) {
 	Write-Host "Importing Module"
 
 	Remove-Module $ModuleName -ErrorAction Ignore
-	Import-Module "$($global:__testData.ModuleRoot)\$ModuleName.psd1" -Global
-	Import-Module "$($global:__testData.ModuleRoot)\$ModuleName.psm1" -Force -Global # This allows testing internal commands
+	Import-Module (Join-Path $global:__testData.ModuleRoot "$ModuleName.psd1") -Global
+	Import-Module (Join-Path $global:__testData.ModuleRoot "$ModuleName.psm1") -Force -Global # This allows testing internal commands
 
 	# Need to import explicitly so we can use the configuration class
 	Import-Module Pester -Global 3>$null
@@ -67,13 +67,13 @@ $config.TestResult.Enabled = $true
 if ($TestGeneral)
 {
 	Write-Host  "Modules imported, proceeding with general tests"
-	foreach ($file in (Get-ChildItem "$PSScriptRoot\general" | Where-Object Name -like "*.Tests.ps1"))
+	foreach ($file in (Get-ChildItem (Join-Path $PSScriptRoot 'general') | Where-Object Name -like "*.Tests.ps1"))
 	{
 		if ($file.Name -notlike $Include) { continue }
 		if ($file.Name -like $Exclude) { continue }
 
 		Write-Host  "  Executing $($file.Name)"
-		$config.TestResult.OutputPath = Join-Path "$PSScriptRoot\TestResults" "TEST-$($file.BaseName).xml"
+		$config.TestResult.OutputPath = Join-Path $PSScriptRoot 'TestResults' -AdditionalChildPath "TEST-$($file.BaseName).xml"
 		$config.Run.Path = $file.FullName
 		$config.Run.PassThru = $true
 		$config.Output.Verbosity = $Output
@@ -101,13 +101,13 @@ $global:__pester_data.ScriptAnalyzer | Out-Host
 if ($TestFunctions)
 {
 	Write-Host "Proceeding with individual tests"
-	foreach ($file in (Get-ChildItem "$PSScriptRoot\commands" -Recurse -File | Where-Object Name -like "*Tests.ps1"))
+	foreach ($file in (Get-ChildItem (Join-Path $PSScriptRoot 'commands') -Recurse -File | Where-Object Name -like "*Tests.ps1"))
 	{
 		if ($file.Name -notlike $Include) { continue }
 		if ($file.Name -like $Exclude) { continue }
 
 		Write-Host "  Executing $($file.Name)"
-		$config.TestResult.OutputPath = Join-Path "$PSScriptRoot\TestResults" "TEST-$($file.BaseName).xml"
+		$config.TestResult.OutputPath = Join-Path $PSScriptRoot 'TestResults' -AdditionalChildPath "TEST-$($file.BaseName).xml"
 		$config.Run.Path = $file.FullName
 		$config.Run.PassThru = $true
 		$config.Output.Verbosity = $Output
@@ -133,13 +133,13 @@ if ($TestFunctions)
 if ($TestAssessments)
 {
 	Write-Host "Proceeding with assessment tests"
-	foreach ($file in (Get-ChildItem "$PSScriptRoot\test-assessments" -Recurse -File | Where-Object Name -like "*Tests.ps1"))
+	foreach ($file in (Get-ChildItem (Join-Path $PSScriptRoot 'test-assessments') -Recurse -File | Where-Object Name -like "*Tests.ps1"))
 	{
 		if ($file.Name -notlike $Include) { continue }
 		if ($file.Name -like $Exclude) { continue }
 
 		Write-Host "  Executing $($file.Name)"
-		$config.TestResult.OutputPath = Join-Path "$PSScriptRoot\TestResults" "TEST-$($file.BaseName).xml"
+		$config.TestResult.OutputPath = Join-Path $PSScriptRoot 'TestResults' -AdditionalChildPath "TEST-$($file.BaseName).xml"
 		$config.Run.Path = $file.FullName
 		$config.Run.PassThru = $true
 		$config.Output.Verbosity = $Output

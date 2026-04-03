@@ -25,12 +25,12 @@
 		TimeSpan.Zero disables the timeout.
 
 	.EXAMPLE
-		PS C:\> Invoke-ZtTest -Test $_ -Database $global:database -LogsPath $logsPath
+		PS> Invoke-ZtTest -Test $_ -Database $global:database -LogsPath $logsPath
 
 		Executes the current test with the globally cached database connection and writes a log file.
 
 	.EXAMPLE
-		PS C:\> Invoke-ZtTest -Test $_ -Database $global:database -LogsPath $logsPath -TestTimeout ([timespan]::FromMinutes(30))
+		PS> Invoke-ZtTest -Test $_ -Database $global:database -LogsPath $logsPath -TestTimeout ([timespan]::FromMinutes(30))
 
 		Executes the test with a 30-minute timeout.
 	#>

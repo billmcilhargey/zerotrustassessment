@@ -18,7 +18,7 @@
 		The name of the table to fill.
 
 	.EXAMPLE
-		PS C:\> Import-EntraTable -Database $database -ExportPath $ExportPath -TableName 'User'
+		PS> Import-EntraTable -Database $database -ExportPath $ExportPath -TableName 'User'
 
 		Creates the table "User" and converts the raw export files of all users of the tenant into the content of that table.
 	#>

@@ -11,7 +11,7 @@
 		If future plans to merge everything into the psm1 file during build prosper, this command will not have any effect outside of dev environments.
 
 	.EXAMPLE
-		PS C:\> Update-ZtTestMetadata
+		PS> Update-ZtTestMetadata
 
 		Reloads all tests and updates the metadata.
 	#>

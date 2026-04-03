@@ -1,11 +1,11 @@
 param (
     [Parameter()]
     [string]
-    $ModuleManifestPath = '{0}\..\src\powershell\ZeroTrustAssessment.psd1' -f (Split-Path -Parent $PSScriptRoot).TrimEnd([io.path]::DirectorySeparatorChar),
+    $ModuleManifestPath = (Join-Path -Path (Split-Path -Parent $PSScriptRoot) -ChildPath '..' -AdditionalChildPath 'src', 'powershell', 'ZeroTrustAssessment.psd1'),
 
     [Parameter()]
     [string]
-    $OutputPath = '{0}\..\output\RequiredModules' -f (Split-Path -Parent $PSScriptRoot).TrimEnd([io.path]::DirectorySeparatorChar),
+    $OutputPath = (Join-Path -Path (Split-Path -Parent $PSScriptRoot) -ChildPath '..' -AdditionalChildPath 'output', 'RequiredModules'),
 
     [Parameter()]
     [switch]

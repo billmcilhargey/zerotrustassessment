@@ -14,7 +14,7 @@ function Get-ZtCurrentLicense {
         $script:CurrentLicense variable to avoid unnecessary API calls on subsequent invocations.
 
     .EXAMPLE
-        PS C:\> Get-ZtCurrentLicense -Force
+        PS> Get-ZtCurrentLicense -Force
 
         This will retrieve the current licenses for the tenant, bypassing any cached information.
     #>

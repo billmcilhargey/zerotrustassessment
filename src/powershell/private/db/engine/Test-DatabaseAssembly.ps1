@@ -2,17 +2,17 @@ function Test-DatabaseAssembly
 {
 	<#
 	.SYNOPSIS
-		Validates that DuckDB is installed and provides instruction on how to install.
+		Validates that DuckDB is installed and auto-downloads the native library if missing.
 
 	.DESCRIPTION
-		Validates that DuckDB is installed and provides instruction on how to install.
+		Validates that DuckDB is installed and auto-downloads the native library if missing.
 		This is done by connecting to the automatic in-memory database.
-		If that works, then the database binaries must be ready to work.
+		If the native library is missing, it will be downloaded automatically from GitHub releases.
 
 	.EXAMPLE
-		PS C:\> Test-DatabaseAssembly
+		PS> Test-DatabaseAssembly
 
-		Validates that DuckDB is installed and - if needed - provides instruction on how to install.
+		Validates that DuckDB is installed and - if needed - downloads and installs the native library.
 	#>
 	[CmdletBinding()]
 	param ()
@@ -25,41 +25,47 @@ function Test-DatabaseAssembly
     catch {
         Write-PSFMessage 'Database binaries not ready to use' -ErrorRecord $_ -Tag DB -Level Debug # Log silently
 
-        # Check for specific DuckDB initialization error
+        # Check for specific DuckDB initialization error (native lib missing)
         if ($_.Exception.Message -like "*The type initializer for 'DuckDB.NET*") {
-            # Check if running on ARM architecture
-            if ([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture -eq 'Arm64') {
+            # Check if running on ARM Windows (unsupported)
+            if ($IsWindows -and [System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture -eq 'Arm64') {
                 Write-Host
                 Write-Host "⚠️ UNSUPPORTED PLATFORM: Windows on ARM" -ForegroundColor Red
                 Write-Host "ZeroTrustAssessment is not currently supported on Windows on ARM devices." -ForegroundColor Yellow
                 Write-Host
+                return $false
             }
-            elseif (-not $IsWindows) {
-                $os = if ($IsMacOS) { 'macOS' } else { 'Linux' }
-                $libName = if ($IsMacOS) { 'libduckdb.dylib' } else { 'libduckdb.so' }
-                $libDir = Join-Path $PSScriptRoot '..' '..' '..' 'lib'
-                $libDir = (Resolve-Path $libDir -ErrorAction SilentlyContinue)?.Path ?? $libDir
+
+            # Auto-download the native library
+            Write-Host
+            Write-Host "DuckDB native library not found. Downloading automatically..." -ForegroundColor Yellow
+            try {
+                Install-DuckDbNativeLibrary
+                # Retry the connection after installing
+                $null = Connect-Database -Transient
                 Write-Host
-                Write-Host "⚠️ PREREQUISITE REQUIRED: DuckDB native library ($libName) is missing" -ForegroundColor Red
+                return $true
+            }
+            catch {
+                $os = if ($IsWindows) { 'Windows' } elseif ($IsMacOS) { 'macOS' } else { 'Linux' }
+                $libName = if ($IsWindows) { 'duckdb.dll' } elseif ($IsMacOS) { 'libduckdb.dylib' } else { 'libduckdb.so' }
+                $libDir = Join-Path $script:ModuleRoot 'lib'
+                Write-Host
+                Write-Host "⚠️ DuckDB native library ($libName) could not be installed automatically." -ForegroundColor Red
                 Write-Host "The assessment requires the DuckDB native library for $os." -ForegroundColor Yellow
-                Write-Host "Expected location: $libDir/$libName" -ForegroundColor Yellow
-                Write-Host "Download from: https://github.com/duckdb/duckdb/releases/tag/v1.1.1" -ForegroundColor Yellow
-                Write-Host "  (get libduckdb-linux-amd64.zip, extract $libName into the lib folder)" -ForegroundColor Yellow
+                Write-Host "Expected location: $libDir" -ForegroundColor Yellow
+                Write-Host "Download from: https://github.com/duckdb/duckdb/releases/tag/$script:DuckDbVersion" -ForegroundColor Yellow
+                Write-Host "  Extract $libName into the lib folder above." -ForegroundColor Yellow
+                if ($IsWindows) {
+                    Write-Host "  Also ensure the Visual C++ Redistributable is installed: https://aka.ms/vcredist" -ForegroundColor Yellow
+                }
                 Write-Host
-            }
-            else {
-                Write-Host
-                Write-Host "⚠️ PREREQUISITE REQUIRED: Visual C++ Redistributable is missing" -ForegroundColor Red
-                Write-Host "ZeroTrustAssessment requires the Microsoft Visual C++ Redistributable to function properly." -ForegroundColor Yellow
-                Write-Host "Please download and install it from: https://aka.ms/vcredist" -ForegroundColor Yellow
-                Write-Host "After installation, restart PowerShell and try running the assessment again." -ForegroundColor Yellow
-                Write-Host
+                return $false
             }
         }
         else {
             # Throw exceptions
             throw
         }
-        return $false
     }
 }

@@ -59,7 +59,7 @@ Invoke-ZtAssessment
 Run the Zero Trust Assessment against the signed in tenant and generates a report of the findings using default settings.
 
 .EXAMPLE
-Invoke-ZtAssessment -Path "C:\Reports\ZT" -Days 7 -ShowLog
+Invoke-ZtAssessment -Path "./Reports/ZT" -Days 7 -ShowLog
 
 Run the Zero Trust Assessment with a custom output path, querying 7 days of logs, and showing detailed logging.
 
@@ -67,12 +67,12 @@ Run the Zero Trust Assessment with a custom output path, querying 7 days of logs
 The Zero Trust pillar to assess. Valid values are 'All', 'Identity', 'Devices', 'Network', or 'Data'. Defaults to 'All' which runs all tests.
 
 .EXAMPLE
-Invoke-ZtAssessment -ConfigurationFile "C:\Config\zt-config.json"
+Invoke-ZtAssessment -ConfigurationFile "./config/zt-config.json"
 
 Run the Zero Trust Assessment using settings from a configuration file.
 
 .EXAMPLE
-Invoke-ZtAssessment -ConfigurationFile "C:\Config\zt-config.json" -Days 14 -ShowLog
+Invoke-ZtAssessment -ConfigurationFile "./config/zt-config.json" -Days 14 -ShowLog
 
 Run the Zero Trust Assessment using settings from a configuration file, but override the Days parameter to 14 and enable ShowLog.
 
@@ -207,27 +207,6 @@ function Invoke-ZtAssessment {
 	Write-Host "Starting Zero Trust Assessment..." -ForegroundColor White
 	Write-Host
 
-	if (-not (Test-ZtLanguageMode)) {
-		Stop-PSFFunction -Message "PowerShell is running in Constrained Language Mode, which is not supported." -EnableException $true -Cmdlet $PSCmdlet
-		return
-	}
-
-	# TODO: Cleanup below (aligning -Preview with all pillars)
-	# Validate preview pillar requirements
-	# if ($Pillar -in ('Network', 'Data') -and -not $Preview) {
-	# 	Write-Host
-	# 	Write-Host "❌ " -NoNewline -ForegroundColor Red
-	# 	Write-Host "The '$Pillar' pillar is currently in preview and requires the " -NoNewline -ForegroundColor Red
-	# 	Write-Host "-Preview" -NoNewline -ForegroundColor Yellow
-	# 	Write-Host " switch." -ForegroundColor Red
-	# 	Write-Host
-	# 	Write-Host "Please run the command again with the " -NoNewline -ForegroundColor White
-	# 	Write-Host "-Preview" -NoNewline -ForegroundColor Yellow
-	# 	Write-Host " parameter to assess the $Pillar pillar." -ForegroundColor White
-	# 	Write-Host
-	# 	return
-	# }
-
 	# Handle configuration file parameter
 	if ($ConfigurationFile) {
 		try {
@@ -269,57 +248,6 @@ function Invoke-ZtAssessment {
 		}
 	}
 
-	# # Handle interactive parameter collection
-	# if ($Interactive) {
-	# 	try {
-	# 		Write-Host "🎮 " -NoNewline -ForegroundColor Magenta
-	# 		Write-Host "Starting interactive parameter collection..." -ForegroundColor White
-	# 		Write-Host
-	# 		$tempConfigFile = New-ZtInteractiveConfig
-
-	# 		# Check if user cancelled the configuration creation
-	# 		if ($null -eq $tempConfigFile -or -not $tempConfigFile) {
-	# 			Write-Host "⏹️ " -NoNewline -ForegroundColor Yellow
-	# 			Write-Host "Interactive configuration cancelled by user. Exiting." -ForegroundColor Yellow
-	# 			return
-	# 		}
-
-	# 		# Verify the file exists before trying to read it (only if tempConfigFile is not null)
-	# 		if (-not (Test-Path $tempConfigFile.FullName -ErrorAction SilentlyContinue)) {
-	# 			Write-Host "❌ " -NoNewline -ForegroundColor Red
-	# 			Write-Host "Configuration file was not created. Exiting." -ForegroundColor Red
-	# 			return
-	# 		}
-
-	# 		# Import the configuration data from JSON
-	# 		$config = Import-PSFJson -Path $tempConfigFile.FullName
-
-	# 		# Assign interactive parameter values to variables
-	# 		$Path = $config.Path
-	# 		$Days = $config.Days
-	# 		$MaximumSignInLogQueryTime = $config.MaximumSignInLogQueryTime
-	# 		$ShowLog = $config.ShowLog
-	# 		$ExportLog = $config.ExportLog
-	# 		$DisableTelemetry = $config.DisableTelemetry
-	# 		$Resume = $config.Resume
-
-	# 		if ($config.PSObject.Properties.Name -contains 'Tests' -and $config.Tests.Count -gt 0) {
-	# 			$Tests = $config.Tests
-	# 		}
-
-	# 		Write-Host "✅ " -NoNewline -ForegroundColor Green
-	# 		Write-Host "Interactive configuration complete. Starting assessment..." -ForegroundColor Green
-	# 		Write-Host
-	# 	}
-	# 	catch {
-	# 		Write-Host "❌ " -NoNewline -ForegroundColor Red
-	# 		Write-Host "Failed to collect interactive parameters: $($_.Exception.Message)" -ForegroundColor Red
-	# 		return
-	# 	}
-	# }
-
-	#$ExportLog = $true # Always create support package during public preview TODO: Remove this line after public preview
-
 	if ($ShowLog) {
 		$null = New-PSFMessageLevelModifier -Name ZeroTrustAssessment.VeryVerbose -Modifier -1 -IncludeModuleName ZeroTrustAssessment
 	}
@@ -327,12 +255,30 @@ function Invoke-ZtAssessment {
 		Get-PSFMessageLevelModifier -Name ZeroTrustAssessment.VeryVerbose | Remove-PSFMessageLevelModifier
 	}
 
-	if (-not (Test-DatabaseAssembly)) {
+	# ── Consolidated pre-flight checks ───────────────────────────────────────
+	$preflightParams = @{ Pillar = $Pillar }
+	if ($Tests) { $preflightParams.Tests = $Tests }
+	$preflight = Test-ZtServicePreflight @preflightParams
+
+	if (-not $preflight.Passed) {
+		foreach ($failure in $preflight.Failures) {
+			Write-Host "❌ " -NoNewline -ForegroundColor Red
+			Write-Host "Pre-flight check failed — $($failure.Check): $($failure.Detail)" -ForegroundColor Red
+		}
+		Write-Host
 		return
 	}
 
-	if (-not (Test-ZtContext)) {
-		return
+	# Show coverage warnings (missing services won't block the run, tests will be skipped)
+	$coverage = $preflight.Coverage
+	if (-not $coverage.FullCoverage) {
+		Write-Host "⚠️ " -NoNewline -ForegroundColor Yellow
+		Write-Host "Service coverage gaps detected — $($coverage.SkippedTestCount) test(s) will be skipped" -ForegroundColor Yellow
+		foreach ($gap in $coverage.ServiceGaps) {
+			$extra = if ($gap.IsWindowsOnly) { ' (Windows only)' } else { '' }
+			Write-Host "   • $($gap.Service): $($gap.TestsAffected) test(s)$extra" -ForegroundColor DarkYellow
+		}
+		Write-Host
 	}
 
 	# Resolve to absolute paths so .NET APIs (DuckDB, System.IO) use the correct location.
@@ -439,10 +385,13 @@ function Invoke-ZtAssessment {
 		# Run the tests
 		Write-PSFMessage -Message "Stage 2: Running Tests" -Tag stage
 		Invoke-ZtTests -Database $database -Tests $Tests -Pillar $Pillar -ThrottleLimit $TestThrottleLimit -LogsPath $logsPath -Timeout $Timeout -TestTimeout $TestTimeout
+
 		Write-PSFMessage -Message "Stage 3: Adding Tenant Information" -Tag stage
+		Write-ZtProgress -Activity "Generating report" -Status "Gathering tenant information"
 		Invoke-ZtTenantInfo -Database $database -Pillar $Pillar
 
 		Write-PSFMessage -Message "Stage 4: Generating Test-Results" -Tag stage
+		Write-ZtProgress -Activity "Generating report" -Status "Compiling assessment results"
 		$assessmentResults = Get-ZtAssessmentResults
 	}
 	finally {
@@ -452,15 +401,19 @@ function Invoke-ZtAssessment {
 	}
 
 	Write-PSFMessage -Message "Stage 5: Writing Assessment report data" -Tag stage
+	Write-ZtProgress -Activity "Generating report" -Status "Writing report data"
 	$assessmentResultsJson = $assessmentResults | ConvertTo-Json -Depth 10
 	$resultsJsonPath = Join-Path -Path $exportPath -ChildPath "ZeroTrustAssessmentReport.json"
 	$assessmentResultsJson | Set-PSFFileContent -Path $resultsJsonPath
 
 	Write-PSFMessage -Message "Stage 6: Generating Html Report" -Tag stage
-	Write-ZtProgress -Activity "Creating html report"
+	Write-ZtProgress -Activity "Generating report" -Status "Building HTML report"
 	$htmlReportPath = Join-Path -Path $Path -ChildPath "ZeroTrustAssessmentReport.html"
 	$output = Get-HtmlReport -AssessmentResults $assessmentResultsJson -Path $Path
 	$output | Set-PSFFileContent -Path $htmlReportPath -Encoding UTF8NoBom
+
+	# Write the test run summary now that the report is complete
+	Write-ZtTestSummary -LogsPath $logsPath
 
 	#region Post Processing
 	Write-Host

@@ -12,7 +12,7 @@ function Test-ZtContext {
 		- Roles: When in user mode, must be connected as "Global Reader" or "Global Administrator"
 
 	.EXAMPLE
-		PS C:\> Test-ZtContext
+		PS> Test-ZtContext
 
 		Validates the MgContext to ensure a valid connection to Microsoft Graph including the required permissions.
 	#>

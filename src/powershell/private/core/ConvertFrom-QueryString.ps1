@@ -16,12 +16,12 @@ function ConvertFrom-QueryString {
 		Converts to hash table object
 
 	.EXAMPLE
-		PS C:\>ConvertFrom-QueryString '?name=path/file.json&index=10'
+		PS>ConvertFrom-QueryString '?name=path/file.json&index=10'
 
 		Convert query string to object.
 
 	.EXAMPLE
-		PS C:\>'name=path/file.json&index=10' | ConvertFrom-QueryString -AsHashtable
+		PS>'name=path/file.json&index=10' | ConvertFrom-QueryString -AsHashtable
 
 		Convert query string to hashtable.
 

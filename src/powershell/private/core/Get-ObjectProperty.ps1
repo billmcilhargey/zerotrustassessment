@@ -15,14 +15,14 @@ function Get-ObjectProperty {
 		Name of property. Specify an array of property names to tranverse nested objects.
 
 	.EXAMPLE
-		PS C:\>$object = New-Object psobject -Property @{ title = 'title value' }
-		PS C:\>$object | Get-ObjectProperty -Property 'title'
+		PS>$object = New-Object psobject -Property @{ title = 'title value' }
+		PS>$object | Get-ObjectProperty -Property 'title'
 
 		Get value of object property named title.
 
 	.EXAMPLE
-		PS C:\>$object = New-Object psobject -Property @{ lvl1 = (New-Object psobject -Property @{ nextLevel = 'lvl2 data' }) }
-		PS C:\>Get-ObjectProperty $object -Property 'lvl1', 'nextLevel'
+		PS>$object = New-Object psobject -Property @{ lvl1 = (New-Object psobject -Property @{ nextLevel = 'lvl2 data' }) }
+		PS>Get-ObjectProperty $object -Property 'lvl1', 'nextLevel'
 
 		Get value of nested object property named nextLevel.
 

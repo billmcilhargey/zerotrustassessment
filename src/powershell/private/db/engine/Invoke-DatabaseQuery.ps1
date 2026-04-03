@@ -27,12 +27,12 @@
 		Adds a slight processing cost, but may be more convenient.
 
 	.EXAMPLE
-		PS C:\> Invoke-DatabaseQuery -Sql $query
+		PS> Invoke-DatabaseQuery -Sql $query
 
 		Executes a SQL query against the previously established connection and returns the results.
 
 	.EXAMPLE
-		PS C:\> Invoke-DatabaseQuery -Sql $query -Database $db -NonQuery
+		PS> Invoke-DatabaseQuery -Sql $query -Database $db -NonQuery
 
 		Executes a SQL statement against the provided connection without processing results.
 	#>

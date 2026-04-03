@@ -10,7 +10,7 @@ function Get-SafeMarkdown {
 		The text to escape
 
 	.EXAMPLE
-		PS C:\> Get-SafeMarkdown -Text $tenantName
+		PS> Get-SafeMarkdown -Text $tenantName
 
 		Converts the content of $tenantName into something safe to use in markdown.
 	#>

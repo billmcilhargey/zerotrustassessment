@@ -29,12 +29,12 @@ function Write-ZtTestProgress {
 		The error message (for Failed actions).
 
 	.EXAMPLE
-		PS C:\> Write-ZtTestProgress -TestID 25384 -LogsPath $logsPath -Action Started
+		PS> Write-ZtTestProgress -TestID 25384 -LogsPath $logsPath -Action Started
 
 		Appends a STARTED line for test 25384 to the progress log.
 
 	.EXAMPLE
-		PS C:\> Write-ZtTestProgress -TestID 25384 -LogsPath $logsPath -Action Completed -Duration $result.Duration
+		PS> Write-ZtTestProgress -TestID 25384 -LogsPath $logsPath -Action Completed -Duration $result.Duration
 
 		Appends a COMPLETED line for test 25384 to the progress log.
 	#>

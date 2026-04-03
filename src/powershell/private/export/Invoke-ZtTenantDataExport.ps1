@@ -21,7 +21,7 @@
 		If this time expires, our export will also fail.
 
 	.EXAMPLE
-		PS C:\> Invoke-ZtTenantDataExport -Export $_ -DependencyTimeout $dependencyTimeout -ExportPath $exportPath
+		PS> Invoke-ZtTenantDataExport -Export $_ -DependencyTimeout $dependencyTimeout -ExportPath $exportPath
 
 		Executes the provided tenant export configuration to the path specified in $exportPath
 	#>

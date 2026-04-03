@@ -25,12 +25,12 @@
 		Internal use only (only useful to developers working on new tests).
 
 	.EXAMPLE
-		PS C:\> Get-ZtTest
+		PS> Get-ZtTest
 
 		Lists all available tests.
 
 	.EXAMPLE
-		PS C:\> Get-ZtTest -Id 21770, 21771
+		PS> Get-ZtTest -Id 21770, 21771
 
 		Returns the test data for tests 21770 and 21771
 	#>

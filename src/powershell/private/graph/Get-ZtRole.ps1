@@ -11,7 +11,7 @@
 		by CISA as highly privieleged.
 
 	.Example
-		PS C:\> Get-ZtRole
+		PS> Get-ZtRole
 
 		List all role definitions in the tenant
 	#>

@@ -1,26 +1,41 @@
-# Website
+# Zero Trust Workshop Site
 
-This is the website code for the ZT Assessment.
+Docusaurus-based documentation and workshop guidance site for the Zero Trust Assessment.
 
-Follow the instructions below to run your own instance of the Zero Trust public site. This is an easy way to make changes and test how the site will look before you commit your changes.
+Covers workshop delivery, pillar-specific guidance (Identity, Devices, Network, Data,
+Infrastructure, Security Operations, AI), videos, and FAQs in 11 languages.
 
-# Installation
+## Running locally
 
-There are two options here. You can use GitHub codespaces (simple) where everything runs on the browser or you can do local dev where you install node and run everything on your laptop locally.
+### Codespaces / Dev Container (recommended)
 
-## Codespaces (recommended for language translations)
+Dependencies are automatically installed when the dev container starts (`postCreateCommand`
+runs `npm install` for both the root and this folder).
 
-- In GitHub select **Code** > **Codespaces** > Create a new one for the first time (or connect if you already created by clicking on the name).
+```bash
+cd src/react
+npm run start
+# Or for a specific locale:
+npm run start -- --locale ja
+```
 
-## Local Dev
-- Install [node.js](https://nodejs.org/en/download/)
+The Docusaurus dev server starts on **port 3000** and is auto-forwarded.
 
-# Running ZT website
+### Local development
 
-- In VS Code (Codespaces or local dev) open a new Terminal (Menu > Terminal > New Terminal)
-- Type this command and hit enter → `cd ./src/react'
-- ONE TIME SETUP: Run this command to install all dependencies → `npm install`
-- Type this command and hit enter to launch site in English → `npm run start`
-   - If you want to run the site in a different language (e.g. Japanese) → `npm run start -- --locale ja`
-   - Use the right code for the language that you are testing
+1. Install [Node.js](https://nodejs.org/en/download/) 18+
+2. Run the following commands:
 
+```bash
+cd src/react
+npm install     # One-time
+npm run start
+```
+
+## Build for production
+
+```bash
+cd src/react
+npm run build   # Output: src/react/build/
+npm run serve   # Preview the production build locally
+```

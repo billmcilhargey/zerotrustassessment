@@ -28,7 +28,7 @@ function Invoke-ZtAzureRequestCache {
 		When specified, does not throw on non-2xx status codes.
 
 	.EXAMPLE
-		PS C:\> Invoke-ZtAzureRequestCache -CacheKey '/subscriptions?api-version=2022-01-01' -AzParams @{ Path = '/subscriptions?api-version=2022-01-01'; Paginate = $true }
+		PS> Invoke-ZtAzureRequestCache -CacheKey '/subscriptions?api-version=2022-01-01' -AzParams @{ Path = '/subscriptions?api-version=2022-01-01'; Paginate = $true }
 
 		Lists all subscriptions (GET is the default) and caches the result.
 	#>

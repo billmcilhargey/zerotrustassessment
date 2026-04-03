@@ -16,7 +16,7 @@
 		The DateTime when the workflow started. This is used in combination with Timeout to determine if the workflow has exceeded the allowed time.
 
 	.EXAMPLE
-		PS C:\> Wait-ZtTest -Workflow $workflow
+		PS> Wait-ZtTest -Workflow $workflow
 
 		Wait for all Tests of the workflow in $workflow to complete, writing progress on screen and reporting failed tests.
 	#>
@@ -57,8 +57,14 @@
 			Write-Progress -Id $progressID -Activity "Processing $($totalCount) Tests" -Status $status -PercentComplete $percent
 		}
 
+		$completedCount = $Workflow.Queues["Results"].Count
 		if ($Timeout -le ([DateTime]::Now - $StartedAt)) {
-			Write-PSFMessage -Level Warning -Message "Timeout of $($Timeout) reached while waiting for tests to complete. Processed $($Workflow.Queues["Results"].Count) out of $totalCount tests (left $($Workflow.Queues["Input"].Count) to process)." -Target $Workflow
+			Write-PSFMessage -Level Warning -Message "Timeout of $($Timeout) reached while waiting for tests to complete. Processed $completedCount out of $totalCount tests (left $($Workflow.Queues["Input"].Count) to process)." -Target $Workflow
+		}
+		elseif ($completedCount -lt $totalCount) {
+			$remaining = $totalCount - $completedCount
+			$inputLeft = $Workflow.Queues["Input"].Count
+			Write-PSFMessage -Level Warning -Message "Workflow ended early: $completedCount of $totalCount tests completed. $remaining tests did not complete ($inputLeft still in queue). Some worker threads may have crashed — check test logs."
 		}
 
 		Write-Progress -Id $progressID -Activity "Processing $($totalCount) Tests" -Completed

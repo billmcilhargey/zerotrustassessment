@@ -39,7 +39,7 @@
 		The index of Graph request page. If not specified, the first page is assumed (0).
 
 	.EXAMPLE
-		PS C:\> Invoke-ZtGraphRequestCache -Uri 'https://graph.microsoft.com/v1.0/users'
+		PS> Invoke-ZtGraphRequestCache -Uri 'https://graph.microsoft.com/v1.0/users'
 
 		Lists all users in the tenant and caches the result.
 	#>

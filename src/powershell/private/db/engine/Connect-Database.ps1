@@ -26,23 +26,23 @@
 		Automatically implicates "-PassThru".
 
 	.EXAMPLE
-		PS C:\> Connect-Database -Transient
+		PS> Connect-Database -Transient
 
 		Connects to the in-memory database (or creates it as an empty database, if not present).
 		This connection will not be managed.
 		A good test, on whether the Database services are functional.
 
 	.EXAMPLE
-		PS C:\> Connect-Database -Path C:\reporting\data
+		PS> Connect-Database -Path ./reporting/data
 
-		Establishes a connection to a file-based database under C:\reporting\data
+		Establishes a connection to a file-based database under ./reporting/data
 		The connection will not be returned, but managed by the module.
 		Subsequent "Invoke-DatabaseQuery" calls will automatically use it.
 
 	.EXAMPLE
-		PS C:\> Connect-Database -Path C:\reporting\data -PassThru
+		PS> Connect-Database -Path ./reporting/data -PassThru
 
-		Establishes a connection to a file-based database under C:\reporting\data
+		Establishes a connection to a file-based database under ./reporting/data
 		The connection will be returned as an object, but also managed by the module.
 		Subsequent "Invoke-DatabaseQuery" calls will automatically use it.
 	#>

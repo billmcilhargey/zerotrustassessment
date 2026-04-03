@@ -45,7 +45,7 @@ function Set-TestMetadata {
 		How high is the impact to users, when implementing this?
 
 	.EXAMPLE
-		PS C:\> Set-TestMetadata -Test 21771 -RiskLevel High
+		PS> Set-TestMetadata -Test 21771 -RiskLevel High
 
 		Updates the Risk Level of test 21771 to high.
 	#>
@@ -96,7 +96,7 @@ function Set-TestMetadata {
 		$UserImpact
 	)
 	begin {
-		. "$PSScriptRoot\..\..\src\powershell\private\tests-metadata\Get-ZtTestMetadata.ps1"
+		. (Join-Path $PSScriptRoot '..' -AdditionalChildPath '..', 'src', 'powershell', 'private', 'tests-metadata', 'Get-ZtTestMetadata.ps1')
 
 		#region Utility Functions
 		function New-ZtiAttribute {

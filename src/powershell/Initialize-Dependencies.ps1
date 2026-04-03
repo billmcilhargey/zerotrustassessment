@@ -40,7 +40,7 @@ function Initialize-Dependencies {
                 Join-Path -Path $env:HOME -ChildPath ".cache/ZeroTrustAssessment/Modules"
             }
             else {
-                Join-Path -Path $env:APPDATA -ChildPath "ZeroTrustAssessment\Modules"
+                Join-Path -Path $env:APPDATA -ChildPath 'ZeroTrustAssessment' -AdditionalChildPath 'Modules'
             }
         ),
 
@@ -237,7 +237,7 @@ function Initialize-Dependencies {
         else {
             Write-Host -Object "`r`n"
             Write-Host -Object 'Asserting MSAL loading order for dependencies...' -ForegroundColor Green
-            $helperPath = Join-Path -Path $PSScriptRoot -ChildPath "private\utility\Get-ModuleImportOrder.ps1" -Resolve -ErrorAction Stop
+            $helperPath = Join-Path -Path $PSScriptRoot -ChildPath 'private' -AdditionalChildPath 'utility', 'Get-ModuleImportOrder.ps1' -Resolve -ErrorAction Stop
             . $helperPath
             Write-Verbose -Message ('Module with DLLs to load: {0}' -f (([Microsoft.PowerShell.Commands.ModuleSpecification[]]$moduleManifest.RequiredModules).Name -join ', '))
             # This method does not necessarily load the right dll (it ignores the load logic from the modules)

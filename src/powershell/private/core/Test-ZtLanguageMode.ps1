@@ -12,7 +12,7 @@ function Test-ZtLanguageMode {
 		and the global session state via the runspace proxy (for manual CLM testing).
 
 	.EXAMPLE
-		PS C:\> Test-ZtLanguageMode
+		PS> Test-ZtLanguageMode
 
 		Returns $true if running in Full Language Mode, $false otherwise.
 	#>

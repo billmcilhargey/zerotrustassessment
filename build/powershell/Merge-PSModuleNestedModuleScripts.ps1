@@ -15,7 +15,7 @@ param
 )
 
 ## Initialize
-Import-Module "$PSScriptRoot\CommonFunctions.psm1" -Force -WarningAction SilentlyContinue -ErrorAction Stop
+Import-Module (Join-Path $PSScriptRoot 'CommonFunctions.psm1') -Force -WarningAction SilentlyContinue -ErrorAction Stop
 
 [System.IO.FileInfo] $ModuleManifestFileInfo = Get-PathInfo $ModuleManifestPath -DefaultFilename "*.psd1" -ErrorAction Stop
 #[System.IO.DirectoryInfo] $ModuleSourceDirectoryInfo = $ModuleManifestFileInfo.Directory
@@ -62,14 +62,14 @@ if ($OutputModuleFileInfo.Extension -eq ".psm1") {
         ## 2. Adding Export-ModuleMember breaks runspace workers that need access to private functions
         ##    (e.g., PSFramework runspace workflows that load the PSM1 directly)
         $NestedModuleEndRegion = "#endregion`r`n"
-        
+
         $NestedModuleEndRegion, $RootModuleContent | Add-Content $OutputModuleFileInfo.FullName -Encoding utf8BOM
     }
 
     if ($RemoveNestedModuleScriptFiles) {
         ## Remove Nested Module Scripts
         $NestedModulesFileInfo | Where-Object Extension -EQ '.ps1' | Where-Object { !$ScriptsToProcessFileInfo -or $_.FullName -notin $ScriptsToProcessFileInfo.FullName } | Remove-Item
-        
+
         ## Remove Empty Directories
         Get-ChildItem $ModuleManifestFileInfo.DirectoryName -Recurse -Directory | Where-Object { !(Get-ChildItem $_.FullName -Recurse -File) } | Remove-Item -Recurse
     }

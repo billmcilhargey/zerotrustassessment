@@ -18,7 +18,7 @@
 		Defaults to: PSObject
 
 	.EXAMPLE
-		PS C:\> Get-ZtGroupMember -GroupId $myGroup
+		PS> Get-ZtGroupMember -GroupId $myGroup
 
 		Returns all members of the group stored in $myGroup
 	#>

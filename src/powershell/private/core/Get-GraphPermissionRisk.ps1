@@ -14,7 +14,7 @@ function Get-GraphPermissionRisk {
 		Whether it is an Application or Delegated role/Scope.
 
 	.EXAMPLE
-		PS C:\> Get-GraphPermissionRisk -Permission Application.ReadWrite.All -PermissionType Application
+		PS> Get-GraphPermissionRisk -Permission Application.ReadWrite.All -PermissionType Application
 
 		Returns how risky/sensitive the role "Application.ReadWrite.All" is.
 		(Spoiler: Very, very risky)

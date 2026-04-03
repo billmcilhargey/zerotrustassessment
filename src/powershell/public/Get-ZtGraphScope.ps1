@@ -20,7 +20,7 @@ Function Get-ZtGraphScope {
 		List the Graph scopes needed for the ZeroTrustAssessment.
 
 	.EXAMPLE
-		PS C:\> Get-ZtGraphScope
+		PS> Get-ZtGraphScope
 
 		List the Graph scopes needed for the ZeroTrustAssessment.
 	#>

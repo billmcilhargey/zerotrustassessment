@@ -1,22 +1,33 @@
 # Developer Guide for the PowerShell module
 
-## Initial setup
+## Quick start for contributors
+
+The fastest way to get started is the developer launcher:
+
+```bash
+./invoke-ztdev.sh              # Linux/macOS/Codespaces — installs pwsh if needed
+./Invoke-ZtDev.ps1             # Windows — run directly in PowerShell 7+
+```
+
+This imports the module from source, connects to your tenant, and provides an interactive menu with assessment, Pester tests, and metadata tools.
+
+## Manual setup
 
 ### Install dependencies
 
-Lookup /src/powershell/ZeroTrustAssessment.psd1 and install all the required modules using `Install-PSResource <ModuleName>`.
-
-### Import the module
-
-From the /src/powershell directory, run:
+Check `src/powershell/ZeroTrustAssessment.psd1` for required modules and install them:
 
 ```powershell
-Import-Module ./ZeroTrustAssessment.psd1 -Force
+Install-PSResource Microsoft.Graph.Authentication, Az.Accounts, ExchangeOnlineManagement, PSFramework
 ```
 
-### Invoke-ZtAssessment tips
+### Import the module from source
 
-You can now run Invoke-ZtAssessment to test the module. Use the parameters to limit tests to individual pillars and specific tests within a pillar. See help for details.
+```powershell
+Import-Module ./src/powershell/ZeroTrustAssessment.psd1 -Force
+```
+
+### Run the assessment
 
 #### Use tenant specific folders
 

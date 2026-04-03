@@ -10,7 +10,7 @@
 		The runspace workflow we are waiting to complete.
 
 	.EXAMPLE
-		PS C:\> Wait-ZtTenantDataExport -Workflow $workflow
+		PS> Wait-ZtTenantDataExport -Workflow $workflow
 
 		Wait for the parallelized data export to complete.
 	#>

@@ -25,6 +25,22 @@ if (-not $script:__ZtThrottling.Value['deviceManagement']) {
 	$script:__ZtThrottling.Value['deviceManagement'] = New-PSFThrottle -Interval 20s -Limit 1000
 }
 
+# Canonical list of allowed/supported service names, in display order.
+# Referenced by service-detection, audit, connection, and validation code.
+$script:AllowedServices = @('Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePointOnline')
+
+# Tracks which services are currently connected. Managed by Add-ZtConnectedService / Remove-ZtConnectedService.
+# Must be initialized as an array to avoid string-concatenation when using +=.
+$script:ConnectedService = @()
+
+# Tracks detected license SKUs for the tenant. Set during Connect-ZtAssessment.
+[string[]] $script:CurrentLicense = @()
+
+# DuckDB native library version — authoritative value lives in PSFConfig 'DuckDB.Version'.
+# This variable is a convenience alias read from config at module load time.
+$script:DuckDbVersion = Get-PSFConfigValue -FullName 'ZeroTrustAssessment.DuckDB.Version' -Fallback 'v1.1.1'
+$script:DuckDbReleaseBaseUrl = Get-PSFConfigValue -FullName 'ZeroTrustAssessment.DuckDB.ReleaseBaseUrl' -Fallback 'https://github.com/duckdb/duckdb/releases/download'
+
 # The Database Connection used by Invoke-DatabaseQuery. Established by Connect-Database, cleared by Disconnect-Database
 $script:_DatabaseConnection = $null
 

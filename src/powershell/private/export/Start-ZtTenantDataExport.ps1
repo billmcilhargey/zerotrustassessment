@@ -24,7 +24,7 @@
 		Too many will risk getting throttled, but a few should be fine.
 
 	.EXAMPLE
-		PS C:\> Start-ZtTenantDataExport -ExportConfig $exportCFGs -ExportPath $ExportPath
+		PS> Start-ZtTenantDataExport -ExportConfig $exportCFGs -ExportPath $ExportPath
 
 		Starts the export processing of all the provided export configuration sets.
 	#>

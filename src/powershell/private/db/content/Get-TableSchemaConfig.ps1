@@ -11,7 +11,7 @@ function Get-TableSchemaConfig {
 		The name of the table to get schema config for
 
 	.EXAMPLE
-		PS C:\> Get-TableSchemaConfig -TableName ServicePrincipalSignIn
+		PS> Get-TableSchemaConfig -TableName ServicePrincipalSignIn
 
 		Returns the explicit schema handling information for the ServicePrincipalSignIn table.
 	#>

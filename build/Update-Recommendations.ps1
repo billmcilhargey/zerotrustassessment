@@ -30,9 +30,9 @@ trap {
 }
 
 if (-not $NoImport) {
-	Import-Module "$PSScriptRoot/../src/powershell/ZeroTrustAssessment.psd1" -Force -Global
+	Import-Module (Join-Path $PSScriptRoot '..' -AdditionalChildPath 'src', 'powershell', 'ZeroTrustAssessment.psd1') -Force -Global
 }
-. "$PSScriptRoot/commands/Set-TestMetadata.ps1"
+. (Join-Path $PSScriptRoot 'commands' -AdditionalChildPath 'Set-TestMetadata.ps1')
 
 
 #region Functions

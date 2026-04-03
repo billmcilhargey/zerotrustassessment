@@ -10,7 +10,7 @@
 		Name of the tenant info to return.
 
 	.EXAMPLE
-		PS C:\> Get-ZtTenantInfo
+		PS> Get-ZtTenantInfo
 
 		Return all cached tenant-related information
 	#>

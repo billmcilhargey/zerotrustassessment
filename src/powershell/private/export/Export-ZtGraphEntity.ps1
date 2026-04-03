@@ -33,7 +33,7 @@ function Export-ZtGraphEntity {
 		Where all the results are stored.
 
 	.EXAMPLE
-		PS C:\> Export-ZtGraphEntity -Name Application -Uri 'beta/applications' -QueryString '$top=999' -ExportPath C:\assessment\export
+		PS> Export-ZtGraphEntity -Name Application -Uri 'beta/applications' -QueryString '$top=999' -ExportPath ./assessment/export
 
 		Retrieves all applications (=App Registrations) from the tenant using the beta api and page-size of 999.
 	#>

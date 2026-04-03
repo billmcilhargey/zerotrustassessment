@@ -12,7 +12,7 @@
 		Will return the full list if not specified.
 
 	.EXAMPLE
-		PS C:\> Get-ZtExportStatistics
+		PS> Get-ZtExportStatistics
 
 		Retrieve the last Entra data export's statistics.
 	#>

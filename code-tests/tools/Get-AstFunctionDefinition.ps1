@@ -12,7 +12,7 @@ function Get-AstFunctionDefinition {
 		Path to the files to scan.
 
 	.EXAMPLE
-		PS C:\> Get-ChildItem -Filter *.ps1 | Get-AstFunctionDefinition
+		PS> Get-ChildItem -Filter *.ps1 | Get-AstFunctionDefinition
 
 		Get all functions from the current folder's files.
 	#>

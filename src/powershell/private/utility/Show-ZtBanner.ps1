@@ -5,7 +5,7 @@ function Show-ZtBanner {
 
 	.DESCRIPTION
 		Writes the standard Zero Trust Assessment banner to the host.
-		Used by Invoke-ZtAssessment and the interactive test runner (Run-ZtTest.ps1)
+		Used by Invoke-ZtAssessment, Start-ZtAssessment, and the developer test runner (Invoke-ZtDev.ps1)
 		to ensure a single consistent banner definition.
 	#>
 	[CmdletBinding()]

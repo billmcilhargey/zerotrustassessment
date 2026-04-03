@@ -10,11 +10,17 @@
 		"ghcr.io/devcontainers/features/powershell:1": {}
 	},
 
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	"forwardPorts": [3000, 5173],
+	// Ports:
+	//   3000 — Docusaurus dev server (src/react)
+	//   8080 — Assessment report HTTP server (auto-started after report generation)
+	"forwardPorts": [3000, 8080],
+	"portsAttributes": {
+		"3000": { "label": "Docusaurus Site", "onAutoForward": "notify" },
+		"8080": { "label": "Assessment Report", "onAutoForward": "openBrowser" }
+	},
 
-	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "npm install && sudo mkdir -p /opt/microsoft/powershell/7/Scripts && sudo chmod 755 /opt/microsoft/powershell/7/Scripts && pwsh -NoProfile -Command \"Install-Module -Name PSFramework, Pester, PSScriptAnalyzer -Force -Scope CurrentUser -AcceptLicense\"",
+	// Install root + react site npm deps, create PS Scripts dir, install PS modules
+	"postCreateCommand": "npm install && cd src/react && npm install && cd ../.. && sudo mkdir -p /opt/microsoft/powershell/7/Scripts && sudo chmod 755 /opt/microsoft/powershell/7/Scripts && pwsh -NoProfile -Command \"Install-Module -Name PSFramework, Pester, PSScriptAnalyzer -Force -Scope CurrentUser -AcceptLicense\"",
 
 	// Configure tool-specific properties.
 	"customizations": {

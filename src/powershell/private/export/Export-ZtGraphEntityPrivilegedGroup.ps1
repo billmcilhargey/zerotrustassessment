@@ -16,7 +16,7 @@
 		The name of the new export.
 
 	.EXAMPLE
-		PS C:\> Export-ZtGraphEntityPrivilegedGroup -Name RoleEligibilityScheduleRequestGroup -INputName RoleEligibilityScheduleRequest -ExportPath $path
+		PS> Export-ZtGraphEntityPrivilegedGroup -Name RoleEligibilityScheduleRequestGroup -INputName RoleEligibilityScheduleRequest -ExportPath $path
 
 		Exports Privileged Group Memberships for the export cache.
 	#>

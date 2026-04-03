@@ -15,7 +15,7 @@ function Get-ZtHttpStatusCode {
 		The ErrorRecord from a catch block to inspect.
 
 	.EXAMPLE
-		PS C:\> try { Invoke-MgGraphRequest ... } catch { Get-ZtHttpStatusCode -ErrorRecord $_ }
+		PS> try { Invoke-MgGraphRequest ... } catch { Get-ZtHttpStatusCode -ErrorRecord $_ }
 
 		Returns the HTTP status code (e.g., 500) or $null if not determinable.
 	#>

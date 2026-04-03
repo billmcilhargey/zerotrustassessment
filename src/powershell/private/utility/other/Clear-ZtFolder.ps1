@@ -11,9 +11,9 @@
 		The path to the folder to clear.
 
 	.EXAMPLE
-		PS C:\> Clear-ZtFolder -Path C:\Temp
+		PS> Clear-ZtFolder -Path ./Temp
 
-		Ensures the path "C:\Temp" exists, but is empty
+		Ensures the path "./Temp" exists, but is empty
 	#>
     [CmdletBinding()]
     param (

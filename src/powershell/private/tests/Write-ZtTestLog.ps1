@@ -18,7 +18,7 @@ function Write-ZtTestLog {
 		Path to the logs folder. If empty or null, the function is a no-op.
 
 	.EXAMPLE
-		PS C:\> Write-ZtTestLog -Result $result -LogsPath $logsPath
+		PS> Write-ZtTestLog -Result $result -LogsPath $logsPath
 
 		Writes the full test log for the completed test to <LogsPath>/<TestID>.md.
 	#>

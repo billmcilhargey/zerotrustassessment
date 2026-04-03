@@ -21,7 +21,7 @@
 	Path to the config file(s) to apply.
 
 .EXAMPLE
-	PS C:\> .\metadata-bulkupdate -ConfigFile .\TestMeta.json
+	PS> .\metadata-bulkupdate -ConfigFile .\TestMeta.json
 
 	Applies all the test settings from TestMeta.Json to the corresponding test commands.
 #>
@@ -38,7 +38,7 @@ trap {
 	throw $_
 }
 
-. "$PSScriptRoot\..\commands\Set-TestMetadata.ps1"
+. (Join-Path $PSScriptRoot '..' -AdditionalChildPath 'commands', 'Set-TestMetadata.ps1')
 
 #region Functions
 function ConvertTo-ConfigEntry {

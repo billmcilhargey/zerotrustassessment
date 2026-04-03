@@ -3,13 +3,13 @@
 # ------------------------------------------------------------------------------
 Set-StrictMode -Version 5
 
-$script:_config = Import-PowerShellDataFile -Path "$PSScriptRoot\build.config.psd1"
+$script:_config = Import-PowerShellDataFile -Path (Join-Path $PSScriptRoot 'build.config.psd1')
 
 function Get-ConfigValue {
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory)]
-		[ArgumentCompleter({ (Import-PowerShellDataFile -Path "$PSScriptRoot\build.config.psd1").Keys })]
+		[ArgumentCompleter({ (Import-PowerShellDataFile -Path (Join-Path $PSScriptRoot 'build.config.psd1')).Keys })]
 		[string]
 		$Name
 	)

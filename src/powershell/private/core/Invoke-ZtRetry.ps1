@@ -17,7 +17,7 @@
 		The initial delay in seconds between retries. Doubles with each attempt (exponential backoff). Default: 3.
 
 	.EXAMPLE
-		PS C:\> Invoke-ZtRetry -ScriptBlock { Invoke-MgGraphRequest -Method GET -Uri $uri -OutputType HashTable }
+		PS> Invoke-ZtRetry -ScriptBlock { Invoke-MgGraphRequest -Method GET -Uri $uri -OutputType HashTable }
 
 		Executes the Graph request with up to 5 retries and exponential backoff on failure.
 	#>
