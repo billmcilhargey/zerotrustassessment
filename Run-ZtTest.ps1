@@ -103,7 +103,7 @@
 param(
     [ValidateSet('Install', 'Connect', 'RunAll', 'RunPillar', 'RunTests', 'ListTests',
                  'Status', 'Resume', 'Disconnect', 'Pester', 'PesterGeneral',
-                 'PesterAssessments', 'PesterCommands', 'UpdateTestServices')]
+                 'PesterAssessments', 'PesterCommands', 'UpdateTestServices', 'DeleteResults')]
     [string] $Action,
 
     [ValidateSet('Identity', 'Devices', 'Network', 'Data', '')]
@@ -394,6 +394,16 @@ function Step-RunAssessment {
         }
     }
 
+    # If previous results exist (and not resuming), offer to delete first
+    if (-not $Resume -and (Test-Path $script:Path)) {
+        Write-Host "  Previous results found at: $script:Path" -ForegroundColor Yellow
+        if (-not (Confirm-DeleteReportFolder -ReportPath $script:Path)) {
+            Write-Host "  Assessment cancelled." -ForegroundColor DarkGray
+            return
+        }
+        Write-Host ""
+    }
+
     $invokeParams = @{
         Path = $script:Path
         Days = $script:Days
@@ -484,6 +494,52 @@ function Step-UpdateTestServices {
     & $updateScript -TestsPath $testsPath -Verbose
 }
 
+# Returns $true if folder was deleted or doesn't exist, $false if user cancelled.
+function Confirm-DeleteReportFolder {
+    param([string] $ReportPath)
+
+    if (-not (Test-Path $ReportPath)) { return $true }
+
+    $items = Get-ChildItem -Path $ReportPath -Recurse -ErrorAction SilentlyContinue
+    $fileCount = ($items | Where-Object { -not $_.PSIsContainer }).Count
+    $folderCount = ($items | Where-Object { $_.PSIsContainer }).Count
+    $sizeMB = [math]::Round(($items | Where-Object { -not $_.PSIsContainer } | Measure-Object -Property Length -Sum).Sum / 1MB, 1)
+
+    Write-Host "  Path    : $ReportPath" -ForegroundColor Gray
+    Write-Host "  Files   : $fileCount" -ForegroundColor Gray
+    Write-Host "  Folders : $folderCount" -ForegroundColor Gray
+    Write-Host "  Size    : $sizeMB MB" -ForegroundColor Gray
+    Write-Host ""
+
+    $confirm = Read-Host "  Delete all contents? (Y/N) [N]"
+    if ($confirm.Trim().ToUpper() -eq 'Y') {
+        try {
+            Remove-Item -Path $ReportPath -Recurse -Force
+            Write-Host "  Deleted: $ReportPath" -ForegroundColor Green
+            return $true
+        }
+        catch {
+            Write-Host "  Failed to delete: $_" -ForegroundColor Red
+            return $false
+        }
+    }
+    else {
+        Write-Host "  Cancelled." -ForegroundColor DarkGray
+        return $false
+    }
+}
+
+function Step-DeleteTestResults {
+    Write-MenuHeader "Delete Test Results"
+
+    if (-not (Test-Path $script:Path)) {
+        Write-Host "  No report folder found at: $script:Path" -ForegroundColor Yellow
+        return
+    }
+
+    $null = Confirm-DeleteReportFolder -ReportPath $script:Path
+}
+
 function Step-Disconnect {
     Write-MenuHeader "Disconnecting"
     try {
@@ -545,6 +601,7 @@ function Show-Menu {
         # ── Maintenance ──
         Write-Host "  ── Maintenance ──" -ForegroundColor DarkCyan
         Write-Host "  [8]  Update test Service metadata (Update-ZtTestService)" -ForegroundColor White
+        Write-Host "  [9]  Delete test results (clean report folder)" -ForegroundColor White
     }
     else {
         # ── Assessment ──
@@ -559,6 +616,7 @@ function Show-Menu {
         # ── Maintenance ──
         Write-Host "  ── Maintenance ──" -ForegroundColor DarkCyan
         Write-Host "  [P]  Check permissions" -ForegroundColor White
+        Write-Host "  [9]  Delete test results (clean report folder)" -ForegroundColor White
         Write-Host "  [D]  Disconnect from tenant" -ForegroundColor White
     }
     Write-Host "  [Q]  Quit" -ForegroundColor White
@@ -685,6 +743,7 @@ function Invoke-InteractiveMenu {
                 }
             }
             '8'  { Step-UpdateTestServices }
+            '9'  { Step-DeleteTestResults }
             'P'  {
                 if ((Get-ConnectionState).IsConnected) {
                     Step-CheckPermissions
@@ -755,6 +814,7 @@ if ($Action) {
         'PesterAssessments'  { Step-Pester -General $false -Commands $false -Assessments $true }
         'PesterCommands'     { Step-Pester -General $false -Commands $true -Assessments $false }
         'UpdateTestServices' { Step-UpdateTestServices }
+        'DeleteResults'      { Step-DeleteTestResults }
     }
 }
 else {
