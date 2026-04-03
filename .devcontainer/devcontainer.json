@@ -20,7 +20,7 @@
 	},
 
 	// Install root + react site npm deps, create PS Scripts dir, install PS modules
-	"postCreateCommand": "npm install && cd src/react && npm install && cd ../.. && sudo mkdir -p /opt/microsoft/powershell/7/Scripts && sudo chmod 755 /opt/microsoft/powershell/7/Scripts && pwsh -NoProfile -Command \"Install-Module -Name PSFramework, Pester, PSScriptAnalyzer -Force -Scope CurrentUser -AcceptLicense\"",
+	"postCreateCommand": "npm install && cd src/react && npm install && cd ../.. && sudo mkdir -p /opt/microsoft/powershell/7/Scripts && sudo chown node:node /opt/microsoft/powershell/7/Scripts && sudo chmod 755 /opt/microsoft/powershell/7/Scripts && pwsh -NoProfile -Command \"Install-Module -Name PSFramework, Pester, PSScriptAnalyzer -Force -Scope CurrentUser -AcceptLicense\"",
 
 	// Configure tool-specific properties.
 	"customizations": {
@@ -34,7 +34,7 @@
 				"esbenp.prettier-vscode"
 			],
 			"settings": {
-				"powershell.powerShellDefaultVersion": "PowerShell (pwsh)"
+				"powershell.powerShellDefaultVersion": "PowerShell"
 			}
 		}
 	}

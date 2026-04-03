@@ -72,7 +72,7 @@
 [CmdletBinding()]
 param(
     [ValidateSet('Install', 'Connect', 'RunAll', 'RunPillar', 'RunTests', 'ListTests',
-                 'Status', 'Resume', 'Disconnect', 'Pester', 'PesterGeneral',
+                 'Status', 'Resume', 'Pester', 'PesterGeneral',
                  'PesterAssessments', 'PesterCommands', 'UpdateTestServices', 'AuditServices',
                  'DeleteResults', 'ListPlanned', 'RunPlanned', 'CheckPermissions', 'ViewReport')]
     [string] $Action,
@@ -482,34 +482,64 @@ function Get-DevConnectionState {
 
 function Show-Menu {
     $conn = Get-DevConnectionState
+    $dimColor = 'DarkGray'
 
     Write-Host ""
     Write-Host "  Microsoft Zero Trust Assessment — Developer Mode" -ForegroundColor Magenta
     Write-Host "  ────────────────────────────────────────────────" -ForegroundColor DarkGray
 
+    # ── Connection & Tenant Status ──
     if ($conn.IsConnected) {
-        Write-Host "  ✅ $($conn.Account) | tenant: $($conn.Tenant)" -ForegroundColor Green
+        Write-Host "  ✅ Connected" -ForegroundColor Green
+        Write-Host "    Account  : $($conn.Account)" -ForegroundColor Gray
+        Write-Host "    Tenant   : $($conn.Tenant)" -ForegroundColor Gray
+        if ($conn.Services -and $conn.Services.Count -gt 0) {
+            Write-Host "    Services : $($conn.Services -join ', ')" -ForegroundColor Gray
+        }
+        if ($conn.ScopesValid) {
+            Write-Host "    Scopes   : ✅ All required scopes granted" -ForegroundColor Green
+        }
+        else {
+            Write-Host "    Scopes   : ⚠ $($conn.MissingScopes.Count) missing" -ForegroundColor Yellow
+        }
     }
     else {
         Write-Host "  ○  Not connected" -ForegroundColor DarkGray
+    }
+
+    # ── Configuration ──
+    Write-Host ""
+    Write-Host "  ── Configuration ──" -ForegroundColor DarkCyan
+    Write-Host "    Path     : $($script:Path)" -ForegroundColor Gray
+    Write-Host "    Days     : $($script:Days)" -ForegroundColor Gray
+    if ($script:TenantId) {
+        Write-Host "    TenantId : $($script:TenantId)" -ForegroundColor Gray
+    }
+    Write-Host "    Service  : $($script:Service -join ', ')" -ForegroundColor Gray
+    if ($script:UseDeviceCode) {
+        Write-Host "    Auth     : Device Code Flow" -ForegroundColor Gray
     }
     Write-Host ""
 
     # ── Setup ──
     Write-Host "  ── Setup ──" -ForegroundColor DarkCyan
-    Write-Host "  [1]  Install from source & connect" -ForegroundColor White
+    if ($conn.IsConnected) {
+        Write-Host "  [1]  Logout" -ForegroundColor White
+    }
+    else {
+        Write-Host "  [1]  Login" -ForegroundColor White
+    }
     Write-Host ""
 
-    if ($conn.IsConnected) {
-        # ── Assessment (delegates to module) ──
-        Write-Host "  ── Assessment ──" -ForegroundColor DarkCyan
-        Write-Host "  [2]  List available tests" -ForegroundColor White
-        Write-Host "  [3]  Run FULL assessment" -ForegroundColor White
-        Write-Host "  [4]  Run a specific PILLAR" -ForegroundColor White
-        Write-Host "  [5]  Run specific TEST(s) by ID" -ForegroundColor White
-        Write-Host "  [6]  Resume previous assessment" -ForegroundColor White
-        Write-Host ""
-    }
+    # ── Assessment (delegates to module) ──
+    $assessColor = if ($conn.IsConnected) { 'White' } else { $dimColor }
+    Write-Host "  ── Assessment ──" -ForegroundColor DarkCyan
+    Write-Host "  [2]  List available tests" -ForegroundColor $assessColor
+    Write-Host "  [3]  Run FULL assessment" -ForegroundColor $assessColor
+    Write-Host "  [4]  Run a specific PILLAR" -ForegroundColor $assessColor
+    Write-Host "  [5]  Run specific TEST(s) by ID" -ForegroundColor $assessColor
+    Write-Host "  [6]  Resume previous assessment" -ForegroundColor $assessColor
+    Write-Host ""
 
     # ── Report ──
     $hasReport = Test-Path (Join-Path $script:Path 'ZeroTrustAssessmentReport.html')
@@ -520,23 +550,20 @@ function Show-Menu {
     }
 
     # ── Preview ──
+    $previewRunColor = if ($conn.IsConnected) { 'White' } else { $dimColor }
     Write-Host "  ── Preview / Planned ──" -ForegroundColor DarkCyan
     Write-Host "  [L]  List planned tests (under construction)" -ForegroundColor White
-    if ($conn.IsConnected) {
-        Write-Host "  [R]  Run planned tests (Preview)" -ForegroundColor White
-    }
+    Write-Host "  [R]  Run planned tests (Preview)" -ForegroundColor $previewRunColor
     Write-Host ""
 
     # ── Dev-only ──
+    $permColor = if ($conn.IsConnected) { 'White' } else { $dimColor }
     Write-Host "  ── Developer ──" -ForegroundColor Magenta
     Write-Host "  [7]  Run Pester tests (All/General/Commands/Assessments)" -ForegroundColor White
     Write-Host "  [8]  Update test Service metadata" -ForegroundColor White
     Write-Host "  [A]  Audit test Service metadata (dry run)" -ForegroundColor White
     Write-Host "  [9]  Delete test results" -ForegroundColor White
-    if ($conn.IsConnected) {
-        Write-Host "  [P]  Check permissions" -ForegroundColor White
-        Write-Host "  [D]  Disconnect" -ForegroundColor White
-    }
+    Write-Host "  [P]  Check permissions" -ForegroundColor $permColor
     Write-Host "  [Q]  Quit" -ForegroundColor White
     Write-Host ""
 }
@@ -557,22 +584,28 @@ function Invoke-InteractiveMenu {
 
         switch ($choice.Trim().ToUpper()) {
             '1' {
-                Step-Install
-                Start-ZtAssessment -Action Connect @moduleParams
+                if ((Get-DevConnectionState).IsConnected) {
+                    Ensure-Module
+                    Start-ZtAssessment -Action Disconnect
+                }
+                else {
+                    Step-Install
+                    Start-ZtAssessment -Action Connect @moduleParams
+                }
             }
             '2' {
                 Ensure-Module
                 if ((Get-DevConnectionState).IsConnected) {
                     Start-ZtAssessment -Action ListTests @moduleParams
                 }
-                else { Write-Host "Not connected. Use [1] first." -ForegroundColor Yellow }
+                else { Write-Host "Not connected. Use [1] to login first." -ForegroundColor Yellow }
             }
             '3' {
                 Ensure-Module
                 if ((Get-DevConnectionState).IsConnected) {
                     Start-ZtAssessment -Action RunAll @moduleParams
                 }
-                else { Write-Host "Not connected. Use [1] first." -ForegroundColor Yellow }
+                else { Write-Host "Not connected. Use [1] to login first." -ForegroundColor Yellow }
             }
             '4' {
                 Ensure-Module
@@ -583,7 +616,7 @@ function Invoke-InteractiveMenu {
                     }
                     else { Write-Host "Invalid pillar: $p" -ForegroundColor Red }
                 }
-                else { Write-Host "Not connected. Use [1] first." -ForegroundColor Yellow }
+                else { Write-Host "Not connected. Use [1] to login first." -ForegroundColor Yellow }
             }
             '5' {
                 Ensure-Module
@@ -595,14 +628,14 @@ function Invoke-InteractiveMenu {
                     }
                     else { Write-Host "No test IDs entered." -ForegroundColor Red }
                 }
-                else { Write-Host "Not connected. Use [1] first." -ForegroundColor Yellow }
+                else { Write-Host "Not connected. Use [1] to login first." -ForegroundColor Yellow }
             }
             '6' {
                 Ensure-Module
                 if ((Get-DevConnectionState).IsConnected) {
                     Start-ZtAssessment -Action Resume @moduleParams
                 }
-                else { Write-Host "Not connected. Use [1] first." -ForegroundColor Yellow }
+                else { Write-Host "Not connected. Use [1] to login first." -ForegroundColor Yellow }
             }
             '7' {
                 Ensure-Module
@@ -624,18 +657,11 @@ function Invoke-InteractiveMenu {
             'L' { Step-ListPlannedTests }
             'R' {
                 if ((Get-DevConnectionState).IsConnected) { Step-RunPlannedTests }
-                else { Write-Host "Not connected. Use [1] first." -ForegroundColor Yellow }
+                else { Write-Host "Not connected. Use [1] to login first." -ForegroundColor Yellow }
             }
             'P' {
                 if ((Get-DevConnectionState).IsConnected) { Step-CheckPermissions }
-                else { Write-Host "Not connected. Use [1] first." -ForegroundColor Yellow }
-            }
-            'D' {
-                Ensure-Module
-                if ((Get-DevConnectionState).IsConnected) {
-                    Start-ZtAssessment -Action Disconnect
-                }
-                else { Write-Host "Not connected." -ForegroundColor Yellow }
+                else { Write-Host "Not connected. Use [1] to login first." -ForegroundColor Yellow }
             }
             'Q' { Write-Host "Bye!" -ForegroundColor Cyan; return }
             default { Write-Host "Invalid option: $choice" -ForegroundColor Red }
@@ -683,7 +709,6 @@ if ($Action) {
         'ListTests'          { Start-ZtAssessment -Action ListTests @moduleParams }
         'Status'             { Start-ZtAssessment -Action Status @moduleParams }
         'Resume'             { Start-ZtAssessment -Action Resume @moduleParams }
-        'Disconnect'         { Start-ZtAssessment -Action Disconnect }
         'Pester'             { Step-Pester -General $true -Commands $true -Assessments $true }
         'PesterGeneral'      { Step-Pester -General $true -Commands $false -Assessments $false }
         'PesterAssessments'  { Step-Pester -General $false -Commands $false -Assessments $true }
