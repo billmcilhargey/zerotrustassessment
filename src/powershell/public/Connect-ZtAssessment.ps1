@@ -115,7 +115,13 @@ function Connect-ZtAssessment {
 	$Service = $Service | Select-Object -Unique
 	$resolvedRequiredModules = Resolve-ZtServiceRequiredModule -Service $Service
 	Write-Host -Object ('🔑 Authentication to {0}.' -f ($Service -join ', ')) -ForegroundColor DarkGray
-	Write-Host -Object ('During the next steps, you may be prompted to authenticate separately for several services.') -ForegroundColor DarkGray
+	if ($UseDeviceCode) {
+		$deviceCodeServices = @($resolvedRequiredModules.ServiceAvailable) -notmatch 'SecurityCompliance'
+		Write-Host -Object ("Each service requires a separate device code. You will be prompted {0} time(s)." -f $deviceCodeServices.Count) -ForegroundColor DarkGray
+	}
+	else {
+		Write-Host -Object ('During the next steps, you may be prompted to authenticate separately for several services.') -ForegroundColor DarkGray
+	}
 	$resolvedRequiredModules.ServiceAvailable.ForEach{
 		Write-PSFMessage -Message ("Service '{0}' is available with its required modules:" -f $_) -Level Debug
 		$resolvedRequiredModules.($_).Foreach{
@@ -471,9 +477,34 @@ function Connect-ZtAssessment {
 					Write-Debug -Message ('Module ''{0}'' v{1} loaded for Exchange Online.' -f $_.Name, $_.Version)
 				}
 
+				#region is Exchange Online connected?
+				$isExoConnected = $false
+				try {
+					$exoConnectionInfo = Get-ConnectionInformation -ErrorAction Stop
+					if ($null -ne $exoConnectionInfo -and $exoConnectionInfo.State -eq 'Connected') {
+						Write-PSFMessage -Message ('An existing Exchange Online connection is established as "{0}".' -f $exoConnectionInfo.UserPrincipalName) -Level Debug
+						$isExoConnected = $true
+					}
+				}
+				catch {
+					Write-PSFMessage -Message "No existing Exchange Online connection found." -Level Debug
+				}
+
+				if ($isExoConnected -and -not $Force.IsPresent) {
+					Write-Host -Object "   ✅ Already connected." -ForegroundColor Green
+					Add-ZtConnectedService -Service 'ExchangeOnline'
+					continue
+				}
+				elseif ($isExoConnected -and $Force.IsPresent) {
+					Write-PSFMessage -Message "Force reconnect requested. Disconnecting existing Exchange Online session." -Level Debug
+					Disconnect-ExchangeOnline -Confirm:$false -ErrorAction Ignore
+				}
+				#endregion
+
 				Write-Verbose -Message 'Connecting to Microsoft Exchange Online'
 				if ($UseDeviceCode) {
-					$null = Connect-ExchangeOnline -ShowBanner:$false -Device:$UseDeviceCode -ExchangeEnvironmentName $ExchangeEnvironmentName -ErrorAction Stop
+					Write-Host -Object '   Requesting device code (each service requires separate authentication)...' -ForegroundColor DarkGray
+					Connect-ExchangeOnline -ShowBanner:$false -Device:$UseDeviceCode -ExchangeEnvironmentName $ExchangeEnvironmentName -ErrorAction Stop
 				}
 				else {
 					$null = Connect-ExchangeOnline -ShowBanner:$false -ExchangeEnvironmentName $ExchangeEnvironmentName -ErrorAction Stop
@@ -550,7 +581,10 @@ function Connect-ZtAssessment {
 			}
 
 			if ($UseDeviceCode) {
-				Write-Host -Object "`nThe Security & Compliance module does not support device code flow authentication." -ForegroundColor Red
+				Write-Host -Object "   ⚠️ Skipped: Security & Compliance does not support device code flow." -ForegroundColor Yellow
+				Write-Host -Object "      Tests requiring Security & Compliance will be skipped." -ForegroundColor Yellow
+				Write-Host -Object "      To connect, use interactive auth on Windows or app registration with certificate." -ForegroundColor DarkGray
+				Remove-ZtConnectedService -Service 'SecurityCompliance'
 			}
 			elseif ($exoSnCModulesLoaded) {
 				try {

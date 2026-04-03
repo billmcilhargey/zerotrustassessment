@@ -71,6 +71,10 @@
         $Service
     }
 
+    # Only attempt to disconnect services that were actually connected.
+    # Services that were never connected (e.g. Windows-only services on Linux) are silently skipped.
+    $connectedServices = @($script:ConnectedService)
+
     foreach ($svc in $serviceMap) {
         if ($Service -contains $svc.Key -or $Service -contains 'All') {
             Write-Host "`nDisconnecting from $($svc.Name)" -ForegroundColor Yellow
@@ -89,6 +93,13 @@
                     $svcArgs = $svc.Args
                     $null = & $svc.Command @svcArgs -ErrorAction Stop
                     Write-Host "Successfully disconnected from $($svc.Name)" -ForegroundColor Green
+                }
+                catch [System.MissingMethodException] {
+                    # Known MSAL DLL conflict between Graph SDK and Az modules.
+                    # The session is process-scoped so it will be cleaned up on exit regardless.
+                    $resultStatus = 'Succeeded'
+                    Write-Host "Disconnected from $($svc.Name) (with MSAL compatibility warning suppressed)" -ForegroundColor Green
+                    Write-PSFMessage -Message ("MSAL DLL conflict during disconnect from {0}: {1}" -f $svc.Name, $_.Exception.Message) -Level Debug
                 }
                 catch {
                     $resultStatus = 'Failed'

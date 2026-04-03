@@ -180,24 +180,33 @@ function Get-PlatformInfo {
 
 function Write-Banner {
     $platform = Get-PlatformInfo
-    Write-Host ""
-    Write-Host "╔══════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-    Write-Host "║         Zero Trust Assessment - Test Runner             ║" -ForegroundColor Cyan
-    Write-Host "╚══════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
-    Write-Host "  Platform : $($platform.OS) | PowerShell $($platform.PSVersion)" -ForegroundColor DarkGray
+    $mod = Get-Module ZeroTrustAssessment -ErrorAction Ignore
+    $version = if ($mod) { "v$($mod.Version)" } else { '' }
+
+    # Show the banner — use the module's shared function if loaded, otherwise inline it.
+    # Note: Invoke-ZtAssessment also calls Show-ZtBanner internally, so we set an
+    # environment variable to suppress the duplicate when the assessment runs.
+    if ($mod) {
+        & $mod { Show-ZtBanner }
+    } else { '' }
+    # Suppress the duplicate banner inside Invoke-ZtAssessment
+    $env:ZT_BANNER_SHOWN = '1'
+
+    Write-Host "  Platform    : $($platform.OS) | PowerShell $($platform.PSVersion)" -ForegroundColor DarkGray
+    if ($version) {
+        Write-Host "  Module      : ZeroTrustAssessment $version" -ForegroundColor DarkGray
+    }
     if ($platform.Codespaces) {
-        $csName = if ($platform.CodespaceName) { " ($($platform.CodespaceName))" } else { "" }
-        Write-Host "  Environment: Codespaces$csName (device code auth auto-enabled)" -ForegroundColor DarkGray
+        $csName = if ($platform.CodespaceName) { " ($($platform.CodespaceName))" } else { '' }
+        Write-Host "  Environment : Codespaces$csName (device code auth)" -ForegroundColor DarkGray
     }
     elseif ($platform.Headless) {
-        Write-Host "  Environment: Headless/SSH (device code auth auto-enabled)" -ForegroundColor DarkGray
+        Write-Host "  Environment : Headless/SSH (device code auth)" -ForegroundColor DarkGray
     }
     if (-not $IsWindows) {
-        Write-Host "  ⚠ Limited functionality on $($platform.OS):" -ForegroundColor Yellow
-        Write-Host "    ✗ AipService - Azure Information Protection (Windows-only module)" -ForegroundColor DarkGray
-        Write-Host "    ✗ SharePointOnline - SPO Management Shell (Windows-only module)" -ForegroundColor DarkGray
-        Write-Host "    Tests requiring these services will be skipped." -ForegroundColor DarkGray
-        Write-Host "    Run on Windows for full assessment coverage." -ForegroundColor DarkGray
+        Write-Host ""
+        Write-Host "  ⚠ Some services require Windows (AipService, SharePointOnline)." -ForegroundColor Yellow
+        Write-Host "    A few Data pillar tests will be skipped on this platform." -ForegroundColor DarkGray
     }
     Write-Host ""
 }
@@ -267,7 +276,6 @@ function Step-Connect {
         Connect-ZtAssessment @connectParams
         Write-Host ""
         Write-Host "Connected successfully." -ForegroundColor Green
-        Step-Status
     }
     catch {
         Write-Host "Connection failed: $_" -ForegroundColor Red
@@ -329,6 +337,10 @@ function Step-ListTests {
             return
         }
 
+        $windowsOnlyServices = @('AipService', 'SharePointOnline')
+        $isNonWindows = -not $IsWindows
+        $skippedCount = 0
+
         $grouped = $allTests | Group-Object Pillar | Sort-Object Name
         foreach ($group in $grouped) {
             Write-Host ""
@@ -336,11 +348,24 @@ function Step-ListTests {
             Write-Host "  $('-' * 50)" -ForegroundColor DarkGray
             foreach ($test in ($group.Group | Sort-Object TestID)) {
                 $svc = if ($test.Service) { "[$(($test.Service) -join ',')]" } else { "" }
-                Write-Host ("    {0}  {1}  {2}" -f $test.TestID, $test.Title, $svc) -ForegroundColor Gray
+                $needsWindows = $isNonWindows -and $test.Service -and ($test.Service | Where-Object { $_ -in $windowsOnlyServices })
+                if ($needsWindows) {
+                    Write-Host ("    {0}  {1}  {2}  (Windows only)" -f $test.TestID, $test.Title, $svc) -ForegroundColor DarkGray
+                    $skippedCount++
+                }
+                else {
+                    Write-Host ("    {0}  {1}  {2}" -f $test.TestID, $test.Title, $svc) -ForegroundColor Gray
+                }
             }
         }
         Write-Host ""
-        Write-Host "  Total: $($allTests.Count) tests" -ForegroundColor Green
+        $availableCount = $allTests.Count - $skippedCount
+        if ($skippedCount -gt 0) {
+            Write-Host "  Total: $availableCount / $($allTests.Count) tests available ($skippedCount require Windows)" -ForegroundColor Green
+        }
+        else {
+            Write-Host "  Total: $($allTests.Count) / $($allTests.Count) tests available" -ForegroundColor Green
+        }
     }
     catch {
         Write-Host "Failed to list tests: $_" -ForegroundColor Red
@@ -359,6 +384,16 @@ function Step-RunAssessment {
         Step-Install
     }
 
+    # Auto-connect if not already connected
+    if (-not (Get-ConnectionState).IsConnected) {
+        Write-Host "Not connected. Connecting automatically..." -ForegroundColor Yellow
+        Step-Connect
+        if (-not (Get-ConnectionState).IsConnected) {
+            Write-Host "Connection failed. Cannot run assessment." -ForegroundColor Red
+            return
+        }
+    }
+
     $invokeParams = @{
         Path = $script:Path
         Days = $script:Days
@@ -367,6 +402,18 @@ function Step-RunAssessment {
     if ($Resume)          { $invokeParams['Resume'] = $true }
     if ($RunPillar)       { $invokeParams['Pillar'] = $RunPillar }
     if ($RunTests)        { $invokeParams['Tests'] = $RunTests }
+
+    # Guard: if Resume requested, check that a previous export actually exists
+    if ($Resume) {
+        $exportPath = Join-Path $invokeParams.Path 'zt-export'
+        $configPath = Join-Path $exportPath 'ztConfig.json'
+        if (-not (Test-Path $configPath)) {
+            Write-MenuHeader "Resume"
+            Write-Host "  No previous assessment found in: $($invokeParams.Path)" -ForegroundColor Yellow
+            Write-Host "  Run a full assessment first with [3]." -ForegroundColor Yellow
+            return
+        }
+    }
 
     $description = if ($Resume) { "Resuming previous assessment" }
                    elseif ($RunTests) { "Running tests: $($RunTests -join ', ')" }
@@ -440,7 +487,7 @@ function Step-UpdateTestServices {
 function Step-Disconnect {
     Write-MenuHeader "Disconnecting"
     try {
-        Disconnect-ZtAssessment -IncludeCleanup
+        $null = Disconnect-ZtAssessment -IncludeCleanup
         Write-Host "Disconnected from all services." -ForegroundColor Green
     }
     catch {
@@ -470,9 +517,14 @@ function Get-ConnectionState {
 function Show-Menu {
     $conn = Get-ConnectionState
 
+    # ── Compact header ──
+    Write-Host ""
+    Write-Host "  Microsoft Zero Trust Assessment" -ForegroundColor Cyan
+    Write-Host "  ────────────────────────────────────────────────" -ForegroundColor DarkGray
+
     # ── Connection status bar ──
     if ($conn.IsConnected) {
-        Write-Host "  ✅ Connected: $($conn.Account) (tenant: $($conn.Tenant))" -ForegroundColor Green
+        Write-Host "  ✅ $($conn.Account) | tenant: $($conn.Tenant)" -ForegroundColor Green
     }
     else {
         Write-Host "  ○  Not connected" -ForegroundColor DarkGray
@@ -507,7 +559,6 @@ function Show-Menu {
         # ── Maintenance ──
         Write-Host "  ── Maintenance ──" -ForegroundColor DarkCyan
         Write-Host "  [P]  Check permissions" -ForegroundColor White
-        Write-Host "  [R]  Reconnect to tenant" -ForegroundColor White
         Write-Host "  [D]  Disconnect from tenant" -ForegroundColor White
     }
     Write-Host "  [Q]  Quit" -ForegroundColor White
@@ -534,14 +585,18 @@ function Step-CheckPermissions {
         $missing = $requiredScopes | Where-Object { $context.Scopes -notcontains $_ }
 
         Write-Host "  Graph Scopes: $grantedCount / $($requiredScopes.Count) granted" -ForegroundColor Gray
-        if ($missing) {
-            Write-Host "  ⚠ Missing scopes:" -ForegroundColor Yellow
-            $missing | ForEach-Object { Write-Host "    - $_" -ForegroundColor Red }
-            Write-Host ""
-            Write-Host "  Reconnect with [1] to request missing scopes." -ForegroundColor Yellow
+        foreach ($scope in ($requiredScopes | Sort-Object)) {
+            if ($context.Scopes -contains $scope) {
+                Write-Host "    ✅ $scope" -ForegroundColor Green
+            }
+            else {
+                Write-Host "    ❌ $scope" -ForegroundColor Red
+            }
         }
-        else {
-            Write-Host "  ✅ All required Graph scopes are present." -ForegroundColor Green
+
+        if ($missing) {
+            Write-Host ""
+            Write-Host "  Reconnect with [R] to request missing scopes." -ForegroundColor Yellow
         }
     }
     catch {
@@ -552,7 +607,15 @@ function Step-CheckPermissions {
 function Invoke-InteractiveMenu {
     Write-Banner
 
+    $firstRun = $true
     while ($true) {
+        if ($firstRun) {
+            $firstRun = $false
+        }
+        else {
+            # On subsequent iterations the previous action output is already visible
+            # above, so just draw the menu below it without clearing.
+        }
         Show-Menu
         $choice = Read-Host "Select an option"
 
@@ -625,14 +688,6 @@ function Invoke-InteractiveMenu {
             'P'  {
                 if ((Get-ConnectionState).IsConnected) {
                     Step-CheckPermissions
-                }
-                else {
-                    Write-Host "Not connected. Use [1] to connect first." -ForegroundColor Yellow
-                }
-            }
-            'R'  {
-                if ((Get-ConnectionState).IsConnected) {
-                    Step-Install; Step-Connect; Step-Status
                 }
                 else {
                     Write-Host "Not connected. Use [1] to connect first." -ForegroundColor Yellow

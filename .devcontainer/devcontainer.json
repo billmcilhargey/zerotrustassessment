@@ -14,7 +14,7 @@
 	"forwardPorts": [3000, 5173],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "npm install && pwsh -NoProfile -Command \"Install-Module -Name PSFramework, Pester, PSScriptAnalyzer -Force -Scope CurrentUser -AcceptLicense\"",
+	"postCreateCommand": "npm install && sudo mkdir -p /opt/microsoft/powershell/7/Scripts && sudo chmod 755 /opt/microsoft/powershell/7/Scripts && pwsh -NoProfile -Command \"Install-Module -Name PSFramework, Pester, PSScriptAnalyzer -Force -Scope CurrentUser -AcceptLicense\"",
 
 	// Configure tool-specific properties.
 	"customizations": {

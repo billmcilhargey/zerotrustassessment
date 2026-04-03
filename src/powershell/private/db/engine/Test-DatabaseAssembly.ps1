@@ -25,13 +25,26 @@ function Test-DatabaseAssembly
     catch {
         Write-PSFMessage 'Database binaries not ready to use' -ErrorRecord $_ -Tag DB -Level Debug # Log silently
 
-        # Check for specific DuckDB initialization error that indicates missing Visual C++ Redistributable
+        # Check for specific DuckDB initialization error
         if ($_.Exception.Message -like "*The type initializer for 'DuckDB.NET*") {
             # Check if running on ARM architecture
             if ([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture -eq 'Arm64') {
                 Write-Host
                 Write-Host "⚠️ UNSUPPORTED PLATFORM: Windows on ARM" -ForegroundColor Red
                 Write-Host "ZeroTrustAssessment is not currently supported on Windows on ARM devices." -ForegroundColor Yellow
+                Write-Host
+            }
+            elseif (-not $IsWindows) {
+                $os = if ($IsMacOS) { 'macOS' } else { 'Linux' }
+                $libName = if ($IsMacOS) { 'libduckdb.dylib' } else { 'libduckdb.so' }
+                $libDir = Join-Path $PSScriptRoot '..' '..' '..' 'lib'
+                $libDir = (Resolve-Path $libDir -ErrorAction SilentlyContinue)?.Path ?? $libDir
+                Write-Host
+                Write-Host "⚠️ PREREQUISITE REQUIRED: DuckDB native library ($libName) is missing" -ForegroundColor Red
+                Write-Host "The assessment requires the DuckDB native library for $os." -ForegroundColor Yellow
+                Write-Host "Expected location: $libDir/$libName" -ForegroundColor Yellow
+                Write-Host "Download from: https://github.com/duckdb/duckdb/releases/tag/v1.1.1" -ForegroundColor Yellow
+                Write-Host "  (get libduckdb-linux-amd64.zip, extract $libName into the lib folder)" -ForegroundColor Yellow
                 Write-Host
             }
             else {

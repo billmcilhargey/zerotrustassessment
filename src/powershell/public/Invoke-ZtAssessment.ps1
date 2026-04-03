@@ -194,29 +194,18 @@ function Invoke-ZtAssessment {
 		Write-Host "Share the report only with authorized personnel in your organization." -ForegroundColor Yellow
 		Write-Host
 	}
-
-	function Show-ZtiBanner {
-		[CmdletBinding()]
-		param ()
-
-		$banner = @"
-╔═════════════════════════════════════════════════════════════════════════════╗
-║                    🛡️  Microsoft Zero Trust Assessment v2                   ║
-║                                                                             ║
-║    Comprehensive security posture evaluation for your Microsoft 365 tenant  ║
-╚═════════════════════════════════════════════════════════════════════════════╝
-"@
-
-		Write-Host $banner -ForegroundColor Cyan
-		Write-Host
-		Write-Host "🚀 " -NoNewline -ForegroundColor Green
-		Write-Host "Starting Zero Trust Assessment..." -ForegroundColor White
-		Write-Host
-	}
 	#endregion Utility Functions
 
 	#region Preparation
-	Show-ZtiBanner
+	if ($env:ZT_BANNER_SHOWN -eq '1') {
+		$env:ZT_BANNER_SHOWN = $null  # Reset for next invocation
+	}
+	else {
+		Show-ZtBanner
+	}
+	Write-Host "🚀 " -NoNewline -ForegroundColor Green
+	Write-Host "Starting Zero Trust Assessment..." -ForegroundColor White
+	Write-Host
 
 	if (-not (Test-ZtLanguageMode)) {
 		Stop-PSFFunction -Message "PowerShell is running in Constrained Language Mode, which is not supported." -EnableException $true -Cmdlet $PSCmdlet
@@ -480,7 +469,29 @@ function Invoke-ZtAssessment {
 	Write-Host "▶▶▶ ✨ Your feedback matters! Help us improve 👉 https://aka.ms/ztassess/feedback ◀◀◀" -ForegroundColor Yellow
 	Write-Host
 	Write-Host
-	Invoke-Item $htmlReportPath | Out-Null
+	try {
+		if ($IsWindows) {
+			Invoke-Item $htmlReportPath | Out-Null
+		}
+		elseif ($env:BROWSER) {
+			# Codespaces/dev containers set $BROWSER to forward to host browser
+			& $env:BROWSER $htmlReportPath
+		}
+		elseif (Get-Command xdg-open -ErrorAction Ignore) {
+			xdg-open $htmlReportPath
+		}
+		elseif ($IsMacOS -and (Get-Command open -ErrorAction Ignore)) {
+			open $htmlReportPath
+		}
+		else {
+			Write-Host "  Open the report manually: $htmlReportPath" -ForegroundColor DarkGray
+		}
+	}
+	catch {
+		# Opening the report is not critical — just inform the user
+		Write-PSFMessage -Level Verbose -Message "Could not open report automatically: $_"
+		Write-Host "  Open the report manually: $htmlReportPath" -ForegroundColor DarkGray
+	}
 
 	if ($ExportLog) {
 		Write-ZtProgress -Activity "Creating support package"
