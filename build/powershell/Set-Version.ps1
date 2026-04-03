@@ -52,5 +52,7 @@ if ( -not (Test-Path $ManifestPath )) {
 
 $NewVersion += $previewLabel
 Write-Host "New version: $NewVersion"
-#Add-Content -Path $env:GITHUB_OUTPUT -Value "newtag=$NewVersion"
-#Add-Content -Path $env:GITHUB_OUTPUT -Value "tag=$NewVersion"
+if ($env:GITHUB_OUTPUT) {
+    Add-Content -Path $env:GITHUB_OUTPUT -Value "newtag=$NewVersion"
+    Add-Content -Path $env:GITHUB_OUTPUT -Value "tag=$NewVersion"
+}

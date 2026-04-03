@@ -1,6 +1,6 @@
 [CmdletBinding(SupportsShouldProcess)]
 param(
-    [string]$TestsPath = "c:\src\zerotrustassessment\src\powershell\tests"
+    [string]$TestsPath = (Join-Path $PSScriptRoot 'src' 'powershell' 'tests')
 )
 
 $allowedServices = @('Graph','Azure','AipService','ExchangeOnline','SecurityCompliance','SharePointOnline')
