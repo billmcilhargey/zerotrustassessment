@@ -65,10 +65,7 @@ function Test-Assessment-24552 {
         id,
         name,
         to_json(assignments) as assignments,
-        list_transform(
-            setting.settingInstance.groupSettingCollectionValue[1].children,
-            x -> x.choiceSettingValue."value"
-        ) as firewallSettingValues
+        to_json(setting.settingInstance.groupSettingCollectionValue[1].children) as firewallSettingChildren
     FROM (
         SELECT
             id,
@@ -84,10 +81,18 @@ function Test-Assessment-24552 {
 "@
     $macOSFirewallPolicies = Invoke-DatabaseQuery -Database $Database -Sql $sql -AsCustomObject
 
-    # Parse JSON assignments field
+    # Parse JSON assignments and firewallSettingChildren fields
     foreach ($policy in $macOSFirewallPolicies) {
         if ($policy.assignments) {
             $policy.assignments = $policy.assignments | ConvertFrom-Json
+        }
+        if ($policy.firewallSettingChildren) {
+            $children = $policy.firewallSettingChildren | ConvertFrom-Json
+            $policy | Add-Member -NotePropertyName 'firewallSettingValues' -NotePropertyValue @(
+                $children | ForEach-Object { $_.choiceSettingValue.value }
+            ) -Force
+        } else {
+            $policy | Add-Member -NotePropertyName 'firewallSettingValues' -NotePropertyValue @() -Force
         }
     }
 

@@ -473,8 +473,64 @@ function Invoke-ZtAssessment {
 		if ($IsWindows) {
 			Invoke-Item $htmlReportPath | Out-Null
 		}
+		elseif (($env:CODESPACES -eq 'true') -or ($env:REMOTE_CONTAINERS -eq 'true') -or
+				(Test-Path '/.dockerenv') -or ($env:DEVCONTAINER -eq 'true')) {
+			# Running in a container — serve via HTTP so Codespaces can port-forward
+			$reportDir = Split-Path $htmlReportPath -Parent
+			$reportFile = Split-Path $htmlReportPath -Leaf
+			$port = 8080
+
+			# Find an available port (try 8080-8089)
+			for ($p = 8080; $p -le 8089; $p++) {
+				$inUse = $false
+				try {
+					$listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $p)
+					$listener.Start()
+					$listener.Stop()
+				} catch {
+					$inUse = $true
+				}
+				if (-not $inUse) { $port = $p; break }
+			}
+
+			# Check if npx/http-server is available
+			$hasNpx = Get-Command npx -ErrorAction Ignore
+			if ($hasNpx) {
+				Write-Host ""
+				Write-Host "  🌐 Starting HTTP server on port $port to serve the report..." -ForegroundColor Cyan
+				# Start http-server in background
+				$null = Start-Job -ScriptBlock {
+					param($dir, $port)
+					npx -y http-server $dir -p $port -s -c-1 2>&1 | Out-Null
+				} -ArgumentList $reportDir, $port
+
+				Start-Sleep -Milliseconds 1500  # Give server a moment to start
+				$reportUrl = "http://127.0.0.1:$port/$reportFile"
+
+				Write-Host "  📄 Report URL: " -NoNewline -ForegroundColor White
+				Write-Host $reportUrl -ForegroundColor Green
+				Write-Host ""
+
+				if ($env:BROWSER) {
+					Write-Host "  Opening in browser..." -ForegroundColor DarkGray
+					try { & $env:BROWSER $reportUrl } catch { }
+				}
+
+				Write-Host "  💡 In Codespaces: check the Ports tab if it doesn't open automatically." -ForegroundColor Yellow
+				Write-Host "     The server will stop when the PowerShell session ends." -ForegroundColor DarkGray
+			}
+			else {
+				# No npx — try $BROWSER with the file path directly
+				if ($env:BROWSER) {
+					& $env:BROWSER $htmlReportPath
+				}
+				else {
+					Write-Host "  Open the report manually: $htmlReportPath" -ForegroundColor DarkGray
+				}
+			}
+		}
 		elseif ($env:BROWSER) {
-			# Codespaces/dev containers set $BROWSER to forward to host browser
+			# Non-container Linux with $BROWSER set
 			& $env:BROWSER $htmlReportPath
 		}
 		elseif (Get-Command xdg-open -ErrorAction Ignore) {
