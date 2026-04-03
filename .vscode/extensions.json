@@ -1,5 +1,10 @@
 {
     "recommendations": [
-        "docsmsft.docs-authoring-pack"
+        "ms-vscode.powershell",
+        "docsmsft.docs-authoring-pack",
+        "dbaeumer.vscode-eslint",
+        "streetsidesoftware.code-spell-checker",
+        "davidanson.vscode-markdownlint",
+        "esbenp.prettier-vscode"
     ]
 }
