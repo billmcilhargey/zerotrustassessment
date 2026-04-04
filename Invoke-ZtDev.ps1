@@ -652,19 +652,26 @@ function Get-DevModuleVersionIssues {
 
 function Step-VerifyDependencyVersions {
     # Quick startup check: are installed dependency versions meeting manifest requirements?
-    $specs = Get-DevModuleSpecs
-    if (-not $specs) { return }
+    # Delegates to the module's Resolve-ZtServiceRequiredModule for detection and
+    # Update-ZtRequiredModule for fixing, keeping a single source of truth.
+    $ztMod = Get-Module ZeroTrustAssessment -ErrorAction Ignore
+    if (-not $ztMod) { return }
 
-    $outdated = @(Get-DevModuleVersionIssues -Specs $specs)
-    if ($outdated.Count -eq 0) { return }
+    $allServices = @('Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePoint')
+    $platformServices = @($allServices | Where-Object {
+        $IsWindows -or $_ -ne 'AipService'
+    })
+
+    $resolved = & $ztMod { param($svc) Resolve-ZtServiceRequiredModule -Service $svc } $platformServices
+    $unavailable = @($resolved.Errors | Where-Object { $_.ErrorMessage -match 'below the required minimum|does not match required version|not found' })
+    if ($unavailable.Count -eq 0) { return }
 
     # Guard against re-triggering after we already tried to fix it this session
     if ($script:_dependencyFixAttempted) {
         Write-Host ""
-        Write-Host "  ⚠️  Dependency version issues persist after upgrade attempt:" -ForegroundColor Yellow
-        foreach ($m in $outdated) {
-            $constraint = if ($m.Type -eq 'exact') { "requires exact v$($m.Required)" } else { "requires >= v$($m.Required)" }
-            Write-Host ("    ❌ {0} v{1} — {2}" -f $m.Name, $m.Installed, $constraint) -ForegroundColor Red
+        Write-Host "  ⚠️  Dependency issues persist after upgrade attempt:" -ForegroundColor Yellow
+        foreach ($err in $unavailable) {
+            Write-Host "    ❌ $($err.Service): $($err.ErrorMessage)" -ForegroundColor Red
         }
         Write-Host "  Run Update-ZtRequiredModule manually if the issue continues." -ForegroundColor DarkGray
         Write-Host ""
@@ -672,38 +679,25 @@ function Step-VerifyDependencyVersions {
     }
 
     Write-Host ""
-    Write-Host "  ⚠️  Dependency version issues detected:" -ForegroundColor Yellow
-    foreach ($m in $outdated) {
-        $constraint = if ($m.Type -eq 'exact') { "requires exact v$($m.Required)" } else { "requires >= v$($m.Required)" }
-        Write-Host ("    ❌ {0} v{1} — {2}" -f $m.Name, $m.Installed, $constraint) -ForegroundColor Red
+    Write-Host "  ⚠️  Dependency issues detected:" -ForegroundColor Yellow
+    foreach ($err in $unavailable) {
+        Write-Host "    ❌ $($err.Service): $($err.ErrorMessage)" -ForegroundColor Red
     }
     Write-Host ""
-    Write-Host "  These services may be skipped during assessment." -ForegroundColor Yellow
-    Write-Host ""
 
-    $answer = Read-Host "  Force upgrade now? (Y/N) [N]"
+    $answer = Read-Host "  Fix now? (Y/N) [N]"
     if ($answer.Trim().ToUpper() -eq 'Y') {
         $script:_dependencyFixAttempted = $true
-        # Remove only the mismatched modules from the cache so Initialize-Dependencies re-downloads them
-        $ztMod = Get-Module ZeroTrustAssessment -ErrorAction Ignore
-        $cachePath = if ($ztMod) { & $ztMod { Get-ZtModuleCachePath } } else { $null }
-        if ($cachePath -and (Test-Path $cachePath)) {
-            foreach ($m in $outdated) {
-                $modDir = Join-Path $cachePath $m.Name
-                if (Test-Path $modDir) {
-                    Remove-Item -Path $modDir -Recurse -Force -ErrorAction Continue
-                    Write-Host ("    🗑️ Removed cached {0}" -f $m.Name) -ForegroundColor DarkGray
-                }
-            }
-        }
         Write-Host ""
-        Write-Host "  Reimporting module (will download correct versions)..." -ForegroundColor DarkGray
+        Update-ZtRequiredModule -Confirm:$false
+        Write-Host ""
+        Write-Host "  Reimporting module..." -ForegroundColor DarkGray
         Step-Install
         Write-Host "  ✅ Done." -ForegroundColor Green
         Write-Host ""
     }
     else {
-        Write-Host "  Skipping upgrade. Some services may be unavailable." -ForegroundColor DarkGray
+        Write-Host "  Skipping. Some services may be unavailable." -ForegroundColor DarkGray
         Write-Host ""
     }
 }
@@ -959,6 +953,7 @@ function Invoke-InteractiveMenu {
         Write-DevStatus
         Show-Menu
         $choice = Read-Host "Select an option"
+        if ([string]::IsNullOrWhiteSpace($choice)) { continue }
         Clear-Host
         $env:ZT_BANNER_SHOWN = $null
 

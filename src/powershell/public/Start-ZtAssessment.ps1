@@ -131,6 +131,7 @@ function Start-ZtAssessment {
 		}
 
 		# Try silent restore from token cache before prompting
+		Write-Host "  Checking for cached login..." -ForegroundColor DarkGray
 		if (Restore-ZtCachedConnection) {
 			$conn = Get-ZtConnectionState
 			Write-Host "`n── Restored from Cache ──`n" -ForegroundColor DarkCyan

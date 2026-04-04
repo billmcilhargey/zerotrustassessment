@@ -40,7 +40,16 @@ function Restore-ZtCachedConnection {
 		return $false
 	}
 
-	# Try silent connect from cached tokens (no user interaction)
+	# Try silent connect from cached tokens (no user interaction).
+	# In headless/container environments, Connect-MgGraph without -UseDeviceCode
+	# may fall back to an interactive device code prompt that appears to hang.
+	# Only attempt if we're in a windowed environment (not container/SSH).
+	$isHeadless = ($env:CODESPACES -eq 'true') -or ($env:REMOTE_CONTAINERS -eq 'true') -or (-not $IsWindows -and -not $env:DISPLAY)
+	if ($isHeadless) {
+		Write-PSFMessage -Message "Skipping silent Connect-MgGraph in headless environment (would trigger interactive auth)." -Level Debug
+		return $false
+	}
+
 	try {
 		$silentParams = @{
 			NoWelcome = $true
