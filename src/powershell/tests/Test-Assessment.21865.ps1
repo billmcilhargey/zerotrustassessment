@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -86,17 +86,5 @@ function Test-Assessment-21865 {
     # Replace the placeholder with the detailed information
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    $params = @{
-        TestId             = '21865'
-        Title              = 'Trusted network locations are configured to increase quality of risk detections'
-        UserImpact         = 'Low'
-        Risk               = 'Medium'
-        ImplementationCost = 'Low'
-        AppliesTo          = 'Identity'
-        Tag                = 'Identity'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

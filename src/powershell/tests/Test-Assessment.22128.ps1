@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -93,16 +93,5 @@ function Test-Assessment-22128 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
 
-    $params = @{
-        TestId             = '22128'
-        Title              = "Guests are not assigned high privileged directory roles"
-        UserImpact         = 'Low'
-        Risk               = 'High'
-        ImplementationCost = 'Low'
-        AppliesTo          = 'Identity'
-        Tag                = 'Identity'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

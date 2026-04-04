@@ -1,4 +1,4 @@
-﻿
+
 <#
 .SYNOPSIS
 
@@ -127,12 +127,5 @@ function Test-Assessment-24540 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '24540'
-        Title  = 'Windows Firewall Policy is Created and Assigned'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

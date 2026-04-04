@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -28,8 +28,5 @@ function Test-Assessment-21894{
     $passed = $result
 
 
-    Add-ZtTestResultDetail -TestId '21894' -Title "All certificates Microsoft Entra Application Registrations and Service Principals must be issued by an approved certification authority" `
-        -UserImpact Low -Risk Low -ImplementationCost Medium `
-        -AppliesTo Identity -Tag Identity `
-        -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
 }

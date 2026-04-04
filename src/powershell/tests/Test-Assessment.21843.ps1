@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -28,8 +28,5 @@ function Test-Assessment-21843{
     $passed = $result
 
 
-    Add-ZtTestResultDetail -TestId '21843' -Title "Block legacy Microsoft Online PowerShell module" `
-        -UserImpact Low -Risk Low -ImplementationCost High `
-        -AppliesTo Identity -Tag Identity `
-        -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
 }

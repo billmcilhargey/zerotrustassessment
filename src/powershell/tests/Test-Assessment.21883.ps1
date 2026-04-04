@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
    Checks if workload identities are configured with risk-based policies
 #>
@@ -49,19 +49,8 @@ function Test-Assessment-21883 {
         $testResultMarkdown += "Workload identities based on risk policy is not configured."
     }
 
-    $params = @{
-        TestId             = '21883'
-        Title              = "Workload identities are configured with risk-based policies"
-        UserImpact         = 'Low'
-        Risk               = 'High'
-        ImplementationCost = 'Low'
-        AppliesTo          = 'Identity'
-        Tag                = 'Identity'
-        GraphObjectType    = 'ConditionalAccess'
-        GraphObjects       = $matchedPolicies
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -GraphObjectType 'ConditionalAccess' `
+        -GraphObjects $matchedPolicies `
+        -Status $passed `
+        -Result $testResultMarkdown
 }

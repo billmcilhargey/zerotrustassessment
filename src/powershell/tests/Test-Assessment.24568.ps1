@@ -1,4 +1,4 @@
-﻿
+
 <#
 .SYNOPSIS
 
@@ -356,12 +356,5 @@ Filters policies that contain either of two different settings, each located in 
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '24568'
-        Title  = 'macOS - Platform SSO is configured and assigned'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

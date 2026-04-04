@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     A Windows Defender Antivirus policy is created and assigned
 #>
@@ -115,12 +115,5 @@ function Test-Assessment-24575 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '24575'
-        Title  = 'A Windows Defender Antivirus policy is created and assigned'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

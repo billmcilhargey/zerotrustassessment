@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -21,6 +21,10 @@ function Test-Assessment-21824 {
 
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = "Checking Guests don't have long lived sign-in sessions"
     Write-ZtProgress -Activity $activity -Status "Getting policy"
@@ -106,12 +110,7 @@ function Test-Assessment-21824 {
                 }
             }
 
-            $status = if ($matchedPolicies -and $matchedPolicies.Id -contains $filteredCAPolicy.Id) {
-                "✅"
-            }
-            else {
-                "❌"
-            }
+            $status = Get-ZtPassFail -Condition ($matchedPolicies -and $matchedPolicies.Id -contains $filteredCAPolicy.Id)
 
             $tableRows += @"
 | [$(Get-SafeMarkdown($policyName))]($portalLink) | $signInFreqValue | $status |`n
@@ -126,10 +125,5 @@ function Test-Assessment-21824 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '21824'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     PDF labeling is enabled in SharePoint Online
 
@@ -79,11 +79,5 @@ function Test-Assessment-35006 {
     }
     #endregion Report Generation
 
-    $params = @{
-        TestId             = '35006'
-        Title              = 'PDF Labeling Support in SharePoint Online'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

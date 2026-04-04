@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -21,6 +21,10 @@ function Test-Assessment-21812 {
 
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = "Checking Maximum number of Global Administrators doesn't exceed eight users"
     Write-ZtProgress -Activity $activity -Status "Getting policy"
@@ -103,11 +107,5 @@ if ($globalAdmins.Count -gt 8) {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '21812'
-        Title  = "Maximum number of Global Administrators doesn't exceed eight users"
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

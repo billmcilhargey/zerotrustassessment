@@ -117,17 +117,5 @@ function Test-Assessment-35034 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35034'
-        Title  = 'Exact Data Match (EDM) Configurations'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    if ($null -ne $customStatus) {
-        $params['CustomStatus'] = $customStatus
-    }
-
-    # Add test result details
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

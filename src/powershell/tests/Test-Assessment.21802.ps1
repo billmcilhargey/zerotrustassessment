@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -21,6 +21,10 @@ function Test-Assessment-21802 {
 
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = 'Checking Authenticator app shows sign-in context'
     Write-ZtProgress -Activity $activity -Status 'Getting authentication method policy'
@@ -51,8 +55,8 @@ function Test-Assessment-21802 {
         $testResultMarkdown = "Microsoft Authenticator notifications lack sign-in context.`n`n%TestResult%"
     }
 
-    if ($appInfoEnabled) {$appEmoji = '✅'} else {$appEmoji = '❌'}
-    if ($locationInfoEnabled) {$locationEmoji = '✅'} else {$locationEmoji = '❌'}
+    $appEmoji = Get-ZtPassFail -Condition $appInfoEnabled
+    $locationEmoji = Get-ZtPassFail -Condition $locationInfoEnabled
 
     # Build the detailed sections of the markdown
 
@@ -85,11 +89,6 @@ $locationEmoji **Geographic Location**
     # Replace the placeholder with the detailed information
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    $params = @{
-        TestId = '21802'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 
 }

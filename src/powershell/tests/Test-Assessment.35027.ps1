@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Custom branding templates are configured for Office 365 Message Encryption
 
@@ -136,16 +136,5 @@ function Test-Assessment-35027 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35027'
-        Title  = 'OME Custom Branding Templates'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

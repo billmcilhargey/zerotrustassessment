@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -29,8 +29,5 @@ function Test-Assessment-21985{
     $passed = $result
 
 
-    Add-ZtTestResultDetail -TestId '21985' -Title "Turn off Seamless SSO if there are is no usage" `
-        -UserImpact Medium -Risk Medium -ImplementationCost Medium `
-        -AppliesTo Identity -Tag Identity `
-        -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
 }

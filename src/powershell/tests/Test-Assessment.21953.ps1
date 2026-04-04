@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks if Local Admin Password Solution (LAPS) is deployed in the tenant.
 #>
@@ -20,6 +20,10 @@ function Test-Assessment-21953{
     param()
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = 'Checking Local Admin Password Solution is deployed'
     Write-ZtProgress -Activity $activity -Status 'Getting LAPS settings'
@@ -56,10 +60,5 @@ function Test-Assessment-21953{
         }
     }
 
-    $params = @{
-        TestId = '21953'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

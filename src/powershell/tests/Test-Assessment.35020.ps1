@@ -134,17 +134,5 @@ function Test-Assessment-35020 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35020'
-        Title  = 'Auto-labeling enforcement mode enabled'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    # Add CustomStatus if status is 'Investigate'
-    if ($null -ne $customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

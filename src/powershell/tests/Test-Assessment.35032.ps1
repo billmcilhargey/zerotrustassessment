@@ -168,14 +168,5 @@ function Test-Assessment-35032 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35032'
-        Title  = 'Adaptive Protection in DLP Policies'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    if ($customStatus -eq $true) {
-        $params.CustomStatus = 'Investigate'
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

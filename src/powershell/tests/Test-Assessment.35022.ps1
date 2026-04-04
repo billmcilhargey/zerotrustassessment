@@ -317,14 +317,5 @@ function Test-Assessment-35022 {
     }
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35022'
-        Title  = 'On-Demand scans configured for sensitive information discovery'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-     if ($null -ne $customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

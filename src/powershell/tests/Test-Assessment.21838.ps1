@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -33,11 +33,11 @@ function Test-Assessment-21838 {
     if ($fido2Enabled) {
         $passed = $true
         $testResultMarkdown = "Security key authentication method is enabled for your tenant, providing hardware-backed phishing-resistant authentication.`n`n%TestResult%"
-        $statusEmoji = '✅'
+        $statusEmoji = Get-ZtPassFail -Condition $true
     } else {
         $passed = $false
         $testResultMarkdown = "Security key authentication method is not enabled; users cannot register FIDO2 security keys for strong authentication.`n`n%TestResult%"
-        $statusEmoji = '❌'
+        $statusEmoji = Get-ZtPassFail -Condition $false
     }
 
     # Build the detailed sections of the markdown
@@ -62,11 +62,6 @@ $statusEmoji **FIDO2 authentication method**
     # Replace the placeholder with the detailed information
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    $params = @{
-        TestId             = '21838'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 
 }

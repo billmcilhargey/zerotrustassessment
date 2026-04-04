@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     A macOS Cloud LAPS Policy is Created and Assigned
 #>
@@ -177,12 +177,5 @@ function Test-Assessment-24561 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '24561'
-        Title  = 'A macOS Cloud LAPS Policy is Created and Assigned'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

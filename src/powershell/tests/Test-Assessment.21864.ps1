@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -28,8 +28,5 @@ function Test-Assessment-21864{
     $passed = $result
 
 
-    Add-ZtTestResultDetail -TestId '21864' -Title "All risk detections are triaged" `
-        -UserImpact Low -Risk High -ImplementationCost High `
-        -AppliesTo Identity -Tag Identity `
-        -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
 }

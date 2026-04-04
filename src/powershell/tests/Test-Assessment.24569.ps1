@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Intune macOS FileVault policy is created and Assigned
 #>
@@ -124,12 +124,5 @@ function Test-Assessment-24569 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId             = '24569'
-        Title              = "Intune macOS FileVault policy is created and Assigned"
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

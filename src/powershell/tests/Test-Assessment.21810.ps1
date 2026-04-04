@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -20,6 +20,10 @@ function Test-Assessment-21810 {
     param()
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = "Checking Resource-Specific Consent is restricted"
     Write-ZtProgress -Activity $activity -Status "Getting resource-specific consent status"
@@ -42,16 +46,5 @@ function Test-Assessment-21810 {
     # Replace the placeholder with the detailed information
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    $params = @{
-        TestId             = '21810'
-        Title              = "Resource-Specific Consent is restricted"
-        UserImpact         = 'Medium'
-        Risk               = 'Medium'
-        ImplementationCost = 'Medium'
-        AppliesTo          = 'Identity'
-        Tag                = 'Identity'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

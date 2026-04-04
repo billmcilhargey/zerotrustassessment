@@ -324,17 +324,5 @@ function Test-Assessment-25396 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25396'
-        Title  = 'Conditional Access policies enforce strong authentication for private apps'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    if ($unprotectedApps -eq 0 -and $manualReviewApps -gt 0) {
-        $params.CustomStatus = 'Investigate'
-    }
-
-    # Add test result details
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

@@ -302,12 +302,5 @@ resources
 
     #endregion Report Generation
 
-    $params = @{
-        TestId = '26889'
-        Title  = 'Diagnostic logging is enabled in Azure Front Door WAF'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

@@ -111,7 +111,7 @@ function Test-Assessment-25381 {
         $tableRows = $profilesMetadata | ForEach-Object {
             $profile = $_.Object
             if ($profile) {
-                $statusIcon = if ($profile.state -eq 'enabled') { '✅' } else { '❌' }
+                $statusIcon = Get-ZtPassFail -Condition ($profile.state -eq 'enabled')
                 "| $($_.Label) | $(Get-SafeMarkdown $profile.name) | $statusIcon $($profile.state) |"
             }
             else {
@@ -131,12 +131,5 @@ function Test-Assessment-25381 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25381'
-        Title  = 'Network traffic is routed through Global Secure Access for security policy enforcement'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

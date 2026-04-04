@@ -88,18 +88,5 @@ function Test-Assessment-25480 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25480'
-        Title  = 'Quick Access has assigned users or groups'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    # Add CustomStatus if Investigate is needed
-    if ($null -ne $customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-
-    # Add test result details
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

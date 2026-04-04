@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -73,7 +73,7 @@ function Test-Assessment-21828 {
         foreach ($policy in $matchedPolicies) {
             $portalLink = "https://entra.microsoft.com/#view/Microsoft_AAD_ConditionalAccess/PolicyBlade/policyId/{0}" -f $policy.id
             $tableRows += @"
-| [$(Get-SafeMarkdown($policy.displayName))]($portalLink) | $($policy.id) | $($policy.state) | $(Get-FormattedDate($policy.createdDateTime)) | $(Get-FormattedDate($policy.modifiedDateTime)) |`n
+| [$(Get-SafeMarkdown($policy.displayName))]($portalLink) | $($policy.id) | $(Get-ZtCaPolicyState -State $policy.state) | $(Get-FormattedDate($policy.createdDateTime)) | $(Get-FormattedDate($policy.modifiedDateTime)) |`n
 "@
         }
 
@@ -87,17 +87,5 @@ function Test-Assessment-21828 {
     # Replace the placeholder with the detailed information
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    $params = @{
-        TestId             = '21828'
-        Title              = "Authentication transfer is blocked"
-        UserImpact         = 'Low'
-        Risk               = 'High'
-        ImplementationCost = 'Low'
-        AppliesTo          = 'Identity'
-        Tag                = 'Identity'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

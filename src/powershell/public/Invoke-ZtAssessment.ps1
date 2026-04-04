@@ -269,6 +269,17 @@ function Invoke-ZtAssessment {
 		return
 	}
 
+	# Show license info from preflight
+	$licenseCheck = $preflight.Checks | Where-Object { $_.Check -eq 'Licensing' }
+	if ($licenseCheck) {
+		$licColor = if ($licenseCheck.Passed) { 'Green' } else { 'Yellow' }
+		$licIcon = if ($licenseCheck.Passed) { '✅' } else { '⚠️' }
+		Write-Host "$licIcon License: $($licenseCheck.Detail)" -ForegroundColor $licColor
+		if (-not $licenseCheck.Passed -and $licenseCheck.LicenseTier -eq 'Free') {
+			Write-Host "   Some tests require Entra ID P1/P2 and will be skipped" -ForegroundColor DarkYellow
+		}
+	}
+
 	# Show coverage warnings (missing services won't block the run, tests will be skipped)
 	$coverage = $preflight.Coverage
 	if (-not $coverage.FullCoverage) {
@@ -412,6 +423,10 @@ function Invoke-ZtAssessment {
 	$output = Get-HtmlReport -AssessmentResults $assessmentResultsJson -Path $Path
 	$output | Set-PSFFileContent -Path $htmlReportPath -Encoding UTF8NoBom
 
+	# Mark the assessment as fully completed so the menu can distinguish
+	# a completed run from an interrupted/resumable one.
+	Set-ZtConfig -ExportPath $exportPath -Property AssessmentCompleted -Value $true
+
 	# Write the test run summary now that the report is complete
 	Write-ZtTestSummary -LogsPath $logsPath
 
@@ -422,85 +437,7 @@ function Invoke-ZtAssessment {
 	Write-Host "▶▶▶ ✨ Your feedback matters! Help us improve 👉 https://aka.ms/ztassess/feedback ◀◀◀" -ForegroundColor Yellow
 	Write-Host
 	Write-Host
-	try {
-		if ($IsWindows) {
-			Invoke-Item $htmlReportPath | Out-Null
-		}
-		elseif (($env:CODESPACES -eq 'true') -or ($env:REMOTE_CONTAINERS -eq 'true') -or
-				(Test-Path '/.dockerenv') -or ($env:DEVCONTAINER -eq 'true')) {
-			# Running in a container — serve via HTTP so Codespaces can port-forward
-			$reportDir = Split-Path $htmlReportPath -Parent
-			$reportFile = Split-Path $htmlReportPath -Leaf
-			$port = 8080
-
-			# Find an available port (try 8080-8089)
-			for ($p = 8080; $p -le 8089; $p++) {
-				$inUse = $false
-				try {
-					$listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $p)
-					$listener.Start()
-					$listener.Stop()
-				} catch {
-					$inUse = $true
-				}
-				if (-not $inUse) { $port = $p; break }
-			}
-
-			# Check if npx/http-server is available
-			$hasNpx = Get-Command npx -ErrorAction Ignore
-			if ($hasNpx) {
-				Write-Host ""
-				Write-Host "  🌐 Starting HTTP server on port $port to serve the report..." -ForegroundColor Cyan
-				# Start http-server in background
-				$null = Start-Job -ScriptBlock {
-					param($dir, $port)
-					npx -y http-server $dir -p $port -s -c-1 2>&1 | Out-Null
-				} -ArgumentList $reportDir, $port
-
-				Start-Sleep -Milliseconds 1500  # Give server a moment to start
-				$reportUrl = "http://127.0.0.1:$port/$reportFile"
-
-				Write-Host "  📄 Report URL: " -NoNewline -ForegroundColor White
-				Write-Host $reportUrl -ForegroundColor Green
-				Write-Host ""
-
-				if ($env:BROWSER) {
-					Write-Host "  Opening in browser..." -ForegroundColor DarkGray
-					try { & $env:BROWSER $reportUrl } catch { }
-				}
-
-				Write-Host "  💡 In Codespaces: check the Ports tab if it doesn't open automatically." -ForegroundColor Yellow
-				Write-Host "     The server will stop when the PowerShell session ends." -ForegroundColor DarkGray
-			}
-			else {
-				# No npx — try $BROWSER with the file path directly
-				if ($env:BROWSER) {
-					& $env:BROWSER $htmlReportPath
-				}
-				else {
-					Write-Host "  Open the report manually: $htmlReportPath" -ForegroundColor DarkGray
-				}
-			}
-		}
-		elseif ($env:BROWSER) {
-			# Non-container Linux with $BROWSER set
-			& $env:BROWSER $htmlReportPath
-		}
-		elseif (Get-Command xdg-open -ErrorAction Ignore) {
-			xdg-open $htmlReportPath
-		}
-		elseif ($IsMacOS -and (Get-Command open -ErrorAction Ignore)) {
-			open $htmlReportPath
-		}
-		else {
-			Write-Host "  Open the report manually: $htmlReportPath" -ForegroundColor DarkGray
-		}
-	}
-	catch {
-		# Opening the report is not critical — just inform the user
-		Write-PSFMessage -Level Verbose -Message "Could not open report automatically: $_"
-		Write-Host "  Open the report manually: $htmlReportPath" -ForegroundColor DarkGray
-	}
+	Open-ZtReport -Path $htmlReportPath -ServeHttp
 
 	if ($ExportLog) {
 		Write-ZtProgress -Activity "Creating support package"

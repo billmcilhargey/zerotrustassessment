@@ -162,15 +162,5 @@ function Test-Assessment-35023 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35023'
-        Title = 'OCR is enabled for sensitive information detection'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

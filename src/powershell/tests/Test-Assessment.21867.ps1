@@ -21,6 +21,12 @@ function Test-Assessment-21867 {
         $Database
     )
 
+    Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
+
     Test-ZtApplicationOwnership `
         -Database $Database `
         -TestId '21867' `

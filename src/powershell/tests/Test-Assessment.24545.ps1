@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Compliance policy assignment for Android Enterprise Fully managed device is configured and assigned
 #>
@@ -96,12 +96,5 @@ function Test-Assessment-24545 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId             = '24545'
-        Title              = "Compliance policy assignment for Android Enterprise Fully managed device is configured and assigned"
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

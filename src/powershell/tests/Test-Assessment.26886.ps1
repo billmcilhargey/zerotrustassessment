@@ -504,12 +504,5 @@ resources
 
     #endregion Report Generation
 
-    $params = @{
-        TestId = '26886'
-        Title  = 'Diagnostic logging is enabled for DDoS-protected public IPs'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

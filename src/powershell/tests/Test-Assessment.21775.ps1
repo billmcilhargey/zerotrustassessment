@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Validates that tenant app management policy is configured with credential restrictions.
 
@@ -209,5 +209,5 @@ function Test-Assessment-21775{
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
 
     # Add test result details
-    Add-ZtTestResultDetail -TestId '21775' -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

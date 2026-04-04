@@ -263,11 +263,20 @@ function Test-Assessment-25535 {
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
 
-    if ((Get-AzContext).Environment.name -ne 'AzureCloud') {
+    $azContext = Get-AzContext
+    if (-not $azContext) {
+        Add-ZtTestResultDetail -SkippedBecause 'NotConnectedAzure'
+        return
+    }
+
+    if ($azContext.Environment.name -ne 'AzureCloud') {
         Write-PSFMessage "This test is only applicable to the Global environment." -Tag Test -Level VeryVerbose
         Add-ZtTestResultDetail -SkippedBecause NotSupported
         return
     }
+
+    $activity = "Checking outbound traffic routing through Azure Firewall"
+    Write-ZtProgress -Activity $activity
 
     try {
         $subscriptions = @(Get-AzSubscription -ErrorAction Stop | Where-Object { $_.Id -and $_.State -eq 'Enabled' })
@@ -333,7 +342,7 @@ function Test-Assessment-25535 {
     $mdInfo += "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |`n"
 
     foreach ($item in $nicFindings | Sort-Object SubscriptionName, NicName) {
-        $icon = if ($item.IsCompliant) { '✅' } else { '❌' }
+        $icon = Get-ZtPassFail -Condition $item.IsCompliant
 
         $subLink = "https://portal.azure.com/#resource/subscriptions/$($item.SubscriptionId)"
         $subName = Get-SafeMarkdown -Text $item.SubscriptionName
@@ -354,12 +363,5 @@ function Test-Assessment-25535 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25535'
-        Title  = 'Outbound traffic from VNET integrated workloads is routed through Azure Firewall'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

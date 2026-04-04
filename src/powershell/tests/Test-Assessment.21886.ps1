@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -22,6 +22,10 @@ function Test-Assessment-21886 {
     )
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = "Checking Applications that use Microsoft Entra for authentication and support provisioning are configured"
     Write-ZtProgress -Activity $activity -Status "Getting all service principals that have SSO configured"
@@ -97,7 +101,7 @@ ORDER BY LOWER(displayName) ASC
         foreach ($app in $unconfiguredApps) {
             $portalLink = "https://entra.microsoft.com/#view/Microsoft_AAD_IAM/ManagedAppMenuBlade/~/Overview/objectId/{0}/appId/{1}/preferredSingleSignOnMode/{2}/servicePrincipalType/Application/fromNav/" -f $app.Id, $app.AppId, $app.PreferredSingleSignOn
             $tableRows += @"
-| [$($app.displayName)]($portalLink) | $($app.Id) | $($app.AppId) |`n
+| [$(Get-SafeMarkdown $app.displayName)]($portalLink) | $($app.Id) | $($app.AppId) |`n
 "@
         }
 
@@ -108,17 +112,5 @@ ORDER BY LOWER(displayName) ASC
         $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     }
 
-    $params = @{
-        TestId             = '21886'
-        Title              = 'Applications that use Microsoft Entra for authentication and support provisioning are configured'
-        UserImpact         = 'Low'
-        Risk               = 'Medium'
-        ImplementationCost = 'Medium'
-        AppliesTo          = 'Identity'
-        Tag                = 'Identity'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

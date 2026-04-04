@@ -1,4 +1,4 @@
-﻿
+
 <#
 .SYNOPSIS
 
@@ -24,6 +24,13 @@ function Test-Assessment-21771 {
     )
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
+
+    $activity = "Checking inactive applications for highly privileged built-in roles"
+    Write-ZtProgress -Activity $activity
 
     $sql = @"
     select distinct r.principalId, r.principalDisplayName, sp.publisherName,
@@ -62,10 +69,7 @@ function Test-Assessment-21771 {
     }
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    Add-ZtTestResultDetail -TestId '21771' -Title 'Inactive applications don'’t have highly privileged Microsoft Entra built-in roles' `
-        -UserImpact Low -Risk High -ImplementationCost Low `
-        -AppliesTo Identity -Tag Application `
-        -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }
 
 function Get-AppListRole

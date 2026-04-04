@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks that enterprise applications require explicit assignment or have scoped provisioning controls.
 #>
@@ -22,6 +22,10 @@ function Test-Assessment-21869 {
     )
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     #region Data Collection
     $activity = 'Checking enterprise applications assignment and provisioning requirements'
@@ -50,12 +54,7 @@ ORDER BY LOWER(displayName) ASC
     if ($servicePrincipals.Count -eq 0) {
         # No applications without assignment requirements - pass
 
-        $params = @{
-            TestId             = '21869'
-            Status             = $true
-            Result             = 'All enterprise applications have explicit assignment requirements.'
-        }
-        Add-ZtTestResultDetail @params
+        Add-ZtTestResultDetail -Status $true -Result 'All enterprise applications have explicit assignment requirements.'
         return
     }
 
@@ -239,11 +238,5 @@ ORDER BY LOWER(displayName) ASC
     $testResultMarkdown += $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId             = '21869'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

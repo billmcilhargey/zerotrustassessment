@@ -240,7 +240,7 @@ function Test-Assessment-25539 {
             $subLink = "https://portal.azure.com/#resource/subscriptions/$($item.SubscriptionId)"
             $policyMd = "[$(Get-SafeMarkdown -Text $item.PolicyName)]($policyLink)"
             $subMd = "[$(Get-SafeMarkdown -Text $item.SubscriptionName)]($subLink)"
-            $icon = if ($item.Passed) { '✅' } else { '❌' }
+            $icon = Get-ZtPassFail -Condition $item.Passed
             $resultText = "$icon $($item.IntrusionDetectionMode)"
             $tableRows += "| $policyMd | $subMd | $resultText |`n"
         }
@@ -253,11 +253,5 @@ function Test-Assessment-25539 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25539'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

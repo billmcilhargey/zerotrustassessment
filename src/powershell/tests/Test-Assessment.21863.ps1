@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -24,9 +24,8 @@ function Test-Assessment-21863{
     $activity = "All high-risk sign-ins are triaged"
     Write-ZtProgress -Activity $activity -Status "Getting risky sign ins."
 
-    $EntraIDPlan = Get-ZtLicenseInformation -Product EntraID
-    if ($EntraIDPlan -eq "Free" -or $EntraIDPlan -eq "P1") {
-        Write-PSFMessage '🟦 Skipping test: Requires P2 or Governance plan' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP2) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP2
         return
     }
 
@@ -66,8 +65,5 @@ function Test-Assessment-21863{
     # Replace the placeholder with the detailed information
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    Add-ZtTestResultDetail -TestId '21863' -Title "All high-risk sign-ins are triaged" `
-        -UserImpact Low -Risk High -ImplementationCost High `
-        -AppliesTo Identity -Tag Identity `
-        -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

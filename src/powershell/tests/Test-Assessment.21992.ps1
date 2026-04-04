@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -21,6 +21,10 @@ function Test-Assessment-21992{
         $Database
     )
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+
+    $activity = "Checking application certificate rotation"
+    Write-ZtProgress -Activity $activity
+
     $sqlApp = @"
     select distinct ON (id) * from
         (select id, appId, displayName, signInAudience,
@@ -71,17 +75,5 @@ function Test-Assessment-21992{
 
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    $params = @{
-        TestId             = '21992'
-        Title              = 'Application Certificates need to be rotated on a regular basis'
-        UserImpact         = 'Low'
-        Risk               = 'High'
-        ImplementationCost = 'High'
-        AppliesTo          = 'Identity'
-        Tag                = 'Identity'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

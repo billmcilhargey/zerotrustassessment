@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks that high priority Entra recommendations are addressed
 #>
@@ -20,6 +20,10 @@ function Test-Assessment-22124 {
     param()
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = "Checking for directory recommendations that are high priority and are active or postponed"
     Write-ZtProgress -Activity $activity
@@ -41,14 +45,11 @@ function Test-Assessment-22124 {
         $mdInfo += "| Display Name | Status | Insights |`n"
         $mdInfo += "| :--- | :--- | :--- |`n"
         foreach ($item in $result) {
-            $mdInfo += "| $($item.displayName) | $($item.status) | $($item.Insights) |`n"
+            $mdInfo += "| $(Get-SafeMarkdown $item.displayName) | $($item.status) | $($item.Insights) |`n"
         }
     }
 
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    Add-ZtTestResultDetail -TestId '22124' -Title 'High priority Entra recommendations are addressed' `
-        -UserImpact Medium -Risk High -ImplementationCost Medium `
-        -AppliesTo Identity -Tag Application `
-        -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

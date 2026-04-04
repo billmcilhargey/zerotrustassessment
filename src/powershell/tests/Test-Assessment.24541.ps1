@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     A compliance policy for Windows devices exists and is assigned
 #>
@@ -106,12 +106,5 @@ function Test-Assessment-24541 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '24541'
-        Title  = 'Windows Compliance Policy is Created and Assigned'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

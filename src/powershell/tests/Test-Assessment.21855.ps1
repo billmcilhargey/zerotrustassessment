@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -28,8 +28,5 @@ function Test-Assessment-21855{
     $passed = $result
 
 
-    Add-ZtTestResultDetail -TestId '21855' -Title "Privileged roles have access reviews" `
-        -UserImpact Low -Risk Medium -ImplementationCost Medium `
-        -AppliesTo Identity -Tag Identity `
-        -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
 }

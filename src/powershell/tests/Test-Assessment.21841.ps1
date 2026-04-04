@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -20,6 +20,10 @@ function Test-Assessment-21841{
     param()
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = "Checking Authenticator app report suspicious activity is enabled"
     Write-ZtProgress -Activity $activity -Status "Getting policy"
@@ -61,11 +65,5 @@ function Test-Assessment-21841{
 
     $passed = $result
 
-    $params = @{
-        TestId             = '21841'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

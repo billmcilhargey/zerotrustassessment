@@ -116,13 +116,5 @@ function Test-Assessment-25391 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25391'
-        Title  = 'Private Access connectors are active and healthy'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    # Add test result details
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

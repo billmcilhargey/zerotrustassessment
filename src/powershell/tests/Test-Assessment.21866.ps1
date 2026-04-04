@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -20,6 +20,10 @@ function Test-Assessment-21866{
     param()
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = "Checking All Microsoft Entra recommendations are addressed"
     Write-ZtProgress -Activity $activity
@@ -40,14 +44,11 @@ function Test-Assessment-21866{
         $mdInfo += "| Display Name | Status | Insights | Priority |`n"
         $mdInfo += "| :--- | :--- | :--- | :--- |`n"
         foreach ($item in $result) {
-            $mdInfo += "| $($item.displayName) | $($item.status) | $($item.Insights) | $($item.priority) |`n"
+            $mdInfo += "| $(Get-SafeMarkdown $item.displayName) | $($item.status) | $($item.Insights) | $($item.priority) |`n"
         }
     }
 
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    Add-ZtTestResultDetail -TestId '21866' -Title "All Microsoft Entra recommendations are addressed" `
-        -UserImpact Low -Risk Medium -ImplementationCost High `
-        -AppliesTo Identity -Tag Identity `
-        -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

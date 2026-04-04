@@ -160,13 +160,5 @@ function Test-Assessment-25406 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25406'
-        Title  = 'Internet access forwarding profile is enabled'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    # Add test result details
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

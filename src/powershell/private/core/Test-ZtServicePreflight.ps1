@@ -90,6 +90,39 @@ function Test-ZtServicePreflight {
 	})
 	if (-not $graphOk) { $allPassed = $false }
 
+	# ── 3b. Licensing ────────────────────────────────────────────────────────
+	# Detect tenant licenses early so per-test checks can use the cache.
+	# This is a warning only — missing licenses don't block the run.
+	$licenseDetail = $null
+	$licenseTier = 'Unknown'
+	if ($graphOk) {
+		try {
+			$null = Get-ZtCurrentLicense -Force
+			# Also prime the plan ID cache used by Get-ZtLicense / Get-ZtLicenseInformation
+			if (-not $script:__ZtLicensePlanIds) {
+				$script:__ZtLicensePlanIds = Invoke-ZtGraphRequest -RelativeUri "subscribedSkus" |
+					Select-Object -ExpandProperty servicePlans |
+					Where-Object { $_.capabilityStatus -ne 'Deleted' } |
+					Select-Object -ExpandProperty servicePlanId
+			}
+			$licenseTier = Get-ZtLicenseInformation -Product EntraID
+			$licenseDetail = "Entra ID: $licenseTier"
+		}
+		catch {
+			$licenseDetail = "Unable to detect licenses: $($_.Exception.Message)"
+		}
+	}
+	else {
+		$licenseDetail = 'Skipped (no Graph context)'
+	}
+	$checks.Add([PSCustomObject]@{
+		Check       = 'Licensing'
+		Passed      = $licenseTier -in 'P1', 'P2', 'Governance'
+		Detail      = $licenseDetail
+		LicenseTier = $licenseTier
+	})
+	# Licensing gaps are a warning, not a hard failure
+
 	# ── 4. Service health ────────────────────────────────────────────────────
 	$healthResults = Test-ZtServiceHealth
 	$unhealthy = @($healthResults | Where-Object { -not $_.Healthy })
@@ -129,7 +162,7 @@ function Test-ZtServicePreflight {
 	# We don't set $allPassed = $false here
 
 	# ── Build result ─────────────────────────────────────────────────────────
-	$failures = @($checks | Where-Object { -not $_.Passed -and $_.Check -ne 'ServiceCoverage' })
+	$failures = @($checks | Where-Object { -not $_.Passed -and $_.Check -notin 'ServiceCoverage', 'Licensing' })
 
 	[PSCustomObject]@{
 		Passed        = $allPassed

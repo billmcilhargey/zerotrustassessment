@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -120,16 +120,5 @@ function Test-Assessment-21799 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
 
-    $params = @{
-        TestId             = '21799'
-        Title              = "Block high risk sign-ins"
-        UserImpact         = 'Medium'
-        Risk               = 'High'
-        ImplementationCost = 'Medium'
-        AppliesTo          = 'Identity'
-        Tag                = 'Identity'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks if MFA is required for device join and device registration using conditional access
 #>
@@ -126,8 +126,5 @@ function Test-Assessment-21872 {
     # Replace the placeholder with the detailed information
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    Add-ZtTestResultDetail -TestId '21872' -Title "Require multifactor authentication for device join and device registration using user action" `
-        -UserImpact Medium -Risk High -ImplementationCost Low `
-        -AppliesTo Identity -Tag Identity `
-        -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

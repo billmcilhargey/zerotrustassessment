@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -33,8 +33,5 @@ function Test-Assessment-21832{
     $passed = $result
 
 
-    Add-ZtTestResultDetail -TestId '21832' -Title "All groups in Conditional Access policies belong to a restricted management administrative unit" `
-        -UserImpact Low -Risk Medium -ImplementationCost Low `
-        -AppliesTo Identity -Tag Identity `
-        -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
 }

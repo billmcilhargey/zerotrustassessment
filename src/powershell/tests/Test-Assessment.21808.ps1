@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks if device code flow is restricted in the tenant using Conditional Access policies.
 #>
@@ -28,7 +28,7 @@ function Test-Assessment-21808{
     Write-ZtProgress -Activity $activity -Status "Getting conditional access policies"
 
     # Get all CA policies from the tenant
-    $allCAPolicies = Invoke-ZtGraphRequest -RelativeUri "identity/conditionalAccess/policies" -ApiVersion 'beta'
+    $allCAPolicies = Get-ZtConditionalAccessPolicy
 
     # Filter enabled policies locally
     $enabledPolicies = $allCAPolicies | Where-Object { $_.state -eq 'enabled' }
@@ -161,7 +161,7 @@ function Test-Assessment-21808{
             $portalLink = "https://entra.microsoft.com/#view/Microsoft_AAD_ConditionalAccess/PolicyBlade/policyId/{0}" -f $policy.id
 
             # Format policy status
-            $status = if ($policy.state -eq "enabledForReportingButNotEnforced") { "Report-only" } else { "Disabled" }
+            $status = Get-ZtCaPolicyState -State $policy.state
 
             # Format target users
             $targetUsers = "All Users"
@@ -213,8 +213,5 @@ function Test-Assessment-21808{
 
     $passed = $result
 
-    Add-ZtTestResultDetail -TestId '21808' -Title "Restrict device code flow" `
-        -UserImpact Medium -Risk High -ImplementationCost Low `
-        -AppliesTo Identity -Tag ConditionalAccess `
-        -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

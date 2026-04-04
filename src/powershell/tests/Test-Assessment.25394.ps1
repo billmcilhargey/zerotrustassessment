@@ -159,19 +159,6 @@ function Test-Assessment-25394 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25394'
-        Title  = 'Quick Access is protected by Conditional Access policies'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    # Add Investigate status if Quick Access is not configured
-    if (-not $quickAccessApp -or $quickAccessApp.Count -eq 0) {
-        $params.CustomStatus = 'Investigate'
-    }
-
-    # Add test result details
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 
 }

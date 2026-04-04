@@ -1,4 +1,4 @@
-﻿
+
 <#
 .SYNOPSIS
     Gets the authentication methods registered by all users.
@@ -29,12 +29,6 @@ function Test-Assessment-21801 {
 
     if( -not (Get-ZtLicense EntraIDP1) ) {
         Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
-        return
-    }
-
-    $EntraIDPlan = Get-ZtLicenseInformation -Product EntraID
-    if ($EntraIDPlan -eq "Free") {
-        Write-PSFMessage '🟦 Skipping: Requires Premium License' -Tag Test -Level VeryVerbose
         return
     }
 
@@ -82,19 +76,16 @@ where u.accountEnabled
     foreach ($user in $phishableUsers | Sort-Object displayName) {
         $userLink = $userLinkFormat -f $user.id
         $lastSignInDate = Get-FormattedDate -Date $user.lastSuccessfulSignInDateTime
-        $mdInfo += "|[$($user.displayName)]($userLink)| $lastSignInDate | ❌ |`n"
+        $mdInfo += "|[$(Get-SafeMarkdown $user.displayName)]($userLink)| $lastSignInDate | ❌ |`n"
     }
 
     foreach ($user in $phishResistantUsers | Sort-Object displayName) {
         $userLink = $userLinkFormat -f $user.id
         $lastSignInDate = Get-FormattedDate -Date $user.lastSuccessfulSignInDateTime
-        $mdInfo += "|[$($user.displayName)]($userLink)| $lastSignInDate | ✅ |`n"
+        $mdInfo += "|[$(Get-SafeMarkdown $user.displayName)]($userLink)| $lastSignInDate | ✅ |`n"
     }
 
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    Add-ZtTestResultDetail -TestId '21801' -Title 'Users have strong authentication methods configured ' `
-        -UserImpact Medium -Risk Medium -ImplementationCost Medium `
-        -AppliesTo Identity -Tag Credential `
-        -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Assessment 21878 – Verifies that all entitlement management policies have expiration dates configured
 #>
@@ -22,6 +22,7 @@ function Test-Assessment-21878 {
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
     if ((Get-MgContext).Environment -ne 'Global') {
         Write-PSFMessage "This test is only applicable to the Global environment." -Tag Test -Level VeryVerbose
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
         return
     }
 
@@ -108,11 +109,5 @@ function Test-Assessment-21878 {
         }
     }
 
-    $params = @{
-        TestId = '21878'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

@@ -260,14 +260,5 @@ function Test-Assessment-25410 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25410'
-        Title  = 'Internet traffic is protected by web content filtering policies in Global Secure Access'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

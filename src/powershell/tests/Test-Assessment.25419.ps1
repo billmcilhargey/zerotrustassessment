@@ -178,13 +178,5 @@ function Test-Assessment-25419 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25419'
-        Title  = 'Network access activity is visible to security operations for threat detection and response'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    # Add test result details
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

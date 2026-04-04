@@ -79,11 +79,5 @@ function Test-Assessment-35007 {
     }
     #endregion Report Generation
 
-    $params = @{
-        TestId             = '35007'
-        Title              = 'Information Rights Management (IRM) Enabled in SharePoint Online'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

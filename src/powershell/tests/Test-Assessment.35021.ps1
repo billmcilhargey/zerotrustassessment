@@ -184,14 +184,5 @@ function Test-Assessment-35021 {
     }
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35021'
-        Title  = 'Auto-Labeling Policies Enabled for SharePoint and OneDrive'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

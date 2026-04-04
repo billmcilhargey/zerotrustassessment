@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Validates that TLS inspection bypass policies are regularly reviewed to prevent security protection gaps.
 
@@ -163,12 +163,5 @@ function Test-Assessment-27001 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '27001'
-        Title  = 'TLS inspection bypass policies are regularly reviewed to prevent security protection gaps'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

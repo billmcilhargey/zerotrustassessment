@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Azure Rights Management licensing is enabled
 
@@ -115,16 +115,5 @@ function Test-Assessment-35024 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35024'
-        Title  = 'Azure RMS Licensing Enabled'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    if ($investigateFlag -eq $true) {
-        $params.CustomStatus = 'Investigate'
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

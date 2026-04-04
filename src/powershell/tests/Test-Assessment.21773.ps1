@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -22,6 +22,9 @@ function Test-Assessment-21773 {
     )
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+
+    $activity = "Checking application certificate expiration"
+    Write-ZtProgress -Activity $activity
 
     $sqlApp = @"
     select distinct ON (id) * from
@@ -78,17 +81,5 @@ function Test-Assessment-21773 {
 
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    $params = @{
-        TestId             = '21773'
-        Title              = 'Applications don''t have certificates with expiration longer than 180 days'
-        UserImpact         = 'Medium'
-        Risk               = 'High'
-        ImplementationCost = 'Medium'
-        AppliesTo          = 'Identity'
-        Tag                = 'Application'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

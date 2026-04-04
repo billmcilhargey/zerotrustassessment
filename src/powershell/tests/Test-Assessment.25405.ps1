@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks if Intelligent Local Access is enabled and configured by verifying private networks exist.
 
@@ -31,6 +31,10 @@ function Test-Assessment-25405 {
 
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = 'Checking Intelligent Local Access configuration'
     Write-ZtProgress -Activity $activity -Status 'Getting private networks'
@@ -90,12 +94,5 @@ function Test-Assessment-25405 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25405'
-        Title  = 'Intelligent Local Access is enabled and configured'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

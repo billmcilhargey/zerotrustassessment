@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Compliance Policy for Android Enterprise Personally-Owned Work Profile is configured and assigned
 #>
@@ -93,12 +93,5 @@ function Test-Assessment-24547 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId             = '24547'
-        Title              = "Compliance Policy for Android Enterprise Personally-Owned Work Profile is configured and assigned"
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

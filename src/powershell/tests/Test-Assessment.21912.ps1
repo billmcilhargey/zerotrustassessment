@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -28,8 +28,5 @@ function Test-Assessment-21912{
     $passed = $result
 
 
-    Add-ZtTestResultDetail -TestId '21912' -Title "Azure resources used by Microsoft Entra only allow access from privileged roles" `
-        -UserImpact Low -Risk High -ImplementationCost Low `
-        -AppliesTo Identity -Tag Identity `
-        -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
 }

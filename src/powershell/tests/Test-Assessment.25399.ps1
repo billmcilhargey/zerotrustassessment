@@ -121,13 +121,6 @@ function Test-Assessment-25399 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25399'
-        Title  = 'Private DNS is configured for internal name resolution'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    # Add test result details
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 
 }

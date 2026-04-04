@@ -184,13 +184,5 @@ function Test-Assessment-25377 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25377'
-        Title  = 'Users accessing external applications from corporate devices are blocked unless explicitly authorized by tenant restrictions policies'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    # Add test result details
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks if all entitlement management policies that apply to external users require approval
 #>
@@ -110,11 +110,5 @@ function Test-Assessment-21879 {
         }
     }
 
-    $params = @{
-        TestId = '21879'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

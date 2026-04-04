@@ -197,19 +197,6 @@ function Write-ZtTestSummary {
 			}
 		}
 
-		# Show planned tests with details
-		if ($planned.Count -gt 0) {
-			$lines.Add('')
-			$lines.Add('  ── Planned (Preview) ──')
-			foreach ($testId in ($planned | Sort-Object)) {
-				$detail = $resultDetails[$testId]
-				$title = if ($detail -and $detail.TestTitle) { $detail.TestTitle } else { 'Unknown' }
-				$pillar = if ($detail -and $detail.TestPillar) { $detail.TestPillar } else { '' }
-				$pillarTag = if ($pillar) { " [$pillar]" } else { '' }
-				$lines.Add("    🔜 $testId - $title$pillarTag  (Preview)")
-			}
-		}
-
 		$lines.Add('─────────────────────────────────────────────────────')
 		$lines.Add('')
 

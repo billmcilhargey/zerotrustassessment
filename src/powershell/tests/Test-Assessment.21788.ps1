@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -120,12 +120,6 @@ function Test-Assessment-21788 {
         # Replace the placeholder with the detailed information
         $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-        $params = @{
-            TestId = '21788'
-            Title  = "Global Administrators don't have standing elevated access to all Azure subscriptions in the tenant"
-            Status = $passed
-            Result = $testResultMarkdown
-        }
-        Add-ZtTestResultDetail @params
+        Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
     }
 }

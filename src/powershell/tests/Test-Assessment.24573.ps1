@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Windows security baseline is configured and assigned
 #>
@@ -98,12 +98,5 @@ function Test-Assessment-24573 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '24573'
-        Title  = 'Windows Security Baseline is Configured and Assigned'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

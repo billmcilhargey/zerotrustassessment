@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Office 365 Message Encryption is configured with simplified client access
 
@@ -140,14 +140,5 @@ function Test-Assessment-35026 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35026'
-        Title  = 'Office 365 Message Encryption (OME) - SimplifiedClientAccessEnabled'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

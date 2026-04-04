@@ -148,13 +148,5 @@ function Test-Assessment-25371 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25371'
-        Title  = 'Network access is validated in real-time through Universal Continuous Access Evaluation'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    # Add test result details
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

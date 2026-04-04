@@ -1,4 +1,4 @@
-﻿
+
 <#
 .SYNOPSIS
 
@@ -24,6 +24,9 @@ function Test-Assessment-21770 {
     )
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+
+    $activity = "Checking inactive applications for highly privileged Microsoft Graph API permissions"
+    Write-ZtProgress -Activity $activity
 
     # Get all applications with permissions using common function
     $results = Get-ApplicationsWithPermissions -Database $Database
@@ -61,11 +64,5 @@ function Test-Assessment-21770 {
 
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    $params = @{
-        TestId = '21770'
-        Title = 'Inactive applications don''t have highly privileged permissions'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

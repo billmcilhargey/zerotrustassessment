@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -39,16 +39,5 @@ function Test-Assessment-21874 {
         }
     }
 
-    $params = @{
-        TestId             = '21874'
-        Title              = "Allow/Deny lists of domains to restrict external collaboration are configured"
-        UserImpact         = 'Medium'
-        Risk               = 'Medium'
-        ImplementationCost = 'Medium'
-        AppliesTo          = 'Identity'
-        Tag                = 'Identity'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

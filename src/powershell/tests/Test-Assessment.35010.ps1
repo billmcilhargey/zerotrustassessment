@@ -146,18 +146,5 @@ function Test-Assessment-35010 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35010'
-        Title  = 'Double Key Encryption (DKE) Labels'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    # Add CustomStatus if status is 'Investigate'
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-
-    # Add test result details
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

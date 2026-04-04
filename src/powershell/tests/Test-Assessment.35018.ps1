@@ -176,16 +176,5 @@ function Test-Assessment-35018 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35018'
-        Title  = 'Downgrade Justification Required for Sensitivity Labels'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    if ($null -ne $customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

@@ -200,18 +200,5 @@ function Test-Assessment-35012 {
 
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35012'
-        Title  = 'Container labels are configured for Teams, Groups, and Sites'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    # Add CustomStatus if status is 'Investigate'
-    if ($null -ne $customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-
-    # Add test result details
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

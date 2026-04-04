@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Non-compliant Devices are Restricted from Accessing Corporate Data
 #>
@@ -20,8 +20,8 @@ function Test-Assessment-24824 {
     param()
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
-    if ( -not (Get-ZtLicense EntraIDP1) ) {
-        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+    if ( -not (Get-ZtLicense Intune) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedIntune
         return
     }
 
@@ -90,12 +90,5 @@ function Test-Assessment-24824 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId             = '24824'
-        Title              = "Non-compliant Devices are Restricted from Accessing Corporate Data "
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

@@ -1,4 +1,4 @@
-﻿function Test-Assessment-21830 {
+function Test-Assessment-21830 {
     [ZtTest(
     	Category = 'Application management',
     	ImplementationCost = 'High',
@@ -35,14 +35,7 @@
     # Filter for privileged roles on client side
     $privilegedRoles = $allRoleDefinitions | Where-Object { $_.isPrivileged -eq $true }
 
-    $policyDetails = @()
-    # Loop through each enabled policy to get detailed information
-    foreach ($policy in $enabledCAPolicies) {
-        $policyId = $policy.id
-        $policyDetails += Invoke-ZtGraphRequest -RelativeUri "identity/conditionalAccess/policies/$policyId" -ApiVersion 'v1.0'
-    }
-
-    $compliantDevicePolicies = $policyDetails | Where-Object {
+    $compliantDevicePolicies = $enabledCAPolicies | Where-Object {
         # Check if policy targets privileged roles
         $targetsPrivilegedRoles = $false
         if ($_.conditions.users.includeRoles) {
@@ -60,7 +53,7 @@
         return $targetsPrivilegedRoles -and $compliantDevice
     }
 
-    $deviceFilterPolicies = $policyDetails | Where-Object {
+    $deviceFilterPolicies = $enabledCAPolicies | Where-Object {
         # Check if policy targets privileged roles
         $targetsPrivilegedRoles = $false
         if ($_.conditions.users.includeRoles) {
@@ -92,15 +85,9 @@
         $testResultMarkdown = "Conditional Access policies restrict privileged role access to PAW devices."
     }
 
-    $compliantDeviceMarkdown = "❌"
-    if ($compliantDevicePolicies.Count -gt 0) {
-        $compliantDeviceMarkdown = "✅"
-    }
+    $compliantDeviceMarkdown = Get-ZtPassFail -Condition ($compliantDevicePolicies.Count -gt 0)
 
-    $deviceFilterMarkdown = "❌"
-    if ($deviceFilterPolicies.Count -gt 0) {
-        $deviceFilterMarkdown = "✅"
-    }
+    $deviceFilterMarkdown = Get-ZtPassFail -Condition ($deviceFilterPolicies.Count -gt 0)
 
     $portalTemplate = "https://entra.microsoft.com/#view/Microsoft_AAD_ConditionalAccess/PolicyBlade/policyId/{0}"
 
@@ -117,16 +104,5 @@
         $testResultMarkdown += "- **Policy:** [$(Get-SafeMarkdown($policy.displayName))]($portalLink)`n"
     }
 
-    $params = @{
-        TestId             = '21830'
-        Title              = 'Highly privileged roles are only activated in a PAW/SAW device'
-        UserImpact         = 'Low'
-        Risk               = 'High'
-        ImplementationCost = 'High'
-        AppliesTo          = 'Identity'
-        Tag                = 'Identity'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

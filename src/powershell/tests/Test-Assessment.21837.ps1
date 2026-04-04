@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -49,13 +49,5 @@ function Test-Assessment-21837{
         $testResultMarkdown = "[Maximum number of devices per user]($entraDeviceSettingsLink) is set to $userQuota. Consider reducing to 10 or fewer."
     }
 
-    $params = @{
-        TestId = '21837'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks if organization has reduced password surface area by enabling multiple passwordless authentication methods
 #>
@@ -20,6 +20,10 @@ function Test-Assessment-21889{
     param()
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = 'Checking passwordless authentication methods configuration'
     Write-ZtProgress -Activity $activity -Status 'Getting authentication methods policy'
@@ -29,12 +33,7 @@ function Test-Assessment-21889{
 
     if (-not $authMethodsPolicy) {
         $testResultMarkdown = 'Unable to retrieve authentication methods policy.'
-        $params = @{
-            TestId = '21889'
-            Status = $false
-            Result = $testResultMarkdown
-        }
-        Add-ZtTestResultDetail @params
+        Add-ZtTestResultDetail -Status $false -Result $testResultMarkdown
         return
     }
 
@@ -100,10 +99,5 @@ function Test-Assessment-21889{
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
 
     # Add test result
-    $params = @{
-        TestId = '21889'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

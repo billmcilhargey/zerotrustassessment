@@ -47,9 +47,21 @@ function Test-DatabaseAssembly
                 return $true
             }
             catch {
-                $os = if ($IsWindows) { 'Windows' } elseif ($IsMacOS) { 'macOS' } else { 'Linux' }
+                # Check if the install succeeded but .NET cached the failed type initializer
                 $libName = if ($IsWindows) { 'duckdb.dll' } elseif ($IsMacOS) { 'libduckdb.dylib' } else { 'libduckdb.so' }
                 $libDir = Join-Path $script:ModuleRoot 'lib'
+                $libPath = Join-Path $libDir $libName
+                if (Test-Path $libPath) {
+                    # Library was installed but .NET won't re-probe the native library in this session
+                    Write-Host
+                    Write-Host "✅ DuckDB native library installed successfully." -ForegroundColor Green
+                    Write-Host "⚠️ PowerShell must be restarted to load the new library." -ForegroundColor Yellow
+                    Write-Host "   Please close this PowerShell session and re-run the command." -ForegroundColor Yellow
+                    Write-Host
+                    return $false
+                }
+
+                $os = if ($IsWindows) { 'Windows' } elseif ($IsMacOS) { 'macOS' } else { 'Linux' }
                 Write-Host
                 Write-Host "⚠️ DuckDB native library ($libName) could not be installed automatically." -ForegroundColor Red
                 Write-Host "The assessment requires the DuckDB native library for $os." -ForegroundColor Yellow

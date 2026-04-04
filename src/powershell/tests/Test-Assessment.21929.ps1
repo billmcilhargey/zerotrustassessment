@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks if all entitlement management packages that apply to guests have expirations or access reviews configured in their assignment policies.
 #>
@@ -153,11 +153,5 @@ function Test-Assessment-21929{
     # Replace placeholder in test result markdown
     $testResultMarkdown = $testResultMarkdown -replace "%PolicyDetails%", $mdInfo
 
-    $params = @{
-        TestId = '21929'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

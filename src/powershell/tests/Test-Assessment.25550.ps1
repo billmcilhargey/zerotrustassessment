@@ -198,12 +198,5 @@ resources
 
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25550'
-        Title  = 'Inspection of Outbound TLS Traffic is Enabled on Azure Firewall'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

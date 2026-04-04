@@ -23,4 +23,4 @@ function Clear-ZtModuleVariable {
     $script:__ZtSession.SignInLogDuration = $null
     $script:__ZtSession.PreviewEnabled = $false
     $script:ConnectedService = @()
-}
+    $script:__ZtLicensePlanIds = $null}

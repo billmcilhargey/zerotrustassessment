@@ -1,4 +1,4 @@
-﻿<#
+<#
     .SYNOPSIS
     Checks Service principals have certificates or credentials associated with them
 
@@ -18,7 +18,9 @@ function Test-Assessment-21896 {
     	UserImpact = 'Low'
     )]
     [CmdletBinding()]
-    param()
+    param(
+        $Database
+    )
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
 
@@ -122,20 +124,5 @@ function Test-Assessment-21896 {
     # Replace the placeholder with the detailed information
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    $params = @{
-        TestId             = '21896'
-        Title              = "Service principals don't have certificates or credentials associated with them"
-        UserImpact         = 'Low'
-        Risk               = 'Medium'
-        ImplementationCost = 'Medium'
-        AppliesTo          = 'Identity'
-        Tag                = 'Identity'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-    if (!$passed) {
-        $params.CustomStatus = 'Investigate'
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

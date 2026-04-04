@@ -87,12 +87,5 @@ function Test-Assessment-35038 {
     }
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35038'
-        Title  = 'Insider Risk Management Policies Enabled for Risky AI Usage'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

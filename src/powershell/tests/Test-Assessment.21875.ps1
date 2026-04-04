@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -22,6 +22,7 @@ function Test-Assessment-21875 {
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
     if ((Get-MgContext).Environment -ne 'Global') {
         Write-PSFMessage "This test is only applicable to the Global environment." -Tag Test -Level VeryVerbose
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
         return
     }
 
@@ -93,14 +94,5 @@ function Test-Assessment-21875 {
         }
     }
 
-    $params = @{
-        TestId = '21875'
-        Status = $testPassed
-        Result = $testResultMarkdown
-    }
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $testPassed -Result $testResultMarkdown
 }

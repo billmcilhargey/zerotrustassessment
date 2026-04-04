@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     An app protection policy for iOS devices exists
 #>
@@ -95,12 +95,5 @@ function Test-Assessment-24548 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId             = '24548'
-        Title              = "An app protection policy for iOS devices exists"
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

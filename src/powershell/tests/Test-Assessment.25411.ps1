@@ -180,12 +180,5 @@ function Test-Assessment-25411 {
     #endregion Report Generation
 
 
-    $params = @{
-        TestId = '25411'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    # Add test result details
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

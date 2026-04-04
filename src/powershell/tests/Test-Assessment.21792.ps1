@@ -1,4 +1,4 @@
-﻿
+
 <#
 .SYNOPSIS
 
@@ -26,6 +26,9 @@ function Test-Assessment-21792 {
 
     $guestRestrictedRoleId = "2af84b1e-32c8-42b7-82bc-daa82404023b"
 
+    $activity = "Checking guest user access restrictions"
+    Write-ZtProgress -Activity $activity
+
     $result = Invoke-ZtGraphRequest -RelativeUri "policies/authorizationPolicy"
 
     $passed = $result.guestUserRoleId -eq $guestRestrictedRoleId
@@ -39,8 +42,5 @@ function Test-Assessment-21792 {
 
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    Add-ZtTestResultDetail -TestId '21792' -Title 'Guests have restricted access to directory objects' `
-        -UserImpact Medium -Risk Medium -ImplementationCost Low `
-        -AppliesTo Identity -Tag Application `
-        -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

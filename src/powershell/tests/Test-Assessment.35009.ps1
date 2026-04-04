@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Co-authoring is enabled for encrypted documents
 #>
@@ -78,16 +78,6 @@ function Test-Assessment-35009 {
 
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35009'
-        Title  = 'Co-Authoring Enabled for Encrypted Documents'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 
 }

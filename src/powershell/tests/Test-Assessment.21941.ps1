@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks if token protection policies are configured in Conditional Access.
 #>
@@ -167,12 +167,8 @@ function Test-Assessment-21941{
 
     $testResultMarkdown += $mdInfo
 
-    $params = @{
-        Status             = $passed
-        Result             = $testResultMarkdown
-        GraphObjectType    = 'ConditionalAccess'
-        GraphObjects       = $tokenProtectionPolicies
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed `
+        -Result $testResultMarkdown `
+        -GraphObjectType 'ConditionalAccess' `
+        -GraphObjects $tokenProtectionPolicies
 }

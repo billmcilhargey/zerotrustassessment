@@ -117,6 +117,10 @@ function Add-ZtTestResultDetail {
 	$hasGraphResults = $GraphObjects -and $GraphObjectType
 
 	if ($SkippedBecause) {
+		# Determine if this is a license-related skip and whether the user wants a warning instead
+		$isLicenseSkip = $SkippedBecause -like 'NotLicensed*' -or $SkippedBecause -eq 'NoCompatibleLicenseFound'
+		$unlicensedAction = Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Tests.UnlicensedAction' -Fallback 'Skip'
+
 		if ($SkippedBecause -eq 'NotConnectedToService') {
 			$SkippedReason = (Get-ZtSkippedReason -SkippedBecause $SkippedBecause) -f ($NotConnectedService -join '", "')
 		}
@@ -128,8 +132,18 @@ function Add-ZtTestResultDetail {
 			$SkippedReason = Get-ZtSkippedReason -SkippedBecause $SkippedBecause
 		}
 
-		if (-not $Result) {
-			$Result = "Skipped. $SkippedReason"
+		if ($isLicenseSkip -and $unlicensedAction -eq 'Warn') {
+			# Convert license skip into a failed test with a warning
+			$SkippedBecause = $null
+			$Status = $false
+			if (-not $Result) {
+				$Result = "⚠️ **Not licensed** — $SkippedReason"
+			}
+		}
+		else {
+			if (-not $Result) {
+				$Result = "Skipped. $SkippedReason"
+			}
 		}
 	}
 

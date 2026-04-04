@@ -269,12 +269,5 @@ function Test-Assessment-25416 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25416'
-        Title  = 'Branch office internet traffic is protected by Cloud Firewall policies through Global Secure Access'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

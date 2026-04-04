@@ -355,16 +355,5 @@ No enabled policies with review mailbox configured were found.
 
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35040'
-        Title  = 'Communication compliance monitoring is configured for enterprise AI tools'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    if ($null -ne $customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Test macOS Firewall Policy is created and assigned
 #>
@@ -194,12 +194,5 @@ function Test-Assessment-24552 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '24552'
-        Title  = 'macOS - Firewall policy is created and assigned'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

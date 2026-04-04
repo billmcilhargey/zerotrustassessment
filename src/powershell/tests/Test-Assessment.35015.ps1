@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Globally published sensitivity labels don't exceed the recommended maximum
 
@@ -133,14 +133,5 @@ function Test-Assessment-35015 {
     }
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35015'
-        Title  = 'Global Scope Label Count'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

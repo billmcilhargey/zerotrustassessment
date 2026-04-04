@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -29,8 +29,5 @@ function Test-Assessment-21891{
     $passed = $result
 
 
-    Add-ZtTestResultDetail -TestId '21891' -Title "Require password reset notifications for administrator roles" `
-        -UserImpact Low -Risk High -ImplementationCost Low `
-        -AppliesTo Identity -Tag Identity `
-        -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
 }

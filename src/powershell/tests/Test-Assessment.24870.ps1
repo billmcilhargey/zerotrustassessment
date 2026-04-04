@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Corporate Wi-Fi Network on macOS Devices is Securely Managed
 #>
@@ -94,12 +94,5 @@ function Test-Assessment-24870 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId             = '24870'
-        Title              = "Corporate Wi-Fi Network on macOS Devices is Securely Managed "
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

@@ -22,7 +22,14 @@ function Get-ZtLicense {
     )
 
     process {
-        $skus = Invoke-ZtGraphRequest -RelativeUri "subscribedSkus" | Select-Object -ExpandProperty servicePlans | Where-Object { $_.capabilityStatus -ne 'Deleted' } | Select-Object -ExpandProperty servicePlanId
+        # Use cached service plan IDs if available (populated by preflight or prior call)
+        if ($script:__ZtLicensePlanIds) {
+            $skus = $script:__ZtLicensePlanIds
+        }
+        else {
+            $skus = Invoke-ZtGraphRequest -RelativeUri "subscribedSkus" | Select-Object -ExpandProperty servicePlans | Where-Object { $_.capabilityStatus -ne 'Deleted' } | Select-Object -ExpandProperty servicePlanId
+            $script:__ZtLicensePlanIds = $skus
+        }
         switch ($Product) {
             'EntraIDP1' {
                 return '41781fb2-bc02-4b7c-bd55-b576c07bb09d' -in $skus

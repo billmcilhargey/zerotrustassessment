@@ -7,6 +7,7 @@ Set-PSFConfig -Module ZeroTrustAssessment -Name 'Export.SignInLog.MaxSizeBytes' 
 Set-PSFConfig -Module ZeroTrustAssessment -Name 'ThrottleLimit.Export' -Value 5 -Initialize -Validation integer -Description 'Maximum number of data collectors processed in parallel'
 Set-PSFConfig -Module ZeroTrustAssessment -Name 'ThrottleLimit.Tests' -Value 5 -Initialize -Validation integer -Description 'Maximum number of tests processed in parallel'
 Set-PSFConfig -Module ZeroTrustAssessment -Name 'Tests.Timeout' -Value '1h' -Initialize -Validation timespan -Description 'Maximum time a single test is allowed to run before it is stopped. Defaults to 1 hour. Set to 0 to disable the timeout. Tests that exceed this limit are recorded as timed out and execution continues with the next test.'
+Set-PSFConfig -Module ZeroTrustAssessment -Name 'Tests.UnlicensedAction' -Value 'Skip' -Initialize -Validation string -Description 'What to do when a test requires a license the tenant does not have (e.g. Entra ID P2). Skip = silently skip the test (default). Warn = mark the test as failed with a license warning in the report.'
 
 # ── Connection settings ──────────────────────────────────────────────────────
 Set-PSFConfig -Module ZeroTrustAssessment -Name 'Connection.UseTokenCache' -Value $true -Initialize -Validation bool -Description 'Cache authentication tokens to disk so they persist across PowerShell sessions. Avoids repeated sign-in prompts when re-running the assessment. Set to $false to require fresh authentication each time (tokens scoped to process only).'

@@ -201,16 +201,5 @@ function Test-Assessment-25378 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25378'
-        Title  = 'External collaboration is governed by explicit Cross-Tenant Access Policies'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

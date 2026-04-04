@@ -388,12 +388,5 @@ function Test-Assessment-25420 {
 
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25420'
-        Title  = 'Network access logs are retained for security analysis and compliance requirements'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

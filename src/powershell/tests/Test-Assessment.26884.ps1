@@ -366,12 +366,5 @@ resources
 
     #endregion Report Generation
 
-    $params = @{
-        TestId = '26884'
-        Title  = 'Bot protection ruleset is enabled and assigned in Azure Front Door WAF'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

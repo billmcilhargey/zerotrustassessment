@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -30,7 +30,7 @@ function Test-Assessment-21786 {
     Write-ZtProgress -Activity $activity -Status "Getting policy"
 
     # Query for all CA policies
-    $allCAPolicies = Invoke-ZtGraphRequest -RelativeUri "identity/conditionalAccess/policies" -ApiVersion beta
+    $allCAPolicies = Get-ZtConditionalAccessPolicy
 
     # Local filtering for token protection policies - only consider enabled policies
     $matchedPolicies = $allCAPolicies | Where-Object {
@@ -88,16 +88,5 @@ function Test-Assessment-21786 {
     # Replace the placeholder with the detailed information
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    $params = @{
-        TestId             = '21786'
-        Title              = "User sign-in activity uses token protection"
-        UserImpact         = 'Low'
-        Risk               = 'High'
-        ImplementationCost = 'Low'
-        AppliesTo          = 'Identity'
-        Tag                = 'Identity'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

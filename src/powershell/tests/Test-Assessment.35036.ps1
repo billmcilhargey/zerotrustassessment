@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Trainable classifiers are used in data loss prevention and auto-labeling policies
 
@@ -287,17 +287,5 @@ function Test-Assessment-35036 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35036'
-        Title  = 'Trainable Classifiers Usage in Policies'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    if ($null -ne $customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-
-    # Add test result details
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

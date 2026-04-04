@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Check if Temporary Access Pass is configured for one-time use only
 #>
@@ -20,6 +20,10 @@ function Test-Assessment-21846{
     param()
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = "Checking Temporary access pass restricted to one-time use"
     Write-ZtProgress -Activity $activity -Status "Getting Temporary Access Pass policy"
@@ -60,16 +64,5 @@ function Test-Assessment-21846{
     # Replace the placeholder with the detailed information
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    $params = @{
-        TestId             = '21846'
-        Title              = "Temporary access pass restricted to one-time use"
-        UserImpact         = 'Low'
-        Risk               = 'Low'
-        ImplementationCost = 'Low'
-        AppliesTo          = 'Identity'
-        Tag                = 'Identity'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

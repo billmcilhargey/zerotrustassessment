@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks if policies to restrict access to high risk users are implemented correctly.
 #>
@@ -169,7 +169,7 @@ function Test-Assessment-21797{
                 $conditions += ", Control: Block"
             }
             $portalLink = "https://entra.microsoft.com/#view/Microsoft_AAD_ConditionalAccess/PolicyBlade/policyId/{0}" -f $policy.id
-            $status = if ($policy.state -eq "enabledForReportingButNotEnforced") { "Report-only" } else { "Disabled" }
+            $status = Get-ZtCaPolicyState -State $policy.state
             $mdInfo += "| [$(Get-SafeMarkdown($policy.displayName))]($portalLink) | $status | $conditions |`n"
         }
     } elseif ($allEnabledHighRiskPolicies.Count -eq 0) {
@@ -182,8 +182,5 @@ function Test-Assessment-21797{
 
     $passed = $result
 
-    Add-ZtTestResultDetail -TestId '21797' -Title "Restrict access to high risk users" `
-        -UserImpact High -Risk High -ImplementationCost Medium `
-        -AppliesTo Identity -Tag Identity `
-        -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

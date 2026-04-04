@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Test to check if App Instance Property Lock is configured for all multitenant applications.
 #>
@@ -109,17 +109,5 @@ function Test-Assessment-21777 {
     # Replace the placeholder with the detailed information
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    $params = @{
-        TestId             = '21777'
-        Title              = "App Instance Property Lock is configured for all multitenant applications"
-        UserImpact         = 'Low'
-        Risk               = 'High'
-        ImplementationCost = 'Low'
-        AppliesTo          = 'Identity'
-        Tag                = 'Identity'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Intune Windows Update policy is configured and assigned
 #>
@@ -103,11 +103,5 @@ function Test-Assessment-24553 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId             = '24553'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks if Passkey (FIDO2) authentication method is enabled and configured for users in the tenant.
 #>
@@ -86,11 +86,5 @@ function Test-Assessment-21839 {
         $testResultMarkdown = "Passkey authentication method is not enabled or not configured for any users in your tenant.$mdInfo"
     }
 
-    $params = @{
-        TestId = '21839'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

@@ -169,16 +169,5 @@ function Test-Assessment-35028 {
     $testResultMarkdown = $testResultMarkdown.Replace('%TestResult%', $mdInfo)
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35028'
-        Title  = 'Email retention policies are configured'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    if ($null -ne $customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

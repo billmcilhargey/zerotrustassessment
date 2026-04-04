@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks if emergency access accounts are configured appropriately
 
@@ -323,7 +323,5 @@ WHERE vr.roleDefinitionId = '62e90394-69f5-4237-9190-012177145e10'
 
     #endregion
 
-    Add-ZtTestResultDetail -TestId '21835' `
-        -Status $passed `
-        -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

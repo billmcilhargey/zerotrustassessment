@@ -111,13 +111,5 @@ function Test-Assessment-35030 {
     $testResultMarkdown += "[View DLP Policies in Microsoft Purview Portal](https://purview.microsoft.com/datalossprevention/policies)`n"
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35030'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    if ($investigateFlag -eq $true) {
-        $params.CustomStatus = 'Investigate'
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

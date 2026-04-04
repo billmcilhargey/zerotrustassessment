@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks that legacy auth is blocked.
 #>
@@ -28,7 +28,7 @@ function Test-Assessment-21796 {
     $activity = "Checking blocking of legacy authentication"
     Write-ZtProgress -Activity $activity -Status "Getting CA policies"
 
-    $caps = Invoke-ZtGraphRequest -RelativeUri 'identity/conditionalAccess/policies' -ApiVersion beta
+    $caps = Get-ZtConditionalAccessPolicy
 
     $blockPolicies = $caps | Where-Object {`
             $_.grantControls.builtInControls -contains "block" -and `
@@ -53,8 +53,8 @@ function Test-Assessment-21796 {
         $testResultMarkdown = "No conditional access to block legacy authentication were found."
     }
 
-    Add-ZtTestResultDetail -TestId '21796' -Title 'Block legacy authentication policies are configured' `
-        -UserImpact Medium -Risk Medium -ImplementationCost Low `
-        -AppliesTo Identity -Tag User, Credential `
-        -Status $passed -Result $testResultMarkdown -GraphObjectType ConditionalAccess -GraphObjects $blockPolicies
+    Add-ZtTestResultDetail -Status $passed `
+        -Result $testResultMarkdown `
+        -GraphObjectType ConditionalAccess `
+        -GraphObjects $blockPolicies
 }

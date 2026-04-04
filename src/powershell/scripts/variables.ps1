@@ -36,6 +36,9 @@ $script:ConnectedService = @()
 # Tracks detected license SKUs for the tenant. Set during Connect-ZtAssessment.
 [string[]] $script:CurrentLicense = @()
 
+# Cached service plan IDs for license checks. Populated on first call to Get-ZtLicense/Get-ZtLicenseInformation.
+$script:__ZtLicensePlanIds = $null
+
 # DuckDB native library version — authoritative value lives in PSFConfig 'DuckDB.Version'.
 # This variable is a convenience alias read from config at module load time.
 $script:DuckDbVersion = Get-PSFConfigValue -FullName 'ZeroTrustAssessment.DuckDB.Version' -Fallback 'v1.1.1'

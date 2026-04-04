@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Sensitivity labels are enabled in SharePoint Online
 
@@ -84,11 +84,5 @@ function Test-Assessment-35005 {
     }
     #endregion Report Generation
 
-    $params = @{
-        TestId             = '35005'
-        Title              = 'Sensitivity Labels Enabled in SharePoint Online'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

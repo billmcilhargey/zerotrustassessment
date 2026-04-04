@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Guest access is limited to approved tenants
 #>
@@ -74,6 +74,5 @@ function Test-Assessment-21822 {
 
 
 
-    Add-ZtTestResultDetail -TestId '21822' -Title "Guest access is limited to approved tenants" `
-        -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

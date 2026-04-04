@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks that activation alerts are configured for all privileged role assignments.
 #>
@@ -47,7 +47,16 @@ function Test-Assessment-21820 {
     Write-ZtProgress -Activity $activity -Status 'Getting PIM policy assignments'
 
     $filter = "scopeId eq '/' and scopeType eq 'DirectoryRole'"
-    $allPolicyAssignments = Invoke-ZtGraphRequest -RelativeUri 'policies/roleManagementPolicyAssignments' -Filter $filter -ApiVersion beta
+    try {
+        $allPolicyAssignments = Invoke-ZtGraphRequest -RelativeUri 'policies/roleManagementPolicyAssignments' -Filter $filter -ApiVersion beta
+    }
+    catch {
+        if ($_ -match 'AadPremiumLicenseRequired|BadRequest') {
+            Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP2
+            return
+        }
+        throw
+    }
 
     # Build hashtable mapping roleDefinitionId -> policyId for quick lookup
     $policyIdByRoleId = @{}
@@ -165,11 +174,5 @@ function Test-Assessment-21820 {
     $testResultMarkdown += $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '21820'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

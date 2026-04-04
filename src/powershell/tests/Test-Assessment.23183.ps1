@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checking App registrations must not have reply URLs containing *.azurewebsites.net
 #>
@@ -21,6 +21,10 @@ function Test-Assessment-23183 {
 
     # NOTE: This test is very similar to
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = "Checking service principals use safe redirect URIs "
     Write-ZtProgress -Activity $activity -Status "Getting policy"
@@ -31,8 +35,5 @@ function Test-Assessment-23183 {
     $passed = $results.Passed
     $testResultMarkdown = $results.TestResultMarkdown
 
-    Add-ZtTestResultDetail -TestId '23183' -Title "Service principals use safe redirect URIs" `
-        -UserImpact Low -Risk High -ImplementationCost High `
-        -AppliesTo Identity -Tag Identity `
-        -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

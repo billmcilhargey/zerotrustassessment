@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks that admins are enforced for phishing resistant authentication.
 #>
@@ -33,7 +33,7 @@ function Test-Assessment-21783 {
     # -Include a pass / partial / fail next to each CA policy to show which ones have phish resistant for roles.
 
     $roles = Get-ZtRole
-    $caps = Invoke-ZtGraphRequest -RelativeUri 'identity/conditionalAccess/policies' -ApiVersion beta
+    $caps = Get-ZtConditionalAccessPolicy
     $asp = Invoke-ZtGraphRequest -RelativeUri 'policies/authenticationStrengthPolicies' -ApiVersion beta
 
     # Get all privileged built-in roles only (CA policies cannot target custom roles)
@@ -96,11 +96,11 @@ function Test-Assessment-21783 {
     $mdInfo += "| Role name | Phishing resistance enforced |`n"
     $mdInfo += "| :--- | :---: |`n"
     foreach ($role in $protectedRoles | Sort-Object displayName) {
-        $mdInfo += "| $($role.displayName) | ✅ |`n"
+        $mdInfo += "| $(Get-SafeMarkdown $role.displayName) | ✅ |`n"
     }
 
     foreach ($role in $unprotectedRoles | Sort-Object displayName) {
-        $mdInfo += "| $($role.displayName) | ❌ |`n"
+        $mdInfo += "| $(Get-SafeMarkdown $role.displayName) | ❌ |`n"
     }
 
 
@@ -112,10 +112,5 @@ function Test-Assessment-21783 {
 
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-$params = @{
-        TestId             = '21783'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

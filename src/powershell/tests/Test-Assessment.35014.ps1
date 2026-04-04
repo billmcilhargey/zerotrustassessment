@@ -150,7 +150,7 @@ function Test-Assessment-35014 {
         # Sort by priority (lower number = higher priority)
         $sortedLabels = $dualScopedLabels | Sort-Object -Property Priority
         foreach ($label in $sortedLabels) {
-            $labelTableRows += "| $($label.DisplayName) | $($label.ContentType) | $($label.Priority) |`n"
+            $labelTableRows += "| $(Get-SafeMarkdown $label.DisplayName) | $($label.ContentType) | $($label.Priority) |`n"
         }
     }
 
@@ -223,18 +223,5 @@ $errorTableRows
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35014'
-        Title  = 'Email label inheritance from attachments configured'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    # Add CustomStatus if status is 'Investigate'
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-
-    # Add test result details
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

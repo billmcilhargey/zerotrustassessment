@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -22,6 +22,10 @@ function Test-Assessment-21811 {
     )
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = "Checking Password expiration is disabled"
     Write-ZtProgress -Activity $activity -Status "Getting policy"
@@ -122,16 +126,5 @@ FROM User
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", ($mdInfo1 + $mdInfo2)
 
 
-    $params = @{
-        TestId             = '21811'
-        Title              = 'Password expiration is disabled'
-        UserImpact         = 'Low'
-        Risk               = 'Medium'
-        ImplementationCost = 'Low'
-        AppliesTo          = 'Identity'
-        Tag                = 'Identity'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

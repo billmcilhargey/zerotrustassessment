@@ -1,4 +1,4 @@
-﻿
+
 <#
 .SYNOPSIS
 
@@ -28,8 +28,5 @@ function Test-Assessment-21851 {
     $testResultMarkdown = "Planned for future release."
     $passed = $result
 
-    Add-ZtTestResultDetail -TestId '21851' -Title 'All guests user strong authentication methods' `
-        -UserImpact Medium -Risk Medium -ImplementationCost Medium `
-        -AppliesTo Identity -Tag Application `
-        -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
 }

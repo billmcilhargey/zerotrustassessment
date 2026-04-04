@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     TLS inspection failure rate remains below 1% to ensure consistent traffic visibility.
 .DESCRIPTION
@@ -351,12 +351,5 @@ $trendRows
 
     #endregion Report Generation
 
-    $params = @{
-        TestId = '27003'
-        Title  = 'TLS inspection failure rate remains below 1% to ensure consistent traffic visibility'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

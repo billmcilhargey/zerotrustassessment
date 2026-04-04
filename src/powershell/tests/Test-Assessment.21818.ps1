@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -26,9 +26,8 @@ function Test-Assessment-21818 {
     $activity = "Checking Activation alert for highly privileged role assignments"
     Write-ZtProgress -Activity $activity -Status "Getting PIM policy assignments for highly privileged roles"
 
-    $EntraIDPlan = Get-ZtLicenseInformation -Product EntraID
-    if ($EntraIDPlan -eq "Free" -or $EntraIDPlan -eq "P1") {
-        Write-PSFMessage '🟦 Skipping test: Requires P2 or Governance plan' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP2) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP2
         return
     }
 
@@ -183,16 +182,5 @@ ORDER BY rd.displayName;
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
 
-    $params = @{
-        TestId             = '21818'
-        Title              = "Activation alert for highly privileged role assignments"
-        UserImpact         = 'Low'
-        Risk               = 'High'
-        ImplementationCost = 'Low'
-        AppliesTo          = 'Identity'
-        Tag                = 'Identity'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

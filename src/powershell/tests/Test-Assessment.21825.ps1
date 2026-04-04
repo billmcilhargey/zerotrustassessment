@@ -41,11 +41,6 @@ function Test-Assessment-21825 {
         return
     }
 
-    if ( -not (Get-ZtLicense EntraIDP1) ) {
-        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
-        return
-    }
-
     $activity = 'Checking Privileged user sessions don''t have long lived sign-in sessions'
     Write-ZtProgress -Activity $activity -Status 'Getting privileged role definitions'
 
@@ -66,7 +61,7 @@ function Test-Assessment-21825 {
     Write-ZtProgress -Activity $activity -Status 'Getting Conditional Access policies'
 
     # Query 2 (Q2): Get enabled CA policies targeting directory roles
-    $caPolicies = Invoke-ZtGraphRequest -RelativeUri 'identity/conditionalAccess/policies' -ApiVersion beta
+    $caPolicies = Get-ZtConditionalAccessPolicy
 
     # Filter to enabled policies that include roles
     $roleScopedPolicies = @($caPolicies | Where-Object {
@@ -106,7 +101,7 @@ function Test-Assessment-21825 {
     $allRolesCovered = $true
 
     foreach ($role in $privilegedRoles) {
-        $testResultMarkdown += "#### $($role.displayName)`n`n"
+        $testResultMarkdown += "#### $(Get-SafeMarkdown $role.displayName)`n`n"
 
         # Get CA policies assigned to this role
         $assignedPolicies = Get-AssignedCAPoliciesForRole -RoleId $role.id -CAPolicies $caPolicies
@@ -154,7 +149,7 @@ function Test-Assessment-21825 {
                 }
 
                 $policyLink = "https://entra.microsoft.com/#view/Microsoft_AAD_ConditionalAccess/PolicyBlade/policyId/$($policy.id)"
-                $testResultMarkdown += "| [$($policy.displayName)]($policyLink) | $freqValue | $isCompliant |`n"
+                $testResultMarkdown += "| [$(Get-SafeMarkdown $policy.displayName)]($policyLink) | $freqValue | $isCompliant |`n"
             }
             $testResultMarkdown += "`n"
         }

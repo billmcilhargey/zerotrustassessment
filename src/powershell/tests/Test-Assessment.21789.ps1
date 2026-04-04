@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -29,8 +29,5 @@ function Test-Assessment-21789{
     $passed = $result
 
 
-    Add-ZtTestResultDetail -TestId '21789' -Title "Tenant creation events are triaged" `
-        -UserImpact Low -Risk Medium -ImplementationCost Low `
-        -AppliesTo Identity -Tag Identity `
-        -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
 }

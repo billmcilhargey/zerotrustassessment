@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -23,6 +23,9 @@ function Test-Assessment-21772 {
     )
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+
+    $activity = "Checking applications for client secrets"
+    Write-ZtProgress -Activity $activity
 
     $sqlApp = @"
 select distinct ON (id) appId, displayName, signInAudience,
@@ -75,17 +78,5 @@ order by displayName, keyEndDateTime DESC
 
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    $params = @{
-        TestId             = '21772'
-        Title              = 'Applications don''t have secrets configured'
-        UserImpact         = 'Medium'
-        Risk               = 'High'
-        ImplementationCost = 'Medium'
-        AppliesTo          = 'Identity'
-        Tag                = 'Application'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

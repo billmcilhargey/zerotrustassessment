@@ -146,14 +146,5 @@ function Test-Assessment-35025 {
     }
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35025'
-        Title  = 'Internal RMS Licensing Enabled'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

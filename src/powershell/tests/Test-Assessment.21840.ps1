@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks if security key attestation is enforced in the FIDO2 authentication method policy.
 #>
@@ -69,11 +69,5 @@ function Test-Assessment-21840{
         $testResultMarkdown = "Security key attestation is not enforced, allowing unverified or potentially compromised security keys to be registered.$mdInfo"
     }
 
-    $params = @{
-        TestId             = '21840'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

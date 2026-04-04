@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Validates that custom TLS inspection bypass rules do not duplicate system bypass destinations.
 
@@ -382,14 +382,5 @@ function Test-Assessment-27004 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '27004'
-        Title  = 'TLS inspection custom bypass rules do not duplicate system bypass destinations'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

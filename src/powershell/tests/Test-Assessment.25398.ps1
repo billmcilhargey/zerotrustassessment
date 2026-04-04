@@ -447,14 +447,5 @@ $policyRows
 
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25398'
-        Title  = 'Domain controller RDP access is protected by phishing-resistant authentication through Global Secure Access'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

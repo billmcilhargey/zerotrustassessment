@@ -540,7 +540,7 @@ function Connect-ZtAssessment {
 				Write-Verbose -Message ("Connecting to Azure with parameters: {0}" -f ($azParams | Out-String))
 				if ($azParams.ContainsKey('UseDeviceAuthentication') -and $azParams.UseDeviceAuthentication) {
 					Write-Host -Object '   Requesting device code (watch for the sign-in prompt below)...' -ForegroundColor DarkGray
-					Connect-AzAccount @azParams -ErrorAction Stop
+					$null = Connect-AzAccount @azParams -ErrorAction Stop
 				}
 				elseif ($ManagedIdentity -or $ClientSecret -or $CertificateThumbprint -or $Certificate) {
 					Write-Host -Object '   Authenticating (app-only)...' -ForegroundColor DarkGray

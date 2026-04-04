@@ -143,13 +143,36 @@ function Start-ZtAssessment {
 		}
 	}
 
+	function Get-ZtaServiceSummary {
+		# Expand configured services and determine platform availability
+		$configured = if ($Service -contains 'All') {
+			@('Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePointOnline')
+		} else { @($Service) }
+		$windowsOnly = @('AipService', 'SharePointOnline')
+		$available = @($configured | Where-Object { $IsWindows -or $_ -notin $windowsOnly })
+		$unavailable = @($configured | Where-Object { -not $IsWindows -and $_ -in $windowsOnly })
+		[PSCustomObject]@{
+			Configured  = $configured
+			Available   = $available
+			Unavailable = $unavailable
+		}
+	}
+
 	function Step-ZtaStatus {
 		Write-Host "`n── Connection Status ──`n" -ForegroundColor Yellow
 		$conn = Get-ZtConnectionState
+		$svcSummary = Get-ZtaServiceSummary
+		$tokenCache = Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Connection.UseTokenCache' -Fallback $true
 		if ($conn.IsConnected) {
 			Write-Host "  Account   : $($conn.Account)" -ForegroundColor Gray
 			Write-Host "  Tenant    : $($conn.Tenant)" -ForegroundColor Gray
-			Write-Host "  Services  : $($conn.Services -join ', ')" -ForegroundColor Gray
+			Write-Host "  Connected : $($conn.Services -join ', ')" -ForegroundColor Gray
+			Write-Host "  Available : $($svcSummary.Available -join ', ')" -ForegroundColor Gray
+			if ($svcSummary.Unavailable.Count -gt 0) {
+				Write-Host "  Unavailable: $($svcSummary.Unavailable -join ', ') (Windows only)" -ForegroundColor DarkGray
+			}
+			Write-Host "  TokenCache: $(if ($tokenCache) { 'Enabled' } else { 'Disabled' })" -ForegroundColor Gray
+			Write-Host "  Unlicensed: $((Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Tests.UnlicensedAction' -Fallback 'Skip')) (Skip = hide, Warn = show as failed)" -ForegroundColor Gray
 			if ($conn.ScopesValid) {
 				Write-Host '  Scopes    : All required scopes present' -ForegroundColor Green
 			}
@@ -159,6 +182,12 @@ function Start-ZtAssessment {
 		}
 		else {
 			Write-Host '  Not connected to Microsoft Graph.' -ForegroundColor Yellow
+			Write-Host "  Available : $($svcSummary.Available -join ', ')" -ForegroundColor Gray
+			if ($svcSummary.Unavailable.Count -gt 0) {
+				Write-Host "  Unavailable: $($svcSummary.Unavailable -join ', ') (Windows only)" -ForegroundColor DarkGray
+			}
+			Write-Host "  TokenCache: $(if ($tokenCache) { 'Enabled' } else { 'Disabled' })" -ForegroundColor Gray
+			Write-Host "  Unlicensed: $((Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Tests.UnlicensedAction' -Fallback 'Skip')) (Skip = hide, Warn = show as failed)" -ForegroundColor Gray
 		}
 	}
 
@@ -298,6 +327,16 @@ function Start-ZtAssessment {
 		}
 	}
 
+	function Step-ZtaViewReport {
+		$htmlReportPath = Join-Path -Path $Path -ChildPath 'ZeroTrustAssessmentReport.html'
+		if (-not (Test-Path $htmlReportPath)) {
+			Write-Host '  No report found.' -ForegroundColor Yellow
+			return
+		}
+		Write-Host "`n── Opening Report ──`n" -ForegroundColor Cyan
+		Open-ZtReport -Path $htmlReportPath
+	}
+
 	# ── Menu ─────────────────────────────────────────────────────────────────
 
 	function Show-ZtaMenu {
@@ -308,15 +347,38 @@ function Start-ZtAssessment {
 
 		if ($conn.IsConnected) {
 			Write-Host "  Connected: $($conn.Account) | Tenant: $($conn.Tenant)" -ForegroundColor Green
-			Write-Host "  Services : $($conn.Services -join ', ')" -ForegroundColor Gray
+			$svcSummary = Get-ZtaServiceSummary
+			$tokenCache = Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Connection.UseTokenCache' -Fallback $true
+			$svcLine = $conn.Services -join ', '
+			if ($svcSummary.Unavailable.Count -gt 0) {
+				$svcLine += "  (unavailable: $($svcSummary.Unavailable -join ', '))"
+			}
+			Write-Host "  Services : $svcLine  |  TokenCache: $(if ($tokenCache) { 'On' } else { 'Off' })  |  Unlicensed: $((Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Tests.UnlicensedAction' -Fallback 'Skip'))" -ForegroundColor Gray
 		}
 		else {
-			Write-Host '  Not connected' -ForegroundColor DarkGray
+			$svcSummary = Get-ZtaServiceSummary
+			$tokenCache = Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Connection.UseTokenCache' -Fallback $true
+			$svcLine = "Not connected  |  Available: $($svcSummary.Available -join ', ')"
+			if ($svcSummary.Unavailable.Count -gt 0) {
+				$svcLine += "  (unavailable: $($svcSummary.Unavailable -join ', '))"
+			}
+			Write-Host "  $svcLine  |  TokenCache: $(if ($tokenCache) { 'On' } else { 'Off' })  |  Unlicensed: $((Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Tests.UnlicensedAction' -Fallback 'Skip'))" -ForegroundColor DarkGray
 		}
 		Write-Host ''
 
+		$hasReport = Test-Path (Join-Path $Path 'ZeroTrustAssessmentReport.html')
+
 		if (-not $conn.IsConnected) {
 			Write-Host '  [1]  Connect to tenant' -ForegroundColor White
+			Write-Host '  [2]  List available tests' -ForegroundColor White
+			Write-Host ''
+			Write-Host '  ── Report ──' -ForegroundColor DarkCyan
+			if ($hasReport) {
+				Write-Host '  [V]  View last assessment report' -ForegroundColor White
+			}
+			else {
+				Write-Host '  [V]  View last assessment report' -ForegroundColor DarkGray
+			}
 		}
 		else {
 			Write-Host '  ── Assessment ──' -ForegroundColor DarkCyan
@@ -324,7 +386,20 @@ function Start-ZtAssessment {
 			Write-Host '  [3]  Run FULL assessment (all pillars)' -ForegroundColor White
 			Write-Host '  [4]  Run a specific PILLAR' -ForegroundColor White
 			Write-Host '  [5]  Run specific TEST(s) by ID' -ForegroundColor White
-			Write-Host '  [6]  Resume previous assessment' -ForegroundColor White
+			if (Test-ZtResumeAvailable -Path $Path) {
+				Write-Host '  [6]  Resume previous assessment' -ForegroundColor White
+			}
+			else {
+				Write-Host '  [6]  Resume previous assessment' -ForegroundColor DarkGray
+			}
+			Write-Host ''
+			Write-Host '  ── Report ──' -ForegroundColor DarkCyan
+			if ($hasReport) {
+				Write-Host '  [V]  View last assessment report' -ForegroundColor White
+			}
+			else {
+				Write-Host '  [V]  View last assessment report' -ForegroundColor DarkGray
+			}
 			Write-Host ''
 			Write-Host '  ── Manage ──' -ForegroundColor DarkCyan
 			Write-Host '  [S]  Connection status & permissions' -ForegroundColor White
@@ -342,8 +417,7 @@ function Start-ZtAssessment {
 			switch ($choice.Trim().ToUpper()) {
 				'1' { Step-ZtaConnect; Step-ZtaStatus }
 				'2' {
-					if ((Get-ZtConnectionState).IsConnected) { $Pillar = $null; Step-ZtaListTests }
-					else { Write-Host '  Connect first with [1].' -ForegroundColor Yellow }
+					$Pillar = $null; Step-ZtaListTests
 				}
 				'3' {
 					if ((Get-ZtConnectionState).IsConnected) { Step-ZtaRunAssessment }
@@ -367,9 +441,13 @@ function Start-ZtAssessment {
 					else { Write-Host '  Connect first with [1].' -ForegroundColor Yellow }
 				}
 				'6' {
-					if ((Get-ZtConnectionState).IsConnected) { Step-ZtaRunAssessment -Resume }
+					if (-not (Test-ZtResumeAvailable -Path $Path)) {
+						Write-Host '  No resumable assessment found.' -ForegroundColor Yellow
+					}
+					elseif ((Get-ZtConnectionState).IsConnected) { Step-ZtaRunAssessment -Resume }
 					else { Write-Host '  Connect first with [1].' -ForegroundColor Yellow }
 				}
+				'V' { Step-ZtaViewReport }
 				'S' {
 					if ((Get-ZtConnectionState).IsConnected) { Step-ZtaStatus }
 					else { Write-Host '  Connect first with [1].' -ForegroundColor Yellow }

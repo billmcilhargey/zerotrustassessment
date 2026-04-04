@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -20,6 +20,10 @@ function Test-Assessment-21793 {
     param()
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = "Checking Tenant restrictions v2 are configured"
     Write-ZtProgress -Activity $activity -Status "Getting policy"
@@ -27,6 +31,7 @@ function Test-Assessment-21793 {
     if((Get-MgContext).Environment -ne 'Global')
     {
         Write-PSFMessage "This test is only applicable to the Global environment." -Tag Test -Level VeryVerbose
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
         return
     }
 
@@ -110,16 +115,5 @@ $mdInfo = $formatTemplate -f $reportTitle, $tableRows
 # Replace the placeholder with the detailed information
 $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-$params = @{
-    TestId             = '21793'
-    Title              = "Tenant restrictions v2 are configured"
-    UserImpact         = 'Low'
-    Risk               = 'High'
-    ImplementationCost = 'Medium'
-    AppliesTo          = 'Identity'
-    Tag                = 'Identity'
-    Status             = $passed
-    Result             = $testResultMarkdown
-}
-Add-ZtTestResultDetail @params
+Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

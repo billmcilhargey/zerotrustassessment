@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -20,6 +20,10 @@ function Test-Assessment-21803 {
     param()
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = 'Checking Migrate from legacy MFA and SSPR policies'
     Write-ZtProgress -Activity $activity -Status 'Getting policy'
@@ -27,6 +31,7 @@ function Test-Assessment-21803 {
     $result = Invoke-ZtGraphRequest -RelativeUri 'policies/authenticationMethodsPolicy' -ApiVersion beta
     if ($null -eq $result) {
         Write-ZtProgress -Activity $activity -Status 'Failed to retrieve policy'
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
         return
     }
 
@@ -45,11 +50,5 @@ function Test-Assessment-21803 {
         $testResultMarkdown = "Combined registration is not enabled.`n`n"
     }
 
-    $params = @{
-        TestId             = 21803
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

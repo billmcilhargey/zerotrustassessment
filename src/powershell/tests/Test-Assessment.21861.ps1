@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks if there are any untriaged high-risk users in Identity Protection.
 #>
@@ -24,15 +24,23 @@ function Test-Assessment-21861 {
     $activity = "Checking All risky users are triaged"
     Write-ZtProgress -Activity $activity -Status "Getting risky users"
 
-    $EntraIDPlan = Get-ZtLicenseInformation -Product EntraID
-    if ($EntraIDPlan -eq "Free" -or $EntraIDPlan -eq "P1") {
-        Write-PSFMessage '🟦 Skipping test: Requires P2 or Governance plan' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP2) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP2
         return
     }
 
     # Query 1: Get untriaged risky users with high risk level
     $riskyUsersQuery = "identityProtection/riskyUsers"
-    $riskyUsers = Invoke-ZtGraphRequest -RelativeUri $riskyUsersQuery -ApiVersion 'v1.0' -Filter "riskState eq 'atRisk' and riskLevel eq 'High'"
+    try {
+        $riskyUsers = Invoke-ZtGraphRequest -RelativeUri $riskyUsersQuery -ApiVersion 'v1.0' -Filter "riskState eq 'atRisk' and riskLevel eq 'High'"
+    }
+    catch {
+        if ($_ -match 'AadPremiumLicenseRequired|Forbidden') {
+            Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP2
+            return
+        }
+        throw
+    }
 
     # Determine pass/fail - pass if no untriaged risky users found
     $result = ($riskyUsers.Count -eq 0)
@@ -65,8 +73,5 @@ function Test-Assessment-21861 {
     # Replace the placeholder with the detailed information
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    Add-ZtTestResultDetail -TestId '21861' -Title "All risky users are triaged" `
-        -UserImpact Low -Risk High -ImplementationCost High `
-        -AppliesTo Identity -Tag Identity `
-        -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

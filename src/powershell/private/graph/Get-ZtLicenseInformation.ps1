@@ -21,7 +21,14 @@ function Get-ZtLicenseInformation {
     )
 
     process {
-        $skus = Invoke-ZtGraphRequest -RelativeUri "subscribedSkus" | Select-Object -ExpandProperty servicePlans | Where-Object { $_.capabilityStatus -ne 'Deleted' } | Select-Object -ExpandProperty servicePlanId
+        # Use cached service plan IDs if available (populated by preflight or prior call)
+        if ($script:__ZtLicensePlanIds) {
+            $skus = $script:__ZtLicensePlanIds
+        }
+        else {
+            $skus = Invoke-ZtGraphRequest -RelativeUri "subscribedSkus" | Select-Object -ExpandProperty servicePlans | Where-Object { $_.capabilityStatus -ne 'Deleted' } | Select-Object -ExpandProperty servicePlanId
+            $script:__ZtLicensePlanIds = $skus
+        }
         switch ($Product) {
             "EntraID" {
                 Write-PSFMessage "Retrieving license information for Entra ID" -Level Debug -Tag License

@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     All Microsoft Entra privileged role assignments are managed with PIM
 #>
@@ -29,7 +29,7 @@ function Test-Assessment-21816 {
     $activity = 'Checking Microsoft Entra privileged role assignments are managed with PIM'
     Write-ZtProgress -Activity $activity
 
-    $globalAdminRoleId = '62e90394-69f5-4237-9190-012177145e10'
+    $globalAdminRoleId = Get-ZtRoleInfo -RoleName 'GlobalAdministrator'
     $permanentGAUserList = @()
     $permanentGAGroupList = @()
     $nonPIMPrivilegedUsers = @()
@@ -42,7 +42,16 @@ function Test-Assessment-21816 {
 
     # Query 2: Check for eligible Global Administrators (PIM usage confirmation)
     Write-ZtProgress -Activity $activity -Status 'Checking eligible Global Administrators'
-    $eligibleGAs = Invoke-ZtGraphRequest -RelativeUri 'roleManagement/directory/roleEligibilitySchedules' -Filter "roleDefinitionId eq '$globalAdminRoleId'" -ApiVersion beta
+    try {
+        $eligibleGAs = Invoke-ZtGraphRequest -RelativeUri 'roleManagement/directory/roleEligibilitySchedules' -Filter "roleDefinitionId eq '$globalAdminRoleId'" -ApiVersion beta
+    }
+    catch {
+        if ($_ -match 'AadPremiumLicenseRequired|BadRequest') {
+            Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP2
+            return
+        }
+        throw
+    }
     Write-PSFMessage "Found $($eligibleGAs.Count) eligible GA assignments" -Level Verbose
 
     $eligibleGAUsers = 0
@@ -60,27 +69,39 @@ function Test-Assessment-21816 {
     }
 
     # Process each privileged role (excluding Global Administrator for now)
+    # Fetch PIM assignments per role in bulk (one call per role instead of per member)
     Write-ZtProgress -Activity $activity -Status 'Checking privileged role assignments'
     foreach ($role in $privilegedRoles) {
         if ($role.templateId -eq $globalAdminRoleId) { continue } # Skip GA, handle separately
 
         Write-PSFMessage "Processing role: $($role.displayName)" -Level Verbose
-        # Find directory role instance
         $directoryRole = Invoke-ZtGraphRequest -RelativeUri 'directoryRoles' -Filter "roleTemplateId eq '$($role.templateId)'" -ApiVersion beta
 
         if ($directoryRole) {
             Write-PSFMessage "Found directory role instance for $($role.displayName)" -Level Verbose
-            # Get members of this role
             $roleMembers = Invoke-ZtGraphRequest -RelativeUri "directoryRoles/$($directoryRole.id)/members" -Select 'userPrincipalName,displayName,id' -ApiVersion beta
             Write-PSFMessage "Found $($roleMembers.Count) members in role $($role.displayName)" -Level Verbose
 
+            # Bulk fetch all PIM assignments for this role (one API call instead of N)
+            try {
+                $rolePimAssignments = Invoke-ZtGraphRequest -RelativeUri 'roleManagement/directory/roleAssignmentScheduleInstances' -Filter "roleDefinitionId eq '$($role.templateId)'" -ApiVersion beta
+            } catch {
+                if ($_ -match 'AadPremiumLicenseRequired|BadRequest|Forbidden') {
+                    Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP2
+                    return
+                }
+                throw
+            }
+            $pimLookup = @{}
+            foreach ($pa in $rolePimAssignments) {
+                $pimLookup[$pa.principalId] = $pa
+            }
+
             foreach ($member in $roleMembers) {
-                # Check if assignment is managed by PIM
-                $pimAssignment = Invoke-ZtGraphRequest -RelativeUri 'roleManagement/directory/roleAssignmentScheduleInstances' -Filter "principalId eq '$($member.id)' and roleDefinitionId eq '$($role.templateId)'" -ApiVersion beta
-                Write-PSFMessage "PIM assignment check for $($member.displayName): Found=$($pimAssignment.Count) results" -Level Verbose
+                $pimAssignment = $pimLookup[$member.id]
+                Write-PSFMessage "PIM assignment check for $($member.displayName): Found=$($null -ne $pimAssignment)" -Level Verbose
 
                 if (-not $pimAssignment -or ($pimAssignment.assignmentType -eq 'Assigned' -and $null -eq $pimAssignment.endDateTime)) {
-                    # Not managed by PIM or permanent assignment
                     $memberInfo = [PSCustomObject]@{
                         displayName = $member.displayName
                         userPrincipalName = $member.userPrincipalName
@@ -109,12 +130,25 @@ function Test-Assessment-21816 {
     if ($gaDirectoryRole) {
         $gaMembers = Invoke-ZtGraphRequest -RelativeUri "directoryRoles/$($gaDirectoryRole.id)/members" -Select 'userPrincipalName,displayName,id' -ApiVersion beta
 
+        # Bulk fetch all PIM assignments for Global Administrator role
+        try {
+            $gaPimAssignments = Invoke-ZtGraphRequest -RelativeUri 'roleManagement/directory/roleAssignmentScheduleInstances' -Filter "roleDefinitionId eq '$globalAdminRoleId'" -ApiVersion beta
+        } catch {
+            if ($_ -match 'AadPremiumLicenseRequired|BadRequest|Forbidden') {
+                Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP2
+                return
+            }
+            throw
+        }
+        $gaPimLookup = @{}
+        foreach ($pa in $gaPimAssignments) {
+            $gaPimLookup[$pa.principalId] = $pa
+        }
+
         foreach ($member in $gaMembers) {
-            # Check if GA assignment is managed by PIM
-            $pimAssignment = Invoke-ZtGraphRequest -RelativeUri 'roleManagement/directory/roleAssignmentScheduleInstances' -Filter "principalId eq '$($member.id)' and roleDefinitionId eq '$globalAdminRoleId'" -ApiVersion beta
+            $pimAssignment = $gaPimLookup[$member.id]
 
             if (-not $pimAssignment -or ($pimAssignment.assignmentType -eq 'Assigned' -and $null -eq $pimAssignment.endDateTime)) {
-                # Permanent GA assignment found
                 $memberInfo = [PSCustomObject]@{
                     displayName = $member.displayName
                     userPrincipalName = $member.userPrincipalName
@@ -130,10 +164,8 @@ function Test-Assessment-21816 {
                     $permanentGAUserList += $memberInfo
                 } elseif ($member.'@odata.type' -eq '#microsoft.graph.group') {
                     $permanentGAGroupList += $memberInfo
-                    # Get group members - only users
                     $groupMembers = Invoke-ZtGraphRequest -RelativeUri "groups/$($member.id)/members" -Select 'userPrincipalName,displayName,id,onPremisesSyncEnabled' -ApiVersion beta
                     foreach ($groupMember in $groupMembers) {
-                        # Only process users, skip service principals
                         if ($groupMember.'@odata.type' -eq '#microsoft.graph.user') {
                             $groupMemberInfo = [PSCustomObject]@{
                                 displayName = $groupMember.displayName
@@ -230,16 +262,5 @@ function Test-Assessment-21816 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '21816'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    # Only add CustomStatus when it's "Investigate" (more than 2 permanent GAs)
-    if ($permanentGACount -gt 2) {
-        $params.CustomStatus = 'Investigate'
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

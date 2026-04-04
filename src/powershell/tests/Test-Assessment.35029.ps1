@@ -120,7 +120,7 @@ function Test-Assessment-35029 {
         foreach ($rule in $allProtectionRulesDetailed | Sort-Object -Property Priority) {
             $ruleName = Get-SafeMarkdown -Text $rule.Name
             $ruleLink = "[$ruleName](https://admin.exchange.microsoft.com/#/transportrules)"
-            $stateIcon = if ($rule.State -eq 'Enabled') { '✅' } else { '❌' }
+            $stateIcon = Get-ZtPassFail -Condition ($rule.State -eq 'Enabled')
             $omeStatus = if ($rule.ApplyOME) { 'Yes' } else { 'No' }
             $rmsTemplate = if ($rule.ApplyRightsProtectionTemplate) { Get-SafeMarkdown -Text $rule.ApplyRightsProtectionTemplate } else { 'N/A' }
             $classificationStatus = if ($rule.ApplyClassification) { Get-SafeMarkdown -Text $rule.ApplyClassification } else { 'N/A' }
@@ -151,12 +151,5 @@ function Test-Assessment-35029 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35029'
-        Title  = 'Mail flow rules with rights protection'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

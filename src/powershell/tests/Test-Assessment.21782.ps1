@@ -1,4 +1,4 @@
-﻿
+
 <#
 .SYNOPSIS
 
@@ -24,6 +24,10 @@ function Test-Assessment-21782 {
 
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = "Checking phishing resistant authentication for privileged roles"
     Write-ZtProgress -Activity $activity -Status "Getting authentication methods"
@@ -68,18 +72,15 @@ from UserRegistrationDetails u
 
     foreach ($user in $phishablePrivUsers | Sort-Object userDisplayName) {
         $userLink = $userLinkFormat -f $user.id
-        $mdInfo += "|[$($user.userDisplayName)]($userLink)| $($user.roleDisplayName) | ❌ |`n"
+        $mdInfo += "|[$(Get-SafeMarkdown $user.userDisplayName)]($userLink)| $(Get-SafeMarkdown $user.roleDisplayName) | ❌ |`n"
     }
 
     foreach ($user in $phishResistantPrivUsers | Sort-Object userDisplayName) {
         $userLink = $userLinkFormat -f $user.id
-        $mdInfo += "|[$($user.userDisplayName)]($userLink)| $($user.roleDisplayName) | ✅ |`n"
+        $mdInfo += "|[$(Get-SafeMarkdown $user.userDisplayName)]($userLink)| $(Get-SafeMarkdown $user.roleDisplayName) | ✅ |`n"
     }
 
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    Add-ZtTestResultDetail -TestId '21782' -Title 'Privileged accounts have phishing-resistant methods registered' `
-        -UserImpact Low -Risk High -ImplementationCost Medium `
-        -AppliesTo Identity -Tag Credential `
-        -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

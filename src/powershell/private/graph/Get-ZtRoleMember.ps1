@@ -121,9 +121,20 @@ function Get-ZtRoleMember {
 		$assignments = @()
 		if ($Active) {
 			if ($pim) {
-				$uri = 'roleManagement/directory/roleAssignmentScheduleInstances'
-				# assignmentType eq 'Assigned' filters out eligible users that have temporarily activated the role
-				$assignments += Get-UsersInRole -Uri $uri -RoleId $directoryRoleId -RoleAssignmentType Active -Filter "assignmentType eq 'Assigned'"
+				try {
+					$uri = 'roleManagement/directory/roleAssignmentScheduleInstances'
+					# assignmentType eq 'Assigned' filters out eligible users that have temporarily activated the role
+					$assignments += Get-UsersInRole -Uri $uri -RoleId $directoryRoleId -RoleAssignmentType Active -Filter "assignmentType eq 'Assigned'"
+				}
+				catch {
+					if ($_ -match 'AadPremiumLicenseRequired|BadRequest') {
+						Write-PSFMessage "PIM API unavailable (license not active), falling back to non-PIM path" -Level Warning
+						$pim = $false
+						$uri = 'roleManagement/directory/roleAssignments'
+						$assignments += Get-UsersInRole -Uri $uri -RoleId $directoryRoleId -RoleAssignmentType Active
+					}
+					else { throw }
+				}
 			}
 			else {
 				#Free or P1 tenant (PIM APIs cannot be called on non-P2 tenants)

@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -124,8 +124,8 @@ WHERE userType = 'Guest'
         $appPortalLink = 'https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Owners/appId/{0}/isMSAApp~/false'
         $spPortalLink = 'https://entra.microsoft.com/#view/Microsoft_AAD_IAM/ManagedAppMenuBlade/~/Owners/objectId/{0}/appId/{1}/preferredSingleSignOnMode~/null/servicePrincipalType/Application/fromNav/'
 
-        $appTable = ($guestAppOwners | ForEach-Object { "| $($_.displayName) | $($_.userPrincipalName) | [$(Get-SafeMarkdown($_.appDisplayName))]($($appPortalLink -f $($_.appId))) |" }) -join "`n"
-        $spTable = ($guestSpOwners | ForEach-Object { "| $($_.displayName) | $($_.userPrincipalName) | [$(Get-SafeMarkdown($_.spDisplayName))]($($spPortalLink -f $($_.spObjectId), $($_.spAppId))) |" }) -join "`n"
+        $appTable = ($guestAppOwners | ForEach-Object { "| $(Get-SafeMarkdown $_.displayName) | $(Get-SafeMarkdown $_.userPrincipalName) | [$(Get-SafeMarkdown($_.appDisplayName))]($($appPortalLink -f $($_.appId))) |" }) -join "`n"
+        $spTable = ($guestSpOwners | ForEach-Object { "| $(Get-SafeMarkdown $_.displayName) | $(Get-SafeMarkdown $_.userPrincipalName) | [$(Get-SafeMarkdown($_.spDisplayName))]($($spPortalLink -f $($_.spObjectId), $($_.spAppId))) |" }) -join "`n"
 
         $mdInfo = $formatTemplate -f $appTable, $spTable
     }
@@ -141,7 +141,7 @@ WHERE userType = 'Guest'
 "@
         $appPortalLink = 'https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Owners/appId/{0}/isMSAApp~/false'
 
-        $appTable = ($guestAppOwners | ForEach-Object { "| $($_.displayName) | $($_.userPrincipalName) | [$(Get-SafeMarkdown($_.appDisplayName))]($($appPortalLink -f $($_.appId))) |" }) -join "`n"
+        $appTable = ($guestAppOwners | ForEach-Object { "| $(Get-SafeMarkdown $_.displayName) | $(Get-SafeMarkdown $_.userPrincipalName) | [$(Get-SafeMarkdown($_.appDisplayName))]($($appPortalLink -f $($_.appId))) |" }) -join "`n"
 
         $mdInfo = $formatTemplate -f $appTable
     }
@@ -157,7 +157,7 @@ WHERE userType = 'Guest'
 "@
         $spPortalLink = 'https://entra.microsoft.com/#view/Microsoft_AAD_IAM/ManagedAppMenuBlade/~/Owners/objectId/{0}/appId/{1}/preferredSingleSignOnMode~/null/servicePrincipalType/Application/fromNav/'
 
-        $spTable = ($guestSpOwners | ForEach-Object { "| $($_.displayName) | $($_.userPrincipalName) | [$(Get-SafeMarkdown($_.spDisplayName))]($($spPortalLink -f $($_.spObjectId), $($_.spAppId))) |" }) -join "`n"
+        $spTable = ($guestSpOwners | ForEach-Object { "| $(Get-SafeMarkdown $_.displayName) | $(Get-SafeMarkdown $_.userPrincipalName) | [$(Get-SafeMarkdown($_.spDisplayName))]($($spPortalLink -f $($_.spObjectId), $($_.spAppId))) |" }) -join "`n"
 
         $mdInfo = $formatTemplate -f $spTable
     }
@@ -165,17 +165,5 @@ WHERE userType = 'Guest'
     # Replace the placeholder with the detailed information
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    $params = @{
-        TestId             = '21868'
-        Title              = "Guests don't own apps in the tenant"
-        UserImpact         = 'Low'
-        Risk               = 'Medium'
-        ImplementationCost = 'Medium'
-        AppliesTo          = 'Identity'
-        Tag                = 'Identity'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

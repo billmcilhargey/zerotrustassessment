@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks Enable protected actions to secure Conditional Access policy creation and changes
 #>
@@ -158,10 +158,17 @@ function Test-Assessment-21964 {
     # Get protected action settings for each action
     $protectedActionResults = @()
     foreach ($action in $protectedActions) {
-        #Write-ZtProgress -Activity $activity -Status "Checking protected action: $action"
-
-        $actionResult = Invoke-ZtGraphRequest -RelativeUri "roleManagement/directory/resourceNamespaces/microsoft.directory/resourceActions/$action" -ApiVersion beta -Select "authenticationContextId,isAuthenticationContextSettable,name,description"
-        $protectedActionResults += $actionResult
+        try {
+            $actionResult = Invoke-ZtGraphRequest -RelativeUri "roleManagement/directory/resourceNamespaces/microsoft.directory/resourceActions/$action" -ApiVersion beta -Select "authenticationContextId,isAuthenticationContextSettable,name,description"
+            $protectedActionResults += $actionResult
+        }
+        catch {
+            if ($_ -match 'AadPremiumLicenseRequired|Forbidden|BadRequest') {
+                Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+                return
+            }
+            throw
+        }
     }
 
     # Check if all protected actions have authentication context configured
@@ -255,13 +262,5 @@ function Test-Assessment-21964 {
     }
 
     $passed = $unprotectedActionsResult -and $caPolicyResult -and  (($caPolicyRequireAuthStrength -and $caAllowedCombinationResult) -or $caPolicyHasSessionControls)
-    $params = @{
-            Status = $passed
-            Result = $testResultMarkdown
-        }
-    if (!$passed) {
-        $params.CustomStatus = 'Investigate'
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

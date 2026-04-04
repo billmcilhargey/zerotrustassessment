@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks that user is not able to register apps.
 #>
@@ -20,6 +20,10 @@ function Test-Assessment-21807 {
     param()
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = "Checking user app registration policy"
     Write-ZtProgress -Activity $activity
@@ -35,8 +39,5 @@ function Test-Assessment-21807 {
         $testResultMarkdown = "Tenant allows all non-privileged users to register applications.`n`n**[Users can register applications](https://entra.microsoft.com/#view/Microsoft_AAD_UsersAndTenants/UserManagementMenuBlade/~/UserSettings/menuId/UserSettings)** → **Yes** ❌"
     }
 
-    Add-ZtTestResultDetail -TestId '21807' -Title 'Creating new applications and service principles is restricted to privileged users' `
-        -UserImpact Medium -Risk Medium -ImplementationCost Low `
-        -AppliesTo Identity -Tag Application `
-        -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

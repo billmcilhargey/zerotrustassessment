@@ -100,7 +100,7 @@ WHERE len(u.assignedLicenses) > 0
         $customStatus = 'Investigate'
         $testResultMarkdown = "⚠️ Unable to determine GSA license availability and assignment due to query failure, connection issues, or insufficient permissions.`n`n"
 
-        Add-ZtTestResultDetail -TestId '25375' -Title 'GSA Licenses are available in the tenant and assigned to users' -Status $false -Result $testResultMarkdown -CustomStatus $customStatus
+        Add-ZtTestResultDetail -Status $false -Result $testResultMarkdown -CustomStatus $customStatus
         return
     }
 
@@ -327,14 +327,5 @@ WHERE len(u.assignedLicenses) > 0
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25375'
-        Title  = 'GSA Licenses are available in the tenant and assigned to users'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

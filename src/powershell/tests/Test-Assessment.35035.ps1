@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Named entity sensitive information types are used in auto-labeling and data loss prevention policies
 
@@ -364,18 +364,5 @@ function Test-Assessment-35035 {
 
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35035'
-        Title  = 'Named Entity SITs Usage in Auto-Labeling and DLP Policies'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    # Add CustomStatus if status is 'Investigate'
-    if ($null -ne $customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-
-    # Add test result details
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

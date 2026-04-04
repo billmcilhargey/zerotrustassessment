@@ -169,14 +169,5 @@ function Test-Assessment-25372 {
     }
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25372'
-        Title  = 'Global Secure Access client is deployed on all managed endpoints'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

@@ -52,7 +52,7 @@ function Test-Assessment-21862{
             $testResultMarkdown += "| :--- | :--- | :--- | :--- | :--- |`n"
             foreach ($sp in $untriagedRiskyPrincipals) {
                 $portalLink = "https://entra.microsoft.com/#view/Microsoft_AAD_IAM/ManagedAppMenuBlade/~/SignOn/objectId/$($sp.id)/appId/$($sp.appId)"
-                $testResultMarkdown += "| [$($sp.displayName)]($portalLink) | $($sp.servicePrincipalType) | $(Get-FormattedRiskLevel -RiskLevel $sp.riskLevel) | $(Get-RiskStateLabel -RiskState $sp.riskState) | $($sp.riskLastUpdatedDateTime) |`n"
+                $testResultMarkdown += "| [$(Get-SafeMarkdown $sp.displayName)]($portalLink) | $($sp.servicePrincipalType) | $(Get-FormattedRiskLevel -RiskLevel $sp.riskLevel) | $(Get-RiskStateLabel -RiskState $sp.riskState) | $($sp.riskLastUpdatedDateTime) |`n"
             }
         }
 
@@ -62,7 +62,7 @@ function Test-Assessment-21862{
             $testResultMarkdown += "| :--- | :--- | :--- | :--- | :--- |`n"
             foreach ($detection in $untriagedRiskDetections) {
                 $portalLink = "https://entra.microsoft.com/#view/Microsoft_AAD_IAM/ManagedAppMenuBlade/~/SignOn/objectId/$($detection.servicePrincipalId)/appId/$($detection.appId)"
-                $testResultMarkdown += "| [$($detection.servicePrincipalDisplayName)]($portalLink) | $(Get-FormattedRiskLevel -RiskLevel $detection.riskLevel) | $(Get-RiskStateLabel -RiskState $detection.riskState) | $(Get-RiskEventTypeLabel -RiskEventType $detection.riskEventType) | $($detection.detectedDateTime) |`n"
+                $testResultMarkdown += "| [$(Get-SafeMarkdown $detection.servicePrincipalDisplayName)]($portalLink) | $(Get-FormattedRiskLevel -RiskLevel $detection.riskLevel) | $(Get-RiskStateLabel -RiskState $detection.riskState) | $(Get-RiskEventTypeLabel -RiskEventType $detection.riskEventType) | $($detection.detectedDateTime) |`n"
             }
         }
     }

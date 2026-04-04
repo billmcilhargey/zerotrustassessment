@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -36,11 +36,5 @@ function Test-Assessment-21954{
         "[Non-administrator users can recover BitLocker keys for their owned devices]($portalLink)"
     }
 
-    $params = @{
-        TestId             = '21954'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

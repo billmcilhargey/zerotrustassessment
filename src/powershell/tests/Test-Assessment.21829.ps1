@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -20,6 +20,10 @@ function Test-Assessment-21829{
     param()
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = "Checking Use cloud authentication"
     Write-ZtProgress -Activity $activity
@@ -43,8 +47,5 @@ function Test-Assessment-21829{
         }
     }
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
-    Add-ZtTestResultDetail -TestId '21829' -Title "Use cloud authentication" `
-        -UserImpact High -Risk High -ImplementationCost High `
-        -AppliesTo Identity -Tag Identity `
-        -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

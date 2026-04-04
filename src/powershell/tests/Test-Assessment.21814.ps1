@@ -1,4 +1,4 @@
-﻿
+
 <#
 .SYNOPSIS
     Checks that admins are not synced from on-prem
@@ -62,22 +62,19 @@ function Test-Assessment-21814 {
         foreach ($user in $role.ZtUsers) {
             if ($user.onPremisesSyncEnabled) {
                 $type = "Synced from on-premise"
-                $status = "❌"
+                $status = Get-ZtPassFail -Condition $false
             }
             else {
                 $type = "Cloud native identity"
-                $status = "✅"
+                $status = Get-ZtPassFail -Condition $true
             }
 
             $userLink = "https://entra.microsoft.com/#view/Microsoft_AAD_UsersAndTenants/UserProfileMenuBlade/~/AdministrativeRole/userId/{0}" -f $user.id
-            $mdInfo += "| $($role.displayName) | [$($user.displayName)]($userLink) | $type | $status |`n"
+            $mdInfo += "| $(Get-SafeMarkdown $role.displayName) | [$(Get-SafeMarkdown $user.displayName)]($userLink) | $type | $status |`n"
         }
     }
 
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    Add-ZtTestResultDetail -TestId '21814' -Title 'Privileged accounts are cloud native identities' `
-        -UserImpact Medium -Risk Medium -ImplementationCost Low `
-        -AppliesTo Identity -Tag PrivilegedIdentity `
-        -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Auto-labeling policies are configured for all workloads
 
@@ -124,14 +124,5 @@ function Test-Assessment-35019 {
     }
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35019'
-        Title  = 'Auto-Labeling Policies Configured (All Workloads)'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

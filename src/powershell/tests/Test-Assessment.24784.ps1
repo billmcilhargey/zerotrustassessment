@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     A Microsoft Defender Antivirus policy is created and assigned in Intune for macOS
 #>
@@ -115,12 +115,5 @@ function Test-Assessment-24784 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '24784'
-        Title  = 'A Microsoft Defender Antivirus policy is created and assigned in Intune for macOS'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

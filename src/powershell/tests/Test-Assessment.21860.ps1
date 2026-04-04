@@ -1,4 +1,4 @@
-﻿
+
 <#
 .SYNOPSIS
     Tests if all Entra Logs are configured with Diagnostic Settings.
@@ -21,13 +21,20 @@ function Test-Assessment-21860 {
     param()
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     if((Get-MgContext).Environment -ne 'Global')
     {
         Write-PSFMessage "This test is only applicable to the Global environment." -Tag Test -Level VeryVerbose
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
         return
     }
 
+    $activity = "Checking diagnostic settings for Microsoft Entra logs"
+    Write-ZtProgress -Activity $activity
 
     $skipped = $null
     try {
@@ -113,8 +120,5 @@ function Test-Assessment-21860 {
         $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     }
 
-    Add-ZtTestResultDetail -TestId '21860' -Title 'Diagnostic settings are configured for all Microsoft Entra logs' `
-        -UserImpact Low -Risk High -ImplementationCost Medium `
-        -AppliesTo Identity -Tag Application `
-        -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

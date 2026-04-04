@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks the ratio of Global Administrator assignments to total privileged role assignments in the tenant.
 #>
@@ -26,7 +26,7 @@ function Test-Assessment-21813{
     $activity = 'Checking Global Administrator to privileged user ratio'
     Write-ZtProgress -Activity $activity -Status 'Getting privileged role assignments'
 
-    $globalAdminRoleId = '62e90394-69f5-4237-9190-012177145e10'
+    $globalAdminRoleId = Get-ZtRoleInfo -RoleName 'GlobalAdministrator'
 
     # Query all privileged role assignments from the database
     $sql = @"
@@ -160,16 +160,5 @@ WHERE isPrivileged = 1 AND "@odata.type" = '#microsoft.graph.user'
     }
     #endregion Assessment Logic
 
-    $params = @{
-        TestId = '21813'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    # Only add CustomStatus when it's "Investigate" (30-50% GA ratio)
-    if ($hasModerateRatio) {
-        $params.CustomStatus = $customStatus
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

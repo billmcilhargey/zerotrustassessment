@@ -196,16 +196,5 @@ function Test-Assessment-25382 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25382'
-        Title  = 'Traffic forwarding profiles are scoped to appropriate users and groups for controlled deployment'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    if ($hasDisabledProfiles -and -not $hasEnabledProfileWithoutAssignments) {
-        $params.CustomStatus = 'Investigate'
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

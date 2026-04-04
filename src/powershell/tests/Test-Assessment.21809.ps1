@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -37,8 +37,5 @@ function Test-Assessment-21809{
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", "The adminConsentRequestPolicy.isEnabled property is set to false."
 
 
-    Add-ZtTestResultDetail -TestId '21809' -Title "Admin consent workflow is enabled" `
-        -UserImpact Low -Risk High -ImplementationCost Low `
-        -AppliesTo Identity -Tag Identity `
-        -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

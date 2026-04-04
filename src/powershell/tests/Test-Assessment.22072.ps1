@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -29,8 +29,5 @@ function Test-Assessment-22072{
     $passed = $result
 
 
-    Add-ZtTestResultDetail -TestId '22072' -Title "Self-Service Password Reset does not use Q & A" `
-        -UserImpact Medium -Risk Medium -ImplementationCost Medium `
-        -AppliesTo Identity -Tag Identity `
-        -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
 }

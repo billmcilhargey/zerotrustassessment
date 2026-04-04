@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Guest self-service sign-up via user flow is disabled
 #>
@@ -28,6 +28,7 @@ function Test-Assessment-21823{
     if((Get-MgContext).Environment -ne 'Global')
     {
         Write-PSFMessage "This test is only applicable to the Global environment." -Tag Test -Level VeryVerbose
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
         return
     }
 
@@ -52,11 +53,5 @@ function Test-Assessment-21823{
 
     #endregion Report Generation
 
-    $params = @{
-        TestId = '21823'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Device enrollment notification is configured and assigned
 #>
@@ -98,12 +98,5 @@ function Test-Assessment-24572 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '24572'
-        Title  = 'Device enrollment notification is configured and assigned'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

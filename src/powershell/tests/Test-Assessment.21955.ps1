@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks if local administrators are managed on Microsoft Entra joined devices.
 #>
@@ -22,6 +22,10 @@ function Test-Assessment-21955 {
     )
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     # Check for Intune license, if present skip the test
     if (Get-ZtLicense Intune) {
@@ -117,11 +121,5 @@ function Test-Assessment-21955 {
     $testResultMarkdown = $testResultMarkdown -replace '%TestResult%', $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '21955'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

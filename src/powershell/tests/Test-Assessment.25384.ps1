@@ -31,6 +31,10 @@ function Test-Assessment-25384 {
 
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = 'Checking Application Administrator role assignments'
     Write-ZtProgress -Activity $activity -Status 'Getting role definition'
@@ -384,12 +388,5 @@ function Test-Assessment-25384 {
     $testResultMarkdown = $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25384'
-        Title  = 'Application admin rights are constrained to specific Private Access apps, not tenant-wide'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

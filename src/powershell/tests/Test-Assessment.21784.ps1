@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 Checks that all users are required to use phishing-resistant authentication methods through Conditional Access policies.
 
@@ -190,7 +190,7 @@ function Test-Assessment-21784 {
 
                 foreach ($strengthPolicy in $phishingResistantPolicies) {
                     $allowedMethods = $strengthPolicy.allowedCombinations -join ', '
-                    $testResultMarkdown += "| $($strengthPolicy.displayName) | $allowedMethods |`n"
+                    $testResultMarkdown += "| $(Get-SafeMarkdown $strengthPolicy.displayName) | $allowedMethods |`n"
                 }
                 $testResultMarkdown += "`n*Note: These authentication strength policies exist but are not applied to all users via Conditional Access.*`n`n"
             }
@@ -198,13 +198,7 @@ function Test-Assessment-21784 {
     }
     $passed = $result
 
-    $params = @{
-        TestId = '21784'
-        Status = $passed
-        Result = $testResultMarkdown
-
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
     Write-PSFMessage '🟦 End' -Tag Test -Level VeryVerbose
 
 }

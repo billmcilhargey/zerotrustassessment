@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Check if Temporary Access Pass is enabled and properly enforced with conditional access policies
 #>
@@ -116,10 +116,5 @@ function Test-Assessment-21845{
         $testResultMarkdown = "❌ Error querying Temporary Access Pass configuration: $($_.Exception.Message)"
     }
 
-    $params = @{
-        TestId             = '21845'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

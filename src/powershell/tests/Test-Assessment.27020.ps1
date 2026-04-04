@@ -172,12 +172,5 @@ resources
 
     #endregion Report Generation
 
-    $params = @{
-        TestId = '27020'
-        Title  = 'CAPTCHA challenge is enabled in Azure Front Door WAF'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

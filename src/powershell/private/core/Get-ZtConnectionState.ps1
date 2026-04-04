@@ -31,6 +31,12 @@ function Get-ZtConnectionState {
 	try {
 		$ctx = Get-MgContext -ErrorAction Ignore
 		if ($null -ne $ctx) {
+			# If Graph context exists but ConnectedService was reset (e.g. module reimport),
+			# re-register Graph so the services list stays accurate.
+			if ($script:ConnectedService -notcontains 'Graph') {
+				Add-ZtConnectedService -Service 'Graph'
+			}
+
 			$state.IsConnected = $true
 			$state.Account = $ctx.Account
 			$state.Tenant = $ctx.TenantId

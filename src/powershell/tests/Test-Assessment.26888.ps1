@@ -278,12 +278,5 @@ resources
 
     #endregion Report Generation
 
-    $params = @{
-        TestId = '26888'
-        Title  = 'Diagnostic logging is enabled in Application Gateway WAF'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

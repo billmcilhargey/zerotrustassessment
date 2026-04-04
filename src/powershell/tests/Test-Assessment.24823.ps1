@@ -1,4 +1,4 @@
-﻿
+
 <#
 .SYNOPSIS
 
@@ -142,7 +142,7 @@ function Test-Assessment-24823 {
 
         $brandingProperties = @()
         if ($BrandingProfile.displayName) {
-            $brandingProperties += "**Display Name**: $($BrandingProfile.displayName)"
+            $brandingProperties += "**Display Name**: $(Get-SafeMarkdown $BrandingProfile.displayName)"
         }
         else {
             $brandingProperties += "**Display Name**: Not configured"
@@ -222,11 +222,5 @@ function Test-Assessment-24823 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '24823'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

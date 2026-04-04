@@ -110,14 +110,5 @@ function Test-Assessment-35033 {
     }
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35033'
-        Title  = 'Custom Sensitive Information Types (SITs) Configured'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

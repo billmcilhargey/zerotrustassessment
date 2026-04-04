@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Windows Cloud LAPS policy is created and assigned
 #>
@@ -157,12 +157,5 @@ function Test-Assessment-24560 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId             = '24560'
-        Title              = "Windows Cloud LAPS policy is created and assigned"
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

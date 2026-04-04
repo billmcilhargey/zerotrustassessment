@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Deploy Attack Surface Reduction Policies (ASR) policies for Windows devices
 #>
@@ -218,11 +218,5 @@ function Test-Assessment-24574 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId             = '24574'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

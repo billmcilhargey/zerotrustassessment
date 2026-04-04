@@ -1,4 +1,4 @@
-﻿    <#
+    <#
 .SYNOPSIS
     Tests if workload identities are protected by location-based Conditional Access policies.
 #>
@@ -67,12 +67,7 @@ function Test-Assessment-21884 {
 
     if ($servicePrincipalsWithCreds.Count -eq 0) {
         $testResultMarkdown = 'No workload identities with credentials found to evaluate. All are compliant.'
-        $params = @{
-            TestId = '21884'
-            Status = $true
-            Result = $testResultMarkdown
-        }
-        Add-ZtTestResultDetail @params
+        Add-ZtTestResultDetail -Status $true -Result $testResultMarkdown
         return
     }
 
@@ -84,7 +79,7 @@ function Test-Assessment-21884 {
     }
 
     # Q4: Get all CA policies targeting workload identities from Graph API (fetch once)
-    $policies = Invoke-ZtGraphRequest -RelativeUri 'identity/conditionalAccess/policies' -ApiVersion 'beta'
+    $policies = Get-ZtConditionalAccessPolicy
 
     # Check for a global policy that covers all service principals
     $allSpPolicy = $policies | Where-Object {
@@ -105,12 +100,7 @@ function Test-Assessment-21884 {
 
         if ($hasValidLocations) {
             $testResultMarkdown = 'All workload identities are protected by global service principal policies with location restrictions.'
-            $params = @{
-                TestId = '21884'
-                Status = [bool]$true
-                Result = $testResultMarkdown
-            }
-            Add-ZtTestResultDetail @params
+            Add-ZtTestResultDetail -Status [bool]$true -Result $testResultMarkdown
             return
         }
     }
@@ -121,7 +111,7 @@ function Test-Assessment-21884 {
             $credTypes = @()
             if (($sp.passwordCredentials -ne '[]') -and ($null -ne $sp.passwordCredentials)) { $credTypes += 'Password' }
             if (($sp.keyCredentials -ne '[]') -and ($null -ne $sp.keyCredentials)) { $credTypes += 'Certificate' }
-            $spPortalLink = "[$($sp.displayName)](https://portal.azure.com/#view/Microsoft_AAD_IAM/ManagedAppMenuBlade/~/Overview/objectId/$($sp.id)/appId/$($sp.appId))"
+            $spPortalLink = "[$(Get-SafeMarkdown $sp.displayName)](https://portal.azure.com/#view/Microsoft_AAD_IAM/ManagedAppMenuBlade/~/Overview/objectId/$($sp.id)/appId/$($sp.appId))"
             $unprotectedSPs += @{ PortalLink = $spPortalLink; CredentialTypes = $credTypes -join ', '; AppliedPolicies = 'None'; LocationRestrictions = 'None' }
         }
         $passed = $false
@@ -134,12 +124,7 @@ function Test-Assessment-21884 {
         if ($spTruncated) {
             $testResultMarkdown += "`n\n_Note: Only the first 1000 service principals are shown._"
         }
-        $params = @{
-            TestId = '21884'
-            Status = $passed
-            Result = $testResultMarkdown
-        }
-        Add-ZtTestResultDetail @params
+        Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
         return
     }
 
@@ -149,12 +134,7 @@ function Test-Assessment-21884 {
         if ($namedLocations.Count -eq 0) {
             $testResultMarkdown = 'No named locations found. Cannot implement network-based restrictions without defined locations.'
 
-            $params = @{
-                TestId = '21884'
-                Status = [bool]$false
-                Result = $testResultMarkdown
-            }
-            Add-ZtTestResultDetail @params
+            Add-ZtTestResultDetail -Status [bool]$false -Result $testResultMarkdown
             return
         }
 
@@ -181,10 +161,10 @@ function Test-Assessment-21884 {
                 if ($policy.conditions.clientApplications.includeServicePrincipals -contains 'ServicePrincipalsInMyTenant' -and
                     (-not $policy.conditions.clientApplications.excludeServicePrincipals)) {
                     $policyApplies = $true
-                    $appliedPolicies += "$($policy.displayName) (Global - covers ServicePrincipalsInMyTenant)"
+                    $appliedPolicies += "$(Get-SafeMarkdown $policy.displayName) (Global - covers ServicePrincipalsInMyTenant)"
                 } elseif ($policy.conditions.clientApplications.includeServicePrincipals -contains $sp.id) {
                     $policyApplies = $true
-                    $appliedPolicies += $policy.displayName
+                    $appliedPolicies += (Get-SafeMarkdown $policy.displayName)
                 }
 
                 # Check location conditions if policy applies
@@ -243,7 +223,7 @@ function Test-Assessment-21884 {
         $spInfo = @{
             DisplayName = $sp.displayName
             AppId = $sp.appId
-            PortalLink = "[$($sp.displayName)](https://portal.azure.com/#view/Microsoft_AAD_IAM/ManagedAppMenuBlade/~/Overview/objectId/$($sp.id)/appId/$($sp.appId))"
+            PortalLink = "[$(Get-SafeMarkdown $sp.displayName)](https://portal.azure.com/#view/Microsoft_AAD_IAM/ManagedAppMenuBlade/~/Overview/objectId/$($sp.id)/appId/$($sp.appId))"
             CredentialTypes = $credTypes -join ', '
             AppliedPolicies = if ($appliedPolicies.Count -gt 0) { $appliedPolicies -join '; ' } else { 'None' }
             LocationRestrictions = if ($locationRestrictions.Count -gt 0) { $locationRestrictions -join '; ' } else { 'None' }
@@ -297,10 +277,5 @@ function Test-Assessment-21884 {
             }
         }
     }
-    $params = @{
-        TestId = '21884'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

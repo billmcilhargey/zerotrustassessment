@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Super user membership is configured for Azure Information Protection
 
@@ -208,13 +208,5 @@ function Test-Assessment-35011 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId = '35011'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    if ($customStatus) {
-        $params.CustomStatus = $customStatus
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

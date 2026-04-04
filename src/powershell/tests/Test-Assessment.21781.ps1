@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks that admins are enforced for phishing resistant authentication.
 #>
@@ -31,8 +31,5 @@ function Test-Assessment-21781 {
 
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
 
-    Add-ZtTestResultDetail -TestId '21781' -Title 'Privileged users sign in with phishing-resistant methods' `
-        -UserImpact Low -Risk High -ImplementationCost Medium `
-        -AppliesTo Identity -Tag Authentication `
-        -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown -SkippedBecause UnderConstruction
 }

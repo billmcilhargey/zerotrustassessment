@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks that Global Secure Access source IP restoration (Conditional Access signaling) is enabled.
 .DESCRIPTION
@@ -51,12 +51,5 @@ function Test-Assessment-25370 {
     #endregion Assessment Logic
 
 
-    $params = @{
-        TestId = '25370'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    # Add test result details
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

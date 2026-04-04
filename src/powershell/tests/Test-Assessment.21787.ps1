@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 #>
@@ -34,17 +34,5 @@ function Test-Assessment-21787 {
         $testResultMarkdown = "Non-privileged users are allowed to create tenants.`n`n"
     }
 
-    $params = @{
-        TestId              = '21787'
-        Title               = 'Permissions to create new tenants is limited to the Tenant Creator role'
-        UserImpact          = 'Medium'
-        Risk                = 'High'
-        ImplementationCost  = 'Medium'
-        AppliesTo           = 'Identity'
-        Tag                 = 'Identity'
-        Status              = $passed
-        Result              = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

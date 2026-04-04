@@ -23,6 +23,9 @@ function Test-Assessment-25407 {
     #region Data Collection
     Write-PSFMessage '🟦 Start GSA Conditional Access evaluation (security profiles via CA)' -Tag Test -Level VeryVerbose
 
+    $activity = "Checking web content filtering integration with Conditional Access"
+    Write-ZtProgress -Activity $activity
+
     # Q1: Retrieve all Conditional Access policies
     $policies = Get-ZtConditionalAccessPolicy
 
@@ -91,11 +94,5 @@ function Test-Assessment-25407 {
 
     #endregion Report Generation
 
-    $params = @{
-        TestId = '25407'
-        Status = $passed
-        Result = $testResultMarkdown -replace '%TestResult%', $mdInfo
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown -replace '%TestResult%', $mdInfo
 }

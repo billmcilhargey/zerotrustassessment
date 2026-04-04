@@ -20,6 +20,10 @@ function Test-Assessment-21836{
     param()
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = "Checking Workload identities assigned privileged roles"
     Write-ZtProgress -Activity $activity -Status "Getting workload identities with privileged roles"

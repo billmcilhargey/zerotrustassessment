@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Corporate Wi-Fi network on fully managed Android devices is securely managed
 #>
@@ -95,11 +95,5 @@ function Test-Assessment-24840 {
     $testResultMarkdown = $testResultMarkdown -replace "%TestResult%", $mdInfo
     #endregion Report Generation
 
-    $params = @{
-        TestId             = '24840'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

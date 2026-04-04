@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks if the Azure Active Directory PowerShell Enterprise Application is blocked
 #>
@@ -89,16 +89,5 @@ function Test-Assessment-21844{
     }
     $testResultMarkdown = $summaryLines -join "`n"
 
-    $params = @{
-        TestId             = '21844'
-        Status             = $passed
-        Result             = $testResultMarkdown
-    }
-
-    # Add investigate status if needed
-    if ($investigateStatus -eq $true) {
-        $params.CustomStatus = 'Investigate'
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

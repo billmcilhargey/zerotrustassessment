@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks if Smart lockout duration is set to a minimum of 60 seconds.
 #>
@@ -20,6 +20,10 @@ function Test-Assessment-21849{
     param()
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+    if ( -not (Get-ZtLicense EntraIDP1) ) {
+        Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
+        return
+    }
 
     $activity = 'Checking Smart lockout duration is set to a minimum of 60'
     Write-ZtProgress -Activity $activity -Status 'Getting password rule settings'
@@ -78,10 +82,5 @@ function Test-Assessment-21849{
         }
     }
 
-    $params = @{
-        TestId = '21849'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

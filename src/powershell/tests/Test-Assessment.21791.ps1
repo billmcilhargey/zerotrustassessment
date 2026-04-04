@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks that a guest user does not invite other guests.
 #>
@@ -52,8 +52,5 @@ function Test-Assessment-21791{
         $testResultMarkdown = "Tenant allows any user (including other guests) to invite guests."
     }
 
-    Add-ZtTestResultDetail -TestId '21791' -Title "Guest can’t invite other guests" `
-        -UserImpact Medium -Risk Medium -ImplementationCost Low `
-        -AppliesTo Identity -Tag ExternalCollaboration `
-        -Status $passed -Result $testResultMarkdown
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }

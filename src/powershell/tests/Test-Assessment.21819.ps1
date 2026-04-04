@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks that activation alerts are configured for the Global Administrator role assignment.
 #>
@@ -46,7 +46,7 @@ function Test-Assessment-21819 {
         $testResultMarkdown = "## Global Administrator Role Not Found`n`n"
         $testResultMarkdown += "*Could not find the Global Administrator role definition.*`n`n"
 
-        Add-ZtTestResultDetail -TestId '21819' -Status $false -Result $testResultMarkdown
+        Add-ZtTestResultDetail -Status $false -Result $testResultMarkdown
         return
     }
 
@@ -55,7 +55,16 @@ function Test-Assessment-21819 {
 
     # Query 2: Get PIM role management policy assignment
     $filter = "scopeId eq '/' and scopeType eq 'DirectoryRole' and roleDefinitionId eq '$($globalAdminRole.id)'"
-    $policyAssignments = Invoke-ZtGraphRequest -RelativeUri 'policies/roleManagementPolicyAssignments' -Filter $filter -ApiVersion beta
+    try {
+        $policyAssignments = Invoke-ZtGraphRequest -RelativeUri 'policies/roleManagementPolicyAssignments' -Filter $filter -ApiVersion beta
+    }
+    catch {
+        if ($_ -match 'AadPremiumLicenseRequired|BadRequest') {
+            Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP2
+            return
+        }
+        throw
+    }
 
     $passed = $false
     if (-not $policyAssignments) {
@@ -94,7 +103,7 @@ function Test-Assessment-21819 {
     $testResultMarkdown += "| :---------------- | :----------------- | :------------------- |`n"
 
     $roleLink = "https://entra.microsoft.com/#view/Microsoft_AAD_IAM/RolesManagementMenuBlade/~/AllRoles"
-    $displayNameLink = "[$($globalAdminRole.displayName)]($roleLink)"
+    $displayNameLink = "[$(Get-SafeMarkdown $globalAdminRole.displayName)]($roleLink)"
     $defaultRecipientsStatus = if ($isDefaultRecipientsEnabled -eq $true) {
         '✅ Enabled'
     }
@@ -114,11 +123,5 @@ function Test-Assessment-21819 {
     $testResultMarkdown += "| $displayNameLink | $defaultRecipientsStatus | $recipientsDisplay |`n"
     #endregion Report Generation
 
-    $params = @{
-        TestId = '21819'
-        Status = $passed
-        Result = $testResultMarkdown
-    }
-
-    Add-ZtTestResultDetail @params
+    Add-ZtTestResultDetail -Status $passed -Result $testResultMarkdown
 }
