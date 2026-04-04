@@ -29,7 +29,7 @@ function Get-ZtRequiredModuleSpecByService {
     [OutputType('ZeroTrustAssessment.Service.ModuleRequirement')]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [ValidateSet('Azure', 'AipService', 'ExchangeOnline', 'Graph', 'SecurityCompliance', 'SharePointOnline')]
+        [ValidateSet('Azure', 'AipService', 'ExchangeOnline', 'Graph', 'SecurityCompliance', 'SharePoint')]
         [string[]] $Service
     )
 

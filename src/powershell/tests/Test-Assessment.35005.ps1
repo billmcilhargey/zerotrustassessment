@@ -16,7 +16,7 @@ function Test-Assessment-35005 {
     	Category = 'SharePoint Online',
     	ImplementationCost = 'Low',
     	MinimumLicense = ('MIP_P1'),
-    	Service = ('SharePointOnline'),
+    	Service = ('SharePoint'),
     	Pillar = 'Data',
     	RiskLevel = 'High',
     	SfiPillar = 'Protect tenants and production systems',
@@ -31,20 +31,9 @@ function Test-Assessment-35005 {
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
 
-    $activity = 'Checking Sensitivity Labels in SharePoint Online'
-    Write-ZtProgress -Activity $activity -Status 'Getting SharePoint Tenant Settings'
-
-    $spoTenant = $null
-    $errorMsg = $null
-
-    try {
-        # Query: Retrieve SharePoint Online tenant sensitivity label integration status
-        $spoTenant = Get-SPOTenant -ErrorAction Stop
-    }
-    catch {
-        $errorMsg = $_
-        Write-PSFMessage "Error querying SharePoint Tenant Settings: $_" -Level Error
-    }
+    $spo = Get-ZtSharePointTenantSettings -Activity 'Checking Sensitivity Labels in SharePoint Online'
+    $spoTenant = $spo.Tenant
+    $errorMsg = $spo.ErrorMessage
     #endregion Data Collection
 
     #region Assessment Logic

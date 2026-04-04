@@ -68,10 +68,10 @@ function Test-ZtServiceHealth {
 				$healthy = $null -ne (Get-Command Connect-AipService -ErrorAction Ignore)
 				if (-not $healthy) { $detail = 'AipService module not loaded' }
 			}
-			'SharePointOnline' {
+			'SharePoint' {
 				# SPO also lacks a quick health-check cmdlet.
 				$healthy = $null -ne (Get-Command Get-SPOSite -ErrorAction Ignore)
-				if (-not $healthy) { $detail = 'SharePoint Online module not loaded' }
+				if (-not $healthy) { $detail = 'SharePoint module not loaded' }
 			}
 			default {
 				$healthy = $true

@@ -27,7 +27,13 @@ if (-not $script:__ZtThrottling.Value['deviceManagement']) {
 
 # Canonical list of allowed/supported service names, in display order.
 # Referenced by service-detection, audit, connection, and validation code.
-$script:AllowedServices = @('Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePointOnline')
+$script:AllowedServices = @('Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePoint')
+
+# Services that require Windows (Windows PowerShell modules not available on Linux/macOS).
+$script:WindowsOnlyServices = @('AipService')
+
+# Services that do not support device code authentication flow.
+$script:NoDeviceCodeServices = @('SecurityCompliance')
 
 # Tracks which services are currently connected. Managed by Add-ZtConnectedService / Remove-ZtConnectedService.
 # Must be initialized as an array to avoid string-concatenation when using +=.

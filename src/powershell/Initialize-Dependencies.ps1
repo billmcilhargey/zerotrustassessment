@@ -58,7 +58,11 @@ function Initialize-Dependencies {
 
         [Parameter()]
         [switch]
-        $DoNotUpdatePSModulePath
+        $DoNotUpdatePSModulePath,
+
+        [Parameter()]
+        [switch]
+        $Quiet = ($Env:ZT_QUIET_INIT -eq 'true' -or $Env:ZT_QUIET_INIT -eq '1')
     )
 
     Write-Verbose -Message "=== Initialize-Dependencies.ps1 Starting ==="
@@ -114,22 +118,12 @@ function Initialize-Dependencies {
     }
     #endregion
 
-    if ($IsMacOS -or $IsLinux)
-    {
-        #region The ZeroTrustAssessment report should be run in Windows.
-        # on Non-windows platform, some pillars won't be available, because some required modules only work on Windows PowerShell.
-        Write-Host
-        Write-Host -Object '⚠️ Warning: For the most complete Zero Trust Assessment results, run this tool on Windows.' -ForegroundColor Yellow
-        Write-Host -Object 'Some assessment tests rely on modules (SPO, AIP) that only work with Windows PowerShell (5.1).' -ForegroundColor Yellow
-        Write-Host -Object 'If you run the tool on macOS or Linux, a few tests may be skipped.' -ForegroundColor Yellow
-        # skipping module installation.
-        #endregion
-    }
-
     if (-not $SkipModuleInstallation.IsPresent)
     {
-        Write-Host
-        Write-Host -Object ('Resolving {0} dependencies...' -f $requiredModuleToSave.Count) -ForegroundColor Green
+        if (-not $Quiet) {
+            Write-Host
+            Write-Host -Object ('Resolving {0} dependencies...' -f $requiredModuleToSave.Count) -ForegroundColor Green
+        }
 
         if ($saveModuleCmd = (Get-Command -Name Save-PSResource -ErrorAction Ignore))
         {
@@ -152,7 +146,9 @@ function Initialize-Dependencies {
 
             if ($isModulePresent)
             {
-                Write-Host -Object ('    ✅ Module {0} found (v{1}).' -f $moduleSpec.Name,$isModulePresent[0].Version) -ForegroundColor Green
+                if (-not $Quiet) {
+                    Write-Host -Object ('    ✅ Module {0} found (v{1}).' -f $moduleSpec.Name,$isModulePresent[0].Version) -ForegroundColor Green
+                }
                 continue
             }
 
@@ -196,7 +192,9 @@ function Initialize-Dependencies {
                     }
 
                     $savedModule = ($latestModuleInRange | Save-PSResource @savePSResourceParams).Where({ $_.Name -eq $moduleSpec.Name },1)
-                    Write-Host -Object ('    ⬇️ Module {0} v{1} saved successfully.' -f $moduleSpec.Name, $savedModule.Version) -ForegroundColor Green
+                    if (-not $Quiet) {
+                        Write-Host -Object ('    ⬇️ Module {0} v{1} saved successfully.' -f $moduleSpec.Name, $savedModule.Version) -ForegroundColor White
+                    }
                 }
                 elseif ($saveModuleCmd.Name -eq 'Save-Module')
                 {
@@ -211,7 +209,9 @@ function Initialize-Dependencies {
                         $saveModuleCmdParams['AllowPrerelease'] = $AllowPrerelease.IsPresent
                     }
                     $moduleSpec | &$saveModuleCmd @saveModuleCmdParams
-                    Write-Host -Object ('    ⬇️ Module {0} saved successfully.' -f $moduleSpec.Name) -ForegroundColor Green
+                    if (-not $Quiet) {
+                        Write-Host -Object ('    ⬇️ Module {0} saved successfully.' -f $moduleSpec.Name) -ForegroundColor White
+                    }
                 }
             }
             catch
@@ -235,8 +235,10 @@ function Initialize-Dependencies {
             Write-Verbose -Message "  Recommendation: Restart PowerShell and import ZeroTrustAssessment first."
         }
         else {
-            Write-Host -Object "`r`n"
-            Write-Host -Object 'Asserting MSAL loading order for dependencies...' -ForegroundColor Green
+            if (-not $Quiet) {
+                Write-Host -Object "`r`n"
+                Write-Host -Object 'Asserting MSAL loading order for dependencies...' -ForegroundColor Green
+            }
             $helperPath = Join-Path -Path $PSScriptRoot -ChildPath 'private' -AdditionalChildPath 'utility', 'Get-ModuleImportOrder.ps1' -Resolve -ErrorAction Stop
             . $helperPath
             Write-Verbose -Message ('Module with DLLs to load: {0}' -f (([Microsoft.PowerShell.Commands.ModuleSpecification[]]$moduleManifest.RequiredModules).Name -join ', '))
@@ -250,7 +252,9 @@ function Initialize-Dependencies {
                 }
                 else
                 {
-                    Write-Host -Object ('    ✅ Loading MSAL v{0} for dependency {1} version {2}' -f $_.DLLVersion, $_.Name, $_.ModuleVersion) -ForegroundColor Green
+                    if (-not $Quiet) {
+                        Write-Host -Object ('    ✅ Loading MSAL v{0} for dependency {1} version {2}' -f $_.DLLVersion, $_.Name, $_.ModuleVersion) -ForegroundColor Green
+                    }
                     $null = [System.Reflection.Assembly]::LoadFrom($_.DLLPath)
                 }
 
@@ -266,7 +270,9 @@ function Initialize-Dependencies {
                     try
                     {
                         $null = [System.Reflection.Assembly]::LoadFrom($relatedDll.FullName)
-                        Write-Host -Object ('    ✅ Loaded {0}' -f $relatedDll.Name) -ForegroundColor Green
+                        if (-not $Quiet) {
+                            Write-Host -Object ('    ✅ Loaded {0}' -f $relatedDll.Name) -ForegroundColor Green
+                        }
                     }
                     catch
                     {

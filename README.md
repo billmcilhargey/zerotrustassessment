@@ -55,7 +55,12 @@ On Windows, run the PowerShell script directly:
 
 ```powershell
 ./Invoke-ZtDev.ps1
+./Invoke-ZtDev.ps1 -Action RunAll
 ```
+
+> **Tip:** Token caching is enabled by default — cached authentication tokens are
+> reused across sessions so you don't need to re-authenticate each time. To disable
+> token caching (require fresh auth each time), pass `-UseTokenCache:$false`.
 
 After running an assessment, select **[V] View last assessment report** from the dev menu
 (or use `-Action ViewReport`) to re-open the HTML report without re-running the assessment.
@@ -351,7 +356,7 @@ the Enterprise Application (or the user running the assessment) also needs:
 | **Azure (Az)** | Reader role on subscriptions | For Azure resource policy checks |
 | **Exchange Online** | View-Only Organization Management (or Global Reader) | For mail flow and org config checks |
 | **Security & Compliance** | Compliance Administrator (or Global Reader) | For DLP, retention, and sensitivity label checks |
-| **SharePoint Online** | SharePoint Administrator | For SharePoint/OneDrive configuration checks (Windows only) |
+| **SharePoint Online** | SharePoint Administrator | For SharePoint/OneDrive configuration checks |
 | **Azure Information Protection** | Global Reader | For AIP label and policy checks (Windows only) |
 
 ---
@@ -369,16 +374,16 @@ The assessment runs on **any platform** that supports PowerShell 7. Most tests (
 | **Exchange Online** | ✅ | ✅ | ✅ | `ExchangeOnlineManagement` |
 | **Security & Compliance** | ✅ | ✅ | ✅ | `ExchangeOnlineManagement` |
 | **Azure Information Protection** | ✅ | ❌ | ❌ | `AIPService` (Windows only) |
-| **SharePoint Online** | ✅ | ❌ | ❌ | `Microsoft.Online.SharePoint.PowerShell` (Windows only) |
+| **SharePoint Online** | ✅ | ✅ | ✅ | `PnP.PowerShell` |
 
 ### Impact on test coverage
 
 | Platform | Tests available | Tests skipped | Skipped tests |
 |----------|:--------------:|:-------------:|---------------|
 | **Windows** | 269 / 269 | 0 | — |
-| **macOS / Linux** | 264 / 269 | 5 | 35005, 35006, 35007, 35008 (SharePointOnline), 35011 (AIPService) |
+| **macOS / Linux** | 268 / 269 | 1 | 35011 (AIPService) |
 
-> **Note:** The 5 skipped tests are all in the **Data** pillar. All other pillars (Identity, Devices, Infrastructure, Network, Visibility/Automation/Orchestration) have full cross-platform coverage.
+> **Note:** The 1 skipped test is in the **Data** pillar. All other pillars (Identity, Devices, Infrastructure, Network, Visibility/Automation/Orchestration) have full cross-platform coverage.
 
 ### Authentication
 
@@ -389,9 +394,9 @@ The assessment runs on **any platform** that supports PowerShell 7. Most tests (
 | Certificate / app identity | ✅ | ✅ | ✅ |
 | Client secret / app identity | ✅ | ✅ | ✅ |
 | Managed identity (Azure-hosted) | ✅ | ✅ | ✅ |
-| Token cache (persistent auth) | ✅ | ✅ | ✅ (auto-enabled) |
+| Token cache (persistent auth) | ✅ (default) | ✅ (default) | ✅ (default) |
 
-In Codespaces and headless environments, device-code authentication and token caching are enabled automatically — no extra flags needed. The cached token persists across PowerShell sessions, so you won't need to re-authenticate when resuming after a timeout.
+Token caching is enabled by default on all platforms — cached tokens persist across PowerShell sessions, so you won't need to re-authenticate when resuming after a timeout. To disable, pass `-UseTokenCache:$false`. In Codespaces and headless environments, device-code authentication is also enabled automatically.
 
 ---
 

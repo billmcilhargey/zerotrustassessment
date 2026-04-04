@@ -6,7 +6,7 @@ function Get-ZtRequiredServiceFromContent {
 	.DESCRIPTION
 		Scans the text content of a PowerShell test script for cmdlet patterns
 		that indicate which services the test depends on (Graph, Azure,
-		AipService, ExchangeOnline, SecurityCompliance, SharePointOnline).
+		AipService, ExchangeOnline, SecurityCompliance, SharePoint).
 
 		Returns the detected services in the canonical order defined by the
 		module manifest. Defaults to 'Graph' when no patterns match.
@@ -56,10 +56,10 @@ function Get-ZtRequiredServiceFromContent {
 		$Content -match '\b(Get|Set|New|Remove)-(Label|Dlp\w+|Retention\w+|Case\w+|Compliance\w+)\b') {
 		$null = $services.Add('SecurityCompliance')
 	}
-	# SharePoint Online
-	if ($Content -match '\b(Get|Set|New|Remove|Connect|Disconnect)-SPO\w+\b' -or
-		$Content -match '\bSharePoint\s+Online\b') {
-		$null = $services.Add('SharePointOnline')
+	# SharePoint (PnP.PowerShell)
+	if ($Content -match '\b(Get|Set|New|Remove|Connect|Disconnect)-PnP\w+\b' -or
+		$Content -match '\bGet-ZtSharePointTenantSettings\b') {
+		$null = $services.Add('SharePoint')
 	}
 
 	# Safe default — every test needs Graph at minimum

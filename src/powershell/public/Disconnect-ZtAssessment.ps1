@@ -10,7 +10,7 @@
 		* Microsoft Graph (using Disconnect-MgGraph)
 		* Azure (using Disconnect-AzAccount)
 		* Exchange Online and Security & Compliance PowerShell (using Disconnect-ExchangeOnline)
-		* SharePoint Online (using Disconnect-SPOService)
+		* SharePoint Online (using Disconnect-PnPOnline)
 		* Azure Information Protection (using Disconnect-AipService)
 
         Optionally, it can also clear cached session state (Graph/Azure caches, test metadata,
@@ -18,7 +18,7 @@
 
 	.PARAMETER Service
 		The services to disconnect from. Default is 'All'.
-		Accepts one or more of: All, Azure, AipService, ExchangeOnline, Graph, SharePointOnline.
+		Accepts one or more of: All, Azure, AipService, ExchangeOnline, Graph, SharePoint).
 
     .PARAMETER IncludeCleanup
         When specified, clears cached module/session state and closes open database connections
@@ -46,7 +46,7 @@
 	#>
     [CmdletBinding()]
     param(
-        [ValidateSet('All', 'Azure', 'AipService', 'ExchangeOnline', 'Graph', 'SharePointOnline')]
+        [ValidateSet('All', 'Azure', 'AipService', 'ExchangeOnline', 'Graph', 'SharePoint')]
         [string[]]$Service = 'All',
 
         [switch]$IncludeCleanup
@@ -59,7 +59,7 @@
         @{ Key = 'Graph'; Name = 'Microsoft Graph'; Command = 'Disconnect-MgGraph'; Args = @{} }
         @{ Key = 'Azure'; Name = 'Azure'; Command = 'Disconnect-AzAccount'; Args = @{} }
         @{ Key = 'ExchangeOnline'; Name = 'Exchange Online and Security & Compliance PowerShell'; Command = 'Disconnect-ExchangeOnline'; Args = @{ Confirm = $false } }
-        @{ Key = 'SharePointOnline'; Name = 'SharePoint Online'; Command = 'Disconnect-SPOService'; Args = @{} }
+        @{ Key = 'SharePoint'; Name = 'SharePoint Online'; Command = 'Disconnect-PnPOnline'; Args = @{} }
         @{ Key = 'AipService'; Name = 'Azure Information Protection'; Command = 'Disconnect-AipService'; Args = @{} }
     )
 

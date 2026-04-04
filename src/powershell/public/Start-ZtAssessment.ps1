@@ -92,7 +92,7 @@ function Start-ZtAssessment {
 		[string]
 		$TenantId,
 
-		[ValidateSet('All', 'Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePointOnline')]
+		[ValidateSet('All', 'Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePoint')]
 		[string[]]
 		$Service = 'All',
 
@@ -121,7 +121,25 @@ function Start-ZtAssessment {
 	# ── Steps ────────────────────────────────────────────────────────────────
 
 	function Step-ZtaConnect {
-		Write-Host "`n── Connecting to Tenant ──`n" -ForegroundColor Yellow
+		# Early-out: if already connected (in-memory) with valid context, skip
+		$conn = Get-ZtConnectionState
+		if ($conn.IsConnected -and $conn.ScopesValid) {
+			Write-Host "`n── Already Connected ──`n" -ForegroundColor DarkCyan
+			Write-Host "  ✅ $($conn.Account) ($($conn.Tenant))" -ForegroundColor Green
+			Write-Host "     Services: $($conn.Services -join ', ')" -ForegroundColor DarkGray
+			return
+		}
+
+		# Try silent restore from token cache before prompting
+		if (Restore-ZtCachedConnection) {
+			$conn = Get-ZtConnectionState
+			Write-Host "`n── Restored from Cache ──`n" -ForegroundColor DarkCyan
+			Write-Host "  ✅ $($conn.Account) ($($conn.Tenant))" -ForegroundColor Green
+			Write-Host "     Services: $($conn.Services -join ', ')" -ForegroundColor DarkGray
+			return
+		}
+
+		Write-Host "`n── Connecting to Tenant ──`n" -ForegroundColor DarkCyan
 
 		$connectParams = @{}
 		if (Get-ZtaEffectiveDeviceCode) { $connectParams['UseDeviceCode'] = $true }
@@ -146,11 +164,10 @@ function Start-ZtAssessment {
 	function Get-ZtaServiceSummary {
 		# Expand configured services and determine platform availability
 		$configured = if ($Service -contains 'All') {
-			@('Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePointOnline')
+			@($script:AllowedServices)
 		} else { @($Service) }
-		$windowsOnly = @('AipService', 'SharePointOnline')
-		$available = @($configured | Where-Object { $IsWindows -or $_ -notin $windowsOnly })
-		$unavailable = @($configured | Where-Object { -not $IsWindows -and $_ -in $windowsOnly })
+		$available = @($configured | Where-Object { $IsWindows -or $_ -notin $script:WindowsOnlyServices })
+		$unavailable = @($configured | Where-Object { -not $IsWindows -and $_ -in $script:WindowsOnlyServices })
 		[PSCustomObject]@{
 			Configured  = $configured
 			Available   = $available
@@ -159,7 +176,7 @@ function Start-ZtAssessment {
 	}
 
 	function Step-ZtaStatus {
-		Write-Host "`n── Connection Status ──`n" -ForegroundColor Yellow
+		Write-Host "`n── Connection Status ──`n" -ForegroundColor DarkCyan
 		$conn = Get-ZtConnectionState
 		$svcSummary = Get-ZtaServiceSummary
 		$tokenCache = Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Connection.UseTokenCache' -Fallback $true
@@ -192,32 +209,36 @@ function Start-ZtAssessment {
 	}
 
 	function Step-ZtaListTests {
-		Write-Host "`n── Available Tests ──`n" -ForegroundColor Yellow
+		Write-Host "`n── Available Tests ──`n" -ForegroundColor DarkCyan
 		$listParams = @{}
 		if ($Pillar) { $listParams['Pillar'] = $Pillar }
 
 		$allTests = Get-ZtTest @listParams
 		if (-not $allTests) { Write-Host '  No tests found.' -ForegroundColor Yellow; return }
 
-		$windowsOnly = @('AipService', 'SharePointOnline')
 		$grouped = $allTests | Group-Object Pillar | Sort-Object Name
 		$skipped = 0
 		foreach ($g in $grouped) {
-			Write-Host "`n  $($g.Name) ($($g.Count) tests)" -ForegroundColor Cyan
+			Write-Host "`n  ── $($g.Name) ($($g.Count) tests) ──" -ForegroundColor Magenta
 			foreach ($t in ($g.Group | Sort-Object TestID)) {
 				$svc = if ($t.Service) { "[$(($t.Service) -join ',')]" } else { '' }
-				$wOnly = -not $IsWindows -and $t.Service -and ($t.Service | Where-Object { $_ -in $windowsOnly })
+				$wOnly = -not $IsWindows -and $t.Service -and ($t.Service | Where-Object { $_ -in $script:WindowsOnlyServices })
 				if ($wOnly) {
-					Write-Host "    $($t.TestID)  $($t.Title)  $svc  (Windows only)" -ForegroundColor DarkGray
+					Write-Host "    SKIP  $($t.TestID)  $($t.Title)  $svc  (Windows only)" -ForegroundColor DarkGray
 					$skipped++
 				}
 				else {
-					Write-Host "    $($t.TestID)  $($t.Title)  $svc" -ForegroundColor Gray
+					Write-Host "          $($t.TestID)  $($t.Title)  $svc" -ForegroundColor Gray
 				}
 			}
 		}
 		$available = $allTests.Count - $skipped
-		Write-Host "`n  Total: $available / $($allTests.Count) tests available" -ForegroundColor Green
+		Write-Host ""
+		Write-Host "  Available : $available" -ForegroundColor Green
+		if ($skipped -gt 0) {
+			Write-Host "  Skipped   : $skipped" -ForegroundColor Yellow
+		}
+		Write-Host "  Total     : $($allTests.Count)" -ForegroundColor DarkGray
 	}
 
 	function Step-ZtaRunAssessment {
@@ -267,7 +288,7 @@ function Start-ZtAssessment {
 		elseif ($RunPillar)  { "Running $RunPillar pillar" }
 		else                 { 'Running full assessment' }
 
-		Write-Host "`n── $($desc) ──`n" -ForegroundColor Yellow
+		Write-Host "`n── $($desc) ──`n" -ForegroundColor DarkCyan
 		Write-Host "  Output : $Path" -ForegroundColor Gray
 		Write-Host "  Days   : $Days" -ForegroundColor Gray
 		if ($RunPillar) { Write-Host "  Pillar : $RunPillar" -ForegroundColor Gray }
@@ -299,7 +320,7 @@ function Start-ZtAssessment {
 	}
 
 	function Step-ZtaDeleteResults {
-		Write-Host "`n── Delete Test Results ──`n" -ForegroundColor Yellow
+		Write-Host "`n── Delete All Reports and Test Results ──`n" -ForegroundColor DarkCyan
 		if (-not (Test-Path $Path)) {
 			Write-Host "  No report folder found at: $Path" -ForegroundColor Yellow
 			return
@@ -317,7 +338,7 @@ function Start-ZtAssessment {
 	}
 
 	function Step-ZtaDisconnect {
-		Write-Host "`n── Disconnecting ──`n" -ForegroundColor Yellow
+		Write-Host "`n── Disconnecting ──`n" -ForegroundColor DarkCyan
 		try {
 			$null = Disconnect-ZtAssessment -IncludeCleanup
 			Write-Host '  Disconnected from all services.' -ForegroundColor Green
@@ -343,7 +364,7 @@ function Start-ZtAssessment {
 		$conn = Get-ZtConnectionState
 
 		Write-Host ''
-		Show-ZtBanner
+		if ($env:ZT_BANNER_SHOWN -ne '1') { Show-ZtBanner }
 
 		if ($conn.IsConnected) {
 			Write-Host "  Connected: $($conn.Account) | Tenant: $($conn.Tenant)" -ForegroundColor Green
@@ -467,7 +488,7 @@ function Start-ZtAssessment {
 	# ── Entry point ──────────────────────────────────────────────────────────
 
 	if ($Action) {
-		Show-ZtBanner
+		if ($env:ZT_BANNER_SHOWN -ne '1') { Show-ZtBanner }
 		switch ($Action) {
 			'Connect'      { Step-ZtaConnect; Step-ZtaStatus }
 			'RunAll'       { Step-ZtaRunAssessment }

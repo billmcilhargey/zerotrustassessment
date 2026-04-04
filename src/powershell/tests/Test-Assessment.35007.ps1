@@ -15,7 +15,7 @@ function Test-Assessment-35007 {
     [ZtTest(
         Category = 'SharePoint Online',
         ImplementationCost = 'Low',
-        Service = ('SharePointOnline'),
+        Service = ('SharePoint'),
         MinimumLicense = ('Microsoft 365 E3'),
         Pillar = 'Data',
         RiskLevel = 'Low',
@@ -31,20 +31,9 @@ function Test-Assessment-35007 {
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
 
-    $activity = 'Checking Information Rights Management (IRM) Status in SharePoint Online'
-    Write-ZtProgress -Activity $activity -Status 'Getting SharePoint Tenant Settings'
-
-    $spoTenant = $null
-    $errorMsg = $null
-
-    try {
-        # Query: Retrieve SharePoint Online tenant IRM enablement status
-        $spoTenant = Get-SPOTenant -ErrorAction Stop
-    }
-    catch {
-        $errorMsg = $_
-        Write-PSFMessage "Error querying SharePoint Tenant Settings: $_" -Level Error
-    }
+    $spo = Get-ZtSharePointTenantSettings -Activity 'Checking Information Rights Management (IRM) Status in SharePoint Online'
+    $spoTenant = $spo.Tenant
+    $errorMsg = $spo.ErrorMessage
     #endregion Data Collection
 
     #region Assessment Logic

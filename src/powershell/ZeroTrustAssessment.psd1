@@ -76,7 +76,7 @@ FunctionsToExport = 'Connect-ZtAssessment', 'Disconnect-ZtAssessment',
                'Get-ZtTestStatistics', 'Invoke-ZtAssessment', 'Start-ZtAssessment',
                'Invoke-ZtGraphRequest', 'Invoke-ZtAzureRequest',
                'Invoke-ZtAzureResourceGraphRequest', 'Clear-ZtRequiredModule',
-               'Get-ZtCurrentLicense'
+               'Get-ZtCurrentLicense', 'Update-ZtRequiredModule'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @()
@@ -100,7 +100,6 @@ FileList = @()
 PrivateData = @{
 
     WindowsPowerShellRequiredModules = @(
-        @{ModuleName = 'Microsoft.Online.SharePoint.PowerShell'; GUID = 'adedde5f-e77b-4682-ab3d-a4cb4ff79b83'; ModuleVersion = '16.0.26914.12004'; },
         @{ModuleName = 'AipService'; GUID = 'e338ccc0-3333-4479-87fe-66382d33782d'; ModuleVersion = '3.0.0.1'; }
     )
 
@@ -108,19 +107,20 @@ PrivateData = @{
         @{ModuleName = 'Microsoft.Graph.Authentication'; GUID = '883916f2-9184-46ee-b1f8-b6a2fb784cee'; ModuleVersion = '2.35.0'; },
         @{ModuleName = 'Microsoft.Graph.Beta.Teams'; GUID = 'e264919d-7ae2-4a89-ba8b-524bd93ddc08'; ModuleVersion = '2.35.0'; },
         @{ModuleName = 'Az.Accounts'; GUID = '17a2feff-488b-47f9-8729-e2cec094624c'; ModuleVersion = '4.0.2'; },
-        @{ModuleName = 'ExchangeOnlineManagement'; GUID = 'b5eced50-afa4-455b-847a-d8fb64140a22'; RequiredVersion = '3.9.0'; }
+        @{ModuleName = 'ExchangeOnlineManagement'; GUID = 'b5eced50-afa4-455b-847a-d8fb64140a22'; RequiredVersion = '3.9.0'; },
+        @{ModuleName = 'PnP.PowerShell'; GUID = '0b0430ce-d799-4f3b-a565-f96f2d94c32b'; ModuleVersion = '2.12.0'; }
     )
 
     ServiceToRequiredModuleMap = @{
         'Graph'              = @('Microsoft.Graph.Authentication', 'Microsoft.Graph.Beta.Teams')
         'Azure'              = @('Az.Accounts')
         'AipService'         = @('AipService')
-        'SharePointOnline'   = @('Microsoft.Online.SharePoint.PowerShell')
+        'SharePoint'         = @('PnP.PowerShell')
         'ExchangeOnline'     = @('ExchangeOnlineManagement')
         'SecurityCompliance' = @('ExchangeOnlineManagement')
     }
 
-    serviceConnectionOrder = @('Graph', 'Azure', 'AipService', 'SharePointOnline', 'ExchangeOnline', 'SecurityCompliance')
+    serviceConnectionOrder = @('Graph', 'Azure', 'AipService', 'SharePoint', 'ExchangeOnline', 'SecurityCompliance')
 
     PSData = @{
         # Tags applied to this module. These help with module discovery in online galleries.

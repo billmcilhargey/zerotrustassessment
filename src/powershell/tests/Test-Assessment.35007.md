@@ -5,9 +5,9 @@ Information Rights Management (IRM) integration in SharePoint Online libraries i
 To disable legacy IRM in SharePoint Online:
 1. Identify libraries currently using IRM protection (audit existing sites)
 2. Plan migration to modern sensitivity labels with encryption
-3. Connect to SharePoint Online: `Connect-SPOService -Url https://<tenant>-admin.sharepoint.com`
-4. Disable legacy IRM: `Set-SPOTenant -IrmEnabled $false`
-5. Enable modern sensitivity labels: `Set-SPOTenant -EnableAIPIntegration $true`
+3. Connect to SharePoint Online: `Connect-PnPOnline -Url https://<tenant>-admin.sharepoint.com -Interactive`
+4. Disable legacy IRM: `Set-PnPTenant -IrmEnabled $false`
+5. Enable modern sensitivity labels: `Set-PnPTenant -EnableAIPIntegration $true`
 6. Configure and publish sensitivity labels with encryption to replace IRM policies
 
 - [Enable sensitivity labels for SharePoint and OneDrive](https://learn.microsoft.com/microsoft-365/compliance/sensitivity-labels-sharepoint-onedrive-files)

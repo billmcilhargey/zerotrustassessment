@@ -63,7 +63,7 @@ function Test-ZtServiceCoverage {
 		$serviceGaps.Add([PSCustomObject]@{
 			Service         = $svc
 			TestsAffected   = $count
-			IsWindowsOnly   = $svc -in @('AipService', 'SharePointOnline')
+			IsWindowsOnly   = $svc -in $script:WindowsOnlyServices
 		})
 	}
 

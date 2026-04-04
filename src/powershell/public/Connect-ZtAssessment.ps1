@@ -66,8 +66,9 @@ function Connect-ZtAssessment {
 		PS> Connect-ZtAssessment
 
 		Connects to Microsoft Graph and other services using Connect-MgGraph with the required scopes and other services.
-		By default, on Windows, this connects to Graph, Azure, Exchange Online, Security & Compliance, SharePoint Online, and Azure Information Protection.
-		On other platforms, this connects to Graph, Azure, Exchange and Security & Compliance (where supported).
+		By default, this connects to Graph, Azure, Exchange Online, Security & Compliance, SharePoint, and Azure Information Protection.
+		On non-Windows platforms, Azure Information Protection is skipped (requires Windows).
+		Security & Compliance is skipped when using device code flow.
 
 	.EXAMPLE
 		PS> Connect-ZtAssessment -UseDeviceCode
@@ -138,7 +139,7 @@ function Connect-ZtAssessment {
 		$ManagedIdentity,
 
 		# The services to connect to such as Azure and ExchangeOnline. Default is All.
-		[ValidateSet('All', 'Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePointOnline')]
+		[ValidateSet('All', 'Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePoint')]
 		[string[]]
 		$Service = 'All',
 
@@ -199,7 +200,7 @@ function Connect-ZtAssessment {
 	}
 
 	if ($Service -contains 'All') {
-		$Service = [string[]]@('Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePointOnline')
+		$Service = [string[]]@($script:AllowedServices)
 	}
 	elseif ($Service -notcontains 'Graph' -and $script:ConnectedService -notcontains 'Graph') {
 		# If not already connected, always connect Graph.
@@ -368,6 +369,19 @@ function Connect-ZtAssessment {
 				}
 
 				Write-PSFMessage -Message "Connecting to Microsoft Graph with params: $($connectMgGraphParams | Out-String)" -Level Verbose
+
+				# For any delegated flow (interactive or device code) with token caching,
+				# try silent restore first to avoid unnecessary login prompts.
+				$isDelegated = -not ($ManagedIdentity -or $ClientSecret -or $CertificateThumbprint -or $Certificate)
+				if ($isDelegated -and $UseTokenCache) {
+					Write-PSFMessage -Message "Attempting silent Graph connect from token cache..." -Level Debug
+					if (Restore-ZtCachedConnection) {
+						Write-Host -Object '   ✅ Connected (from cached token)' -ForegroundColor Green
+						$contextTenantId = (Get-MgContext).TenantId
+						continue
+					}
+				}
+
 				if ($connectMgGraphParams.ContainsKey('UseDeviceCode') -and $connectMgGraphParams.UseDeviceCode) {
 					Write-Host -Object '   Requesting device code (watch for the sign-in prompt below)...' -ForegroundColor DarkGray
 					Connect-MgGraph @connectMgGraphParams -ErrorAction Stop
@@ -881,27 +895,26 @@ function Connect-ZtAssessment {
 			}
 		}
 
-		'SharePointOnline' {
-			Write-Host -Object "`nConnecting to SharePoint Online" -ForegroundColor Cyan
+		'SharePoint' {
+			Write-Host -Object "`nConnecting to SharePoint" -ForegroundColor Cyan
 			try {
-				Write-PSFMessage -Message ('Loading SharePoint Online required modules: {0}' -f ($resolvedRequiredModules.SharePointOnline.Name -join ', ')) -Level Verbose
-				$loadedSharePointOnlineModules = $resolvedRequiredModules.SharePointOnline.ForEach{
+				Write-PSFMessage -Message ('Loading SharePoint required modules: {0}' -f ($resolvedRequiredModules.SharePoint.Name -join ', ')) -Level Verbose
+				$loadedSharePointModules = $resolvedRequiredModules.SharePoint.ForEach{
 					$importParams = @{ Global = $true; ErrorAction = 'Stop'; PassThru = $true; WarningAction = 'SilentlyContinue' }
-					if ($IsWindows) { $importParams['UseWindowsPowerShell'] = $true }
 					$_ | Import-Module @importParams
 				}
 
-				$loadedSharePointOnlineModules.ForEach{
-					Write-Debug -Message ('Module ''{0}'' v{1} loaded for SharePoint Online.' -f $_.Name, $_.Version)
+				$loadedSharePointModules.ForEach{
+					Write-Debug -Message ('Module ''{0}'' v{1} loaded for SharePoint.' -f $_.Name, $_.Version)
 				}
 			}
 			catch {
-				Write-Host -Object "   ❌ Failed to load required modules for SharePoint Online." -ForegroundColor Yellow
-				Write-Host -Object "      Tests requiring SharePoint Online will be skipped." -ForegroundColor Yellow
+				Write-Host -Object "   ❌ Failed to load required modules for SharePoint." -ForegroundColor Yellow
+				Write-Host -Object "      Tests requiring SharePoint will be skipped." -ForegroundColor Yellow
 				Write-Host -Object ("       Error details: {0}" -f $_.Exception.Message) -ForegroundColor Red
-				Write-PSFMessage -Message ("Failed to load required modules for SharePoint Online: {0}" -f $_) -Level Debug -ErrorRecord $_
+				Write-PSFMessage -Message ("Failed to load required modules for SharePoint: {0}" -f $_) -Level Debug -ErrorRecord $_
 				# Mark service as unavailable
-				Remove-ZtConnectedService -Service 'SharePointOnline'
+				Remove-ZtConnectedService -Service 'SharePoint'
 				continue
 			}
 
@@ -957,20 +970,56 @@ function Connect-ZtAssessment {
 				Write-Host -Object "   ❌ SharePoint Admin URL not provided and could not be inferred." -ForegroundColor Red
 				Write-Host -Object "       The SharePoint tests will be skipped." -ForegroundColor Red
 				Write-PSFMessage -Message "SharePoint Admin URL not provided and could not be inferred. Skipping SharePoint connection." -Level debug
-				Remove-ZtConnectedService -Service 'SharePointOnline'
+				Remove-ZtConnectedService -Service 'SharePoint'
 			}
 			else {
 				try {
-					Connect-SPOService -Url $adminUrl -ErrorAction Stop
+					$pnpParams = @{
+						Url         = $adminUrl
+						ErrorAction = 'Stop'
+					}
+
+					if ($ManagedIdentity) {
+						$pnpParams.ManagedIdentity = $true
+						Write-Host -Object '   Authenticating (managed identity)...' -ForegroundColor DarkGray
+					}
+					elseif ($ClientSecret) {
+						$pnpParams.ClientId = $ClientId
+						$pnpParams.ClientSecret = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
+							[System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($ClientSecret)
+						)
+						Write-Host -Object '   Authenticating (app-only client secret)...' -ForegroundColor DarkGray
+					}
+					elseif ($CertificateThumbprint -and $ClientId) {
+						$pnpParams.ClientId  = $ClientId
+						$pnpParams.Thumbprint = $CertificateThumbprint
+						if ($TenantId) { $pnpParams.Tenant = $TenantId }
+						Write-Host -Object '   Authenticating (app-only certificate)...' -ForegroundColor DarkGray
+					}
+					elseif ($Certificate -and $ClientId) {
+						$pnpParams.ClientId  = $ClientId
+						$pnpParams.Thumbprint = $Certificate.Certificate.Thumbprint
+						if ($TenantId) { $pnpParams.Tenant = $TenantId }
+						Write-Host -Object '   Authenticating (app-only certificate)...' -ForegroundColor DarkGray
+					}
+					elseif ($UseDeviceCode) {
+						$pnpParams.DeviceLogin = $true
+						Write-Host -Object '   Requesting device code (watch for the sign-in prompt below)...' -ForegroundColor DarkGray
+					}
+					else {
+						$pnpParams.Interactive = $true
+					}
+
+					Connect-PnPOnline @pnpParams
 					Write-Host -Object "   ✅ Connected" -ForegroundColor Green
-					Add-ZtConnectedService -Service 'SharePointOnline'
+					Add-ZtConnectedService -Service 'SharePoint'
 				}
 				catch {
-					Write-PSFMessage -Message ('Failed to connect to SharePoint Online: {0}' -f $_.Exception.Message) -Level Debug -ErrorRecord $_
+					Write-PSFMessage -Message ('Failed to connect to SharePoint: {0}' -f $_.Exception.Message) -Level Debug -ErrorRecord $_
 					Write-Host -Object "   ❌ Failed to connect." -ForegroundColor Yellow
-					Write-Host -Object "      Tests requiring SharePoint Online will be skipped." -ForegroundColor Yellow
+					Write-Host -Object "      Tests requiring SharePoint will be skipped." -ForegroundColor Yellow
 					Write-Host -Object ("       Error details: {0}" -f $_.Exception.Message) -ForegroundColor Red
-					Remove-ZtConnectedService -Service 'SharePointOnline'
+					Remove-ZtConnectedService -Service 'SharePoint'
 				}
 			}
 		}

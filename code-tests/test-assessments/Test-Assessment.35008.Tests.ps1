@@ -7,15 +7,15 @@ Describe "Test-Assessment-35008" {
         if (-not (Get-Command Write-PSFMessage -ErrorAction SilentlyContinue)) {
             function Write-PSFMessage {}
         }
-        if (-not (Get-Command Get-SPOTenant -ErrorAction SilentlyContinue)) {
-            function Get-SPOTenant {}
-        }
 
         # Load the class
         $classPath = Join-Path $srcRoot "classes/ZtTest.ps1"
         if (-not ("ZtTest" -as [type])) {
             . $classPath
         }
+
+        # Load shared helper
+        . (Join-Path $srcRoot "private/tests-shared/Get-ZtSharePointTenantSettings.ps1")
 
         # Load the SUT
         $sut = Join-Path $srcRoot "tests/Test-Assessment.35008.ps1"
@@ -36,7 +36,7 @@ Describe "Test-Assessment-35008" {
 
     Context "When querying SharePoint tenant settings fails" {
         It "Should return Fail status with Investigate message" {
-            Mock Get-SPOTenant { throw "Connection error" }
+            Mock Get-ZtSharePointTenantSettings { [PSCustomObject]@{ Tenant = $null; ErrorMessage = 'Connection error' } }
             Mock Add-ZtTestResultDetail {
                 param($TestId, $Title, $Status, $Result)
                 "## Scenario: Error querying settings`n`n$Result`n" | Add-Content $script:outputFile
@@ -52,10 +52,8 @@ Describe "Test-Assessment-35008" {
 
     Context "When Default Labeling is Disabled (Fail)" {
         It "Should return Fail status" {
-            Mock Get-SPOTenant {
-                return [PSCustomObject]@{
-                    DisableDocumentLibraryDefaultLabeling = $true
-                }
+            Mock Get-ZtSharePointTenantSettings {
+                [PSCustomObject]@{ Tenant = [PSCustomObject]@{ DisableDocumentLibraryDefaultLabeling = $true }; ErrorMessage = $null }
             }
             Mock Add-ZtTestResultDetail {
                 param($TestId, $Title, $Status, $Result)
@@ -72,10 +70,8 @@ Describe "Test-Assessment-35008" {
 
     Context "When Default Labeling is Enabled (Pass)" {
         It "Should return Pass status" {
-            Mock Get-SPOTenant {
-                return [PSCustomObject]@{
-                    DisableDocumentLibraryDefaultLabeling = $false
-                }
+            Mock Get-ZtSharePointTenantSettings {
+                [PSCustomObject]@{ Tenant = [PSCustomObject]@{ DisableDocumentLibraryDefaultLabeling = $false }; ErrorMessage = $null }
             }
             Mock Add-ZtTestResultDetail {
                 param($TestId, $Title, $Status, $Result)
@@ -92,10 +88,8 @@ Describe "Test-Assessment-35008" {
 
     Context "When Default Labeling is Null (Pass)" {
         It "Should return Pass status" {
-            Mock Get-SPOTenant {
-                return [PSCustomObject]@{
-                    DisableDocumentLibraryDefaultLabeling = $null
-                }
+            Mock Get-ZtSharePointTenantSettings {
+                [PSCustomObject]@{ Tenant = [PSCustomObject]@{ DisableDocumentLibraryDefaultLabeling = $null }; ErrorMessage = $null }
             }
             Mock Add-ZtTestResultDetail {
                 param($TestId, $Title, $Status, $Result)

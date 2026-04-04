@@ -55,12 +55,7 @@ function Clear-ZtRequiredModule {
     }
 
     # Remove all ZTA-related module files from disk
-    if ($isWindows) {
-        $ZTAModulesFolder = Join-Path -Path $Env:APPDATA -ChildPath 'ZeroTrustAssessment' -AdditionalChildPath 'Modules'
-    }
-    else {
-        $ZTAModulesFolder = Join-Path -Path $Env:HOME -ChildPath '.cache/ZeroTrustAssessment/Modules'
-    }
+    $ZTAModulesFolder = Get-ZtModuleCachePath
 
     if (Test-Path -Path $ZTAModulesFolder) {
         Remove-Item -Path $ZTAModulesFolder -Recurse -Force -ErrorAction Continue

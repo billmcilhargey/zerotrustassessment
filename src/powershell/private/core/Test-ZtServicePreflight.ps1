@@ -117,7 +117,7 @@ function Test-ZtServicePreflight {
 	}
 	$checks.Add([PSCustomObject]@{
 		Check       = 'Licensing'
-		Passed      = $licenseTier -in 'P1', 'P2', 'Governance'
+		Passed      = $licenseTier -in @('P1', 'P2', 'Governance')
 		Detail      = $licenseDetail
 		LicenseTier = $licenseTier
 	})

@@ -93,7 +93,7 @@ function Add-ZtTestResultDetail {
 		[ValidateSet('Investigate')]
 		[string] $CustomStatus,
 
-		[ValidateSet('Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePointOnline')]
+		[ValidateSet('Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePoint')]
 		[string[]] $NotConnectedService
 	)
 

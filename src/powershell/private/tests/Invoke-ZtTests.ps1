@@ -64,7 +64,7 @@
 		$LogsPath,
 
 		[Parameter(DontShow)]
-		[ValidateSet('Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePointOnline')]
+		[ValidateSet('Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePoint')]
 		[string[]]
 		$ConnectedService = $script:ConnectedService,
 
@@ -114,7 +114,7 @@
 
 	$testsToRun = $testsToRun.Where{ $_.TestId -notin $skippedTestsForLicense.TestId }
 
-	# Separate Sync Tests (Compliance/ExchangeOnline/SharePointOnline) from Parallel Tests (because of DLL order to manage in runspaces & remoting into WPS)
+	# Separate Sync Tests (Compliance/ExchangeOnline/SharePoint) from Parallel Tests (because of DLL order to manage in runspaces & remoting into WPS)
 	[int[]]$syncTestIds   = $testsToRun.Where{ $_.Pillar -eq 'Data'}.TestId
 	$syncTests     = $testsToRun.Where{ $_.TestId -in $syncTestIds }
 	$parallelTests = $testsToRun.Where{ $_.TestId -notin $syncTestIds }

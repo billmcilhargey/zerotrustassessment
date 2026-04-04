@@ -21,7 +21,7 @@ function Resolve-ZtServiceRequiredModule {
     [OutputType('ZeroTrustAssessment.Service.ModuleRequired')]
     param (
         [Parameter(Mandatory)]
-        [ValidateSet('Azure', 'AipService', 'ExchangeOnline', 'Graph', 'SecurityCompliance', 'SharePointOnline')]
+        [ValidateSet('Azure', 'AipService', 'ExchangeOnline', 'Graph', 'SecurityCompliance', 'SharePoint')]
         [string[]] $Service
     )
 
@@ -52,6 +52,14 @@ function Resolve-ZtServiceRequiredModule {
                     ErrorMessage        = $_.Exception.Message
                 }
             }
+        }
+    }
+
+    # Surface version mismatch errors prominently so the user knows why a service is unavailable.
+    foreach ($err in $resolvedRequiredModuleByService['Errors']) {
+        if ($err.ErrorMessage -match 'below the required minimum|does not match required version') {
+            Write-Host -Object ("  ❌ {0}" -f $err.ErrorMessage) -ForegroundColor Red
+            Write-Host -Object "     Run Update-ZtRequiredModule to download the correct version, then reimport the module." -ForegroundColor Yellow
         }
     }
 
