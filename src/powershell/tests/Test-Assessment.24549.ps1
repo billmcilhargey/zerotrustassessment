@@ -13,6 +13,7 @@ function Test-Assessment-24549 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 24549,
+    	RequiredScopes = ("DeviceManagementApps.Read.All", "Directory.Read.All"),
     	Title = 'Data on Android is protected by app protection policies',
     	UserImpact = 'High'
     )]

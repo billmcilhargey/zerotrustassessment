@@ -26,6 +26,7 @@ function Test-Assessment-35023 {
         SfiPillar = 'Protect tenants and production systems',
         TenantType = ('Workforce'),
         TestId = 35023,
+        RequiredScopes = "Directory.Read.All",
         Title = 'OCR is enabled for sensitive information detection',
         UserImpact = 'Low'
     )]

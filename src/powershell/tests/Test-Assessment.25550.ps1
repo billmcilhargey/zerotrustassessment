@@ -9,6 +9,7 @@
 function Test-Assessment-25550 {
     [ZtTest(
         Category = 'Azure Network Security',
+        CloudEnvironment = ('Global'),
         ImplementationCost = 'Low',
         MinimumLicense = ('Azure_Firewall_Premium'),
         Pillar = 'Network',
@@ -16,6 +17,7 @@ function Test-Assessment-25550 {
         SfiPillar = 'Protect networks',
         TenantType = ('Workforce', 'External'),
         TestId = 25550,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Inspection of Outbound TLS Traffic is Enabled on Azure Firewall',
         UserImpact = 'Low'
     )]
@@ -38,12 +40,9 @@ function Test-Assessment-25550 {
         return
     }
 
-    # Check the supported environment, 'AzureCloud' maps to 'Global'
-    Write-ZtProgress -Activity $activity -Status 'Checking Azure environment'
-
-    if ($azContext.Environment.Name -ne 'AzureCloud') {
-        Write-PSFMessage 'This test is only applicable to the Global (AzureCloud) environment.' -Tag Test -Level VeryVerbose
-        Add-ZtTestResultDetail -SkippedBecause NotSupported
+    # Check the supported cloud environment
+    if (-not (Test-ZtCloudEnvironment -SupportedCloudType 'Global')) {
+        Add-ZtTestResultDetail -SkippedBecause NotSupportedEnvironment
         return
     }
 

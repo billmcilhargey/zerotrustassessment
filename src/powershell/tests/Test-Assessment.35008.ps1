@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     A default sensitivity label is configured for SharePoint document libraries
 
@@ -22,6 +22,7 @@ function Test-Assessment-35008 {
     	SfiPillar = 'Protect tenants and production systems',
     	TenantType = ('Workforce'),
     	TestId = 35008,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Default sensitivity labels are configured for SharePoint document libraries',
     	UserImpact = 'Low'
     )]

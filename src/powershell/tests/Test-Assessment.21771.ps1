@@ -15,6 +15,7 @@ function Test-Assessment-21771 {
     	SfiPillar = 'Protect engineering systems',
     	TenantType = ('Workforce','External'),
     	TestId = 21771,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Inactive applications don’’t have highly privileged built-in roles',
     	UserImpact = 'Low'
     )]
@@ -81,14 +82,32 @@ function Get-AppListRole
 		$Icon
 	)
     $mdInfo = ""
+    if (-not $Apps -or $Apps.Count -eq 0) { return $mdInfo }
+
+    # Bulk-fetch all roles in a single query instead of per-item N+1
+    $allPrincipalIds = @($Apps | ForEach-Object {
+        "'$($_.principalId.ToString().Replace("'", "''"))'"
+    }) -join ','
+
     $sqlRole = @"
-    select r.roleDisplayName
+    select r.principalId, r.roleDisplayName
     from main.vwRole r
-    where r.principalId = '{0}' and r.isPrivileged = true
+    where r.principalId in ($allPrincipalIds) and r.isPrivileged = true
 "@
+    $allRoles = Invoke-DatabaseQuery -Database $Database -Sql $sqlRole
+
+    # Build lookup: principalId → list of role display names
+    $roleLookup = @{}
+    foreach ($r in $allRoles) {
+        $key = "$($r.principalId)"
+        if (-not $roleLookup[$key]) { $roleLookup[$key] = [System.Collections.Generic.List[string]]::new() }
+        $roleLookup[$key].Add($r.roleDisplayName)
+    }
+
     foreach ($item in $apps) {
-        $role = Invoke-DatabaseQuery -Database $Database -Sql ($sqlRole -f $item.principalId)
-        $roleDisplayName = $role.roleDisplayName -join ", "
+        $roleDisplayName = if ($roleLookup["$($item.principalId)"]) {
+            $roleLookup["$($item.principalId)"] -join ", "
+        } else { "" }
         $portalLink = "https://entra.microsoft.com/#view/Microsoft_AAD_IAM/ManagedAppMenuBlade/~/Overview/objectId/$($item.principalId)/appId/$($item.appId)"
         $mdInfo += "| $($Icon) | [$(Get-SafeMarkdown($item.principalDisplayName))]($portalLink) | $roleDisplayName | $($item.privilegeType) | $(Get-SafeMarkdown($item.publisherName)) | $(Get-FormattedDate($item.lastSignInDateTime)) | `n"
     }

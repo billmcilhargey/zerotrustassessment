@@ -16,6 +16,7 @@ function Test-Assessment-25411 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce'),
     	TestId = 25411,
+    	RequiredScopes = ("Directory.Read.All", "NetworkAccess.Read.All", "Policy.Read.All"),
     	Title = 'TLS inspection is enabled and correctly configured for outbound traffic',
     	UserImpact = 'Medium'
     )]
@@ -27,6 +28,12 @@ function Test-Assessment-25411 {
 
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
+        return
+    }
 
     $activity = 'TLS inspection is enabled and correctly configured for outbound traffic in Global Secure Access.'
     Write-ZtProgress -Activity $activity -Status 'Querying TLS inspection policies'

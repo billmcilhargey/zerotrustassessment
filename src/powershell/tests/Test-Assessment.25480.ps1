@@ -21,6 +21,7 @@ function Test-Assessment-25480 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce','External'),
     	TestId = 25480,
+    	RequiredScopes = ("Directory.Read.All", "NetworkAccess.Read.All"),
     	Title = 'Quick Access has user or group assignments',
     	UserImpact = 'Low'
     )]
@@ -29,6 +30,13 @@ function Test-Assessment-25480 {
 
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
+        return
+    }
+
     $activity = 'Checking Quick Access user and group assignments'
     Write-ZtProgress -Activity $activity -Status 'Querying Quick Access application and assigned users/groups'
 

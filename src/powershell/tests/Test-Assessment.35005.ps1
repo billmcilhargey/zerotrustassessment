@@ -22,6 +22,7 @@ function Test-Assessment-35005 {
     	SfiPillar = 'Protect tenants and production systems',
     	TenantType = ('Workforce'),
     	TestId = 35005,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Sensitivity labels are enabled for SharePoint and OneDrive',
     	UserImpact = 'Low'
     )]

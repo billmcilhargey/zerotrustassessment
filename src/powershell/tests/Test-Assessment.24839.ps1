@@ -13,6 +13,7 @@ function Test-Assessment-24839 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce'),
     	TestId = 24839,
+    	RequiredScopes = ("DeviceManagementConfiguration.Read.All", "Directory.Read.All"),
     	Title = 'Secure Wi-Fi profiles protect iOS devices from unauthorized network access',
     	UserImpact = 'Low'
     )]

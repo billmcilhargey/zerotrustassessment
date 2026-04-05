@@ -24,6 +24,7 @@ function Test-Assessment-25422 {
     	SfiPillar = 'Monitor and detect cyberthreats',
     	TenantType = ('Workforce','External'),
     	TestId = 25422,
+    	RequiredScopes = "NetworkAccess.Read.All",
     	Title = 'Global Secure Access deployment logs are populated and reviewed',
     	UserImpact = 'Low'
     )]
@@ -34,20 +35,8 @@ function Test-Assessment-25422 {
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
     $activity = 'Checking GSA Deployment logs are populated and reviewed'
 
-    # Q1: Check if GSA is enabled (prerequisite check)
-    Write-ZtProgress -Activity $activity -Status 'Checking if Global Secure Access is enabled'
-    $forwardingProfiles = Invoke-ZtGraphRequest -RelativeUri 'networkAccess/forwardingProfiles' -ApiVersion beta
-
-    # Check if GSA is configured
-    $gsaEnabled = $false
-    if ($forwardingProfiles -and $forwardingProfiles.Count -gt 0) {
-        $enabledProfiles = $forwardingProfiles | Where-Object { $_.state -eq 'enabled' }
-        $gsaEnabled = $enabledProfiles.Count -gt 0
-    }
-
-    # If GSA not configured, skip
-    if (-not $gsaEnabled) {
-        Write-PSFMessage 'Global Secure Access is not enabled in this tenant.' -Tag Test -Level Verbose
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
         Add-ZtTestResultDetail -SkippedBecause NotApplicable
         return
     }

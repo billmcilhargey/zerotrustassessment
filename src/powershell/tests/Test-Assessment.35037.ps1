@@ -14,6 +14,7 @@ function Test-Assessment-35037 {
         SfiPillar = 'Protect tenants and production systems',
         TenantType = ('Workforce','External'),
         TestId = 35037,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Purview audit logging is enabled',
         UserImpact = 'Low'
     )]

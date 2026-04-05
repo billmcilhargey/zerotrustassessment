@@ -22,5 +22,17 @@ function Clear-ZtModuleVariable {
     $script:__ZtSession.TenantInfo.Value.Clear()
     $script:__ZtSession.SignInLogDuration = $null
     $script:__ZtSession.PreviewEnabled = $false
+    $script:__ZtSession.CloudEnvironment = $null
     $script:ConnectedService = @()
-    $script:__ZtLicensePlanIds = $null}
+    $script:__ZtLicensePlanIds = $null
+
+    # Clear the thread-safe permission risk cache so stale data doesn't persist
+    if ($script:_GraphPermissions -and $script:_GraphPermissions -is [System.Collections.Concurrent.ConcurrentDictionary[string, string]]) {
+        $script:_GraphPermissions.Clear()
+    }
+
+    # Close any lingering module-managed database connection
+    if ($script:_DatabaseConnection) {
+        try { Disconnect-Database } catch { Write-PSFMessage "Failed to close lingering DB connection: $_" -Level Debug }
+    }
+}

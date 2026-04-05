@@ -13,6 +13,7 @@ function Test-Assessment-21840{
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21840,
+    	RequiredScopes = "Policy.Read.All",
     	Title = 'Security key attestation is enforced',
     	UserImpact = 'Low'
     )]

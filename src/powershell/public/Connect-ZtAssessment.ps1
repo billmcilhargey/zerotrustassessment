@@ -207,11 +207,52 @@ function Connect-ZtAssessment {
 		$Service += 'Graph'
 	}
 
-	#TODO: UseDeviceCode does not work with ExchangeOnline
-
 	#region Validate Services
 	$Service = $Service | Select-Object -Unique
 	$resolvedRequiredModules = Resolve-ZtServiceRequiredModule -Service $Service
+
+	# ── Pre-flight: classify services & skip those known to be unavailable ──
+	# Uses Get-ZtServiceClassification to detect Windows-only, no-device-code,
+	# no-client-secret, and missing-app-registration constraints *before* attempting connections.
+	$hasCertOrMI = ($CertificateThumbprint -or $Certificate -or $ManagedIdentity)
+	$classifyParams = @{}
+	if ($UseDeviceCode) { $classifyParams.UseDeviceCode = $true }
+	if ($ClientSecret -and -not $hasCertOrMI) { $classifyParams.UseClientSecret = $true }
+	if ($hasCertOrMI) { $classifyParams.HasCertificateOrMI = $true }
+	$serviceClassification = Get-ZtServiceClassification @classifyParams
+	$servicesToSkip = @()
+
+	foreach ($svcInfo in $serviceClassification) {
+		$svcName = $svcInfo.Name
+		# Only check services the user requested
+		if ($svcName -notin $resolvedRequiredModules.ServiceAvailable) { continue }
+
+		$skipReason = $null
+		if (-not $svcInfo.Available) {
+			# Hard platform constraint (e.g. Requires Windows)
+			$skipReason = $svcInfo.Reason
+		}
+		elseif ($svcInfo.RequiresCustomApp -and -not (Get-ZtPnPClientId -ClientId $ClientId)) {
+			$skipReason = $svcInfo.Reason
+		}
+		elseif ($svcInfo.NoDeviceCode -and $UseDeviceCode -and -not $hasCertOrMI) {
+			$skipReason = $svcInfo.Reason
+		}
+		elseif ($svcInfo.NoClientSecret -and $ClientSecret -and -not $hasCertOrMI) {
+			$skipReason = $svcInfo.Reason
+		}
+
+		if ($skipReason) {
+			$servicesToSkip += $svcName
+			Write-Host -Object (' ⚠️ Service "{0}" — {1}.' -f $svcName, $skipReason) -ForegroundColor Yellow
+			Write-Host -Object ('      Tests requiring {0} will be skipped.' -f $svcName) -ForegroundColor Yellow
+			Remove-ZtConnectedService -Service $svcName
+		}
+	}
+
+	# Filter the available services list so the switch loop never attempts skipped ones
+	$connectableServices = @($resolvedRequiredModules.ServiceAvailable | Where-Object { $_ -notin $servicesToSkip })
+
 	Write-Host -Object ('🔑 Authentication to {0}.' -f ($Service -join ', ')) -ForegroundColor DarkGray
 	if ($ManagedIdentity) {
 		Write-Host -Object 'Using managed identity authentication (no interactive prompts).' -ForegroundColor DarkGray
@@ -220,7 +261,7 @@ function Connect-ZtAssessment {
 		Write-Host -Object 'Using service principal (app-only) authentication (no interactive prompts).' -ForegroundColor DarkGray
 	}
 	elseif ($UseDeviceCode) {
-		$deviceCodeServices = @($resolvedRequiredModules.ServiceAvailable) -notmatch 'SecurityCompliance'
+		$deviceCodeServices = @($connectableServices) -notmatch 'SecurityCompliance'
 		Write-Host -Object ("Each service requires a separate device code. You will be prompted {0} time(s)." -f $deviceCodeServices.Count) -ForegroundColor DarkGray
 	}
 	else {
@@ -247,7 +288,7 @@ function Connect-ZtAssessment {
 	# For services where their requiredModules are available, attempt to import and connect.
 	# If errors occurs, mark them as service unavailable and continue with the rest, instead of stopping the entire connection process.
 	# if the connection is successful, add them to service available (module scope).
-	switch ($resolvedRequiredModules.ServiceAvailable) {
+	switch ($connectableServices) {
 		'Graph' {
 			Write-Host -Object "`nConnecting to Microsoft Graph" -ForegroundColor Cyan
 			Write-PSFMessage -Message 'Connecting to Microsoft Graph' -Level Verbose
@@ -313,16 +354,14 @@ function Connect-ZtAssessment {
 					($isGraphConnected -and -not $isContextValid) # if missing permission, reconnect to ask for the permissions needed for the assessment
 				) {
 					Write-PSFMessage -Message "Disconnecting from ClientId ({0}), tenant ({1}) account ({2})." -Level Debug -StringValues @($context.ClientId, $context.TenantId, $context.Account)
-					#TODO: Disconnect ZtAssessment is not quiet enough
 					$null = Disconnect-MgGraph -ErrorAction Ignore
-					# Disconnect-ZtAssessment -Service Graph -InformationAction Ignore
 					Remove-ZtConnectedService -Service 'Graph'
 				}
 				elseif ($isGraphConnected) { # if it's connected, and everything is ok.
 					# Test the existing context to ensure it has the required permissions and is valid for use in the assessment. If not, disconnect and reconnect with the correct parameters.
 					Write-PSFMessage -Message "Connected to Graph with the same info as specified in parameters." -Level Debug
 					Add-ZtConnectedService -Service 'Graph'
-					Write-Host -Object "   ✅ Already connected." -ForegroundColor Green
+					Write-Host -Object "   ✅ Already connected to Microsoft Graph." -ForegroundColor Green
 					$contextTenantId = $context.TenantId
 					continue
 				}
@@ -368,7 +407,14 @@ function Connect-ZtAssessment {
 					$connectMgGraphParams.ContextScope = 'Process'
 				}
 
-				Write-PSFMessage -Message "Connecting to Microsoft Graph with params: $($connectMgGraphParams | Out-String)" -Level Verbose
+				# Log connection parameters without sensitive credential material.
+				$safeLogParams = $connectMgGraphParams.Clone()
+				foreach ($sensitiveKey in @('ClientSecretCredential', 'Certificate', 'CertificateThumbprint')) {
+					if ($safeLogParams.ContainsKey($sensitiveKey)) {
+						$safeLogParams[$sensitiveKey] = '***REDACTED***'
+					}
+				}
+				Write-PSFMessage -Message "Connecting to Microsoft Graph with params: $($safeLogParams | Out-String)" -Level Verbose
 
 				# For any delegated flow (interactive or device code) with token caching,
 				# try silent restore first to avoid unnecessary login prompts.
@@ -376,14 +422,20 @@ function Connect-ZtAssessment {
 				if ($isDelegated -and $UseTokenCache) {
 					Write-PSFMessage -Message "Attempting silent Graph connect from token cache..." -Level Debug
 					if (Restore-ZtCachedConnection) {
-						Write-Host -Object '   ✅ Connected (from cached token)' -ForegroundColor Green
+						Write-Host -Object '   ✅ Connected to Microsoft Graph (from cached token).' -ForegroundColor Green
 						$contextTenantId = (Get-MgContext).TenantId
 						continue
 					}
 				}
 
 				if ($connectMgGraphParams.ContainsKey('UseDeviceCode') -and $connectMgGraphParams.UseDeviceCode) {
+					if (Read-ZtDeviceCodeSkip -ServiceName 'Graph') {
+						Remove-ZtConnectedService -Service 'Graph'
+						Write-Host -Object '   ⏭️  Skipped Graph — tests requiring Microsoft Graph will be skipped.' -ForegroundColor Yellow
+						continue
+					}
 					Write-Host -Object '   Requesting device code (watch for the sign-in prompt below)...' -ForegroundColor DarkGray
+					Open-ZtDeviceCodeBrowser
 					Connect-MgGraph @connectMgGraphParams -ErrorAction Stop
 				}
 				elseif ($ManagedIdentity -or $ClientSecret -or $CertificateThumbprint -or $Certificate) {
@@ -394,7 +446,7 @@ function Connect-ZtAssessment {
 					$null = Connect-MgGraph @connectMgGraphParams -ErrorAction Stop
 				}
 				$contextTenantId = (Get-MgContext).TenantId
-				Write-Host -Object "   ✅ Connected" -ForegroundColor Green
+				Write-Host -Object "   ✅ Connected to Microsoft Graph." -ForegroundColor Green
 				Add-ZtConnectedService -Service 'Graph'
 			}
 			catch {
@@ -406,6 +458,7 @@ function Connect-ZtAssessment {
 				Write-Host -Object "       Tests requiring Microsoft Graph cannot be executed." -ForegroundColor Yellow
 				Write-Host -Object "       Graph is critical to the ZeroTrustAssessment report. Aborting." -ForegroundColor Yellow
 				$methodNotFound = $null
+				$dllConflict = $null
 				if ($graphException.Exception.InnerException -is [System.MissingMethodException]) {
 					$methodNotFound = $graphException.Exception.InnerException
 				}
@@ -413,8 +466,23 @@ function Connect-ZtAssessment {
 					$methodNotFound = $graphException.Exception
 				}
 
+				# Detect TypeLoadException (e.g. AzureIdentityAccessTokenProvider from Microsoft.Graph.Core)
+				$innerEx = $graphException.Exception
+				while ($innerEx) {
+					if ($innerEx -is [System.TypeLoadException]) {
+						$dllConflict = $innerEx
+						break
+					}
+					$innerEx = $innerEx.InnerException
+				}
+
 				if ($methodNotFound -and $methodNotFound.Message -like '*Microsoft.Identity*') {
 					Write-Warning -Message "DLL conflict detected (MissingMethodException in Microsoft.Identity). This typically occurs when incompatible versions of Microsoft.Identity.Client or Microsoft.IdentityModel.Abstractions are loaded."
+					Write-Warning -Message "Please RESTART your PowerShell session and run Connect-ZtAssessment again, ensuring no other Microsoft modules are imported first."
+				}
+				elseif ($dllConflict) {
+					Write-Warning -Message "DLL conflict detected (TypeLoadException): $($dllConflict.Message)"
+					Write-Warning -Message "This typically occurs when another module (e.g. Az.Accounts) loaded an incompatible version of Microsoft.Graph.Core or related assemblies."
 					Write-Warning -Message "Please RESTART your PowerShell session and run Connect-ZtAssessment again, ensuring no other Microsoft modules are imported first."
 				}
 
@@ -430,6 +498,21 @@ function Connect-ZtAssessment {
 			}
 			catch {
 				Remove-ZtConnectedService -Service 'Graph'
+
+				# Check for DLL conflicts that surface during post-connection verification
+				$verifyEx = $_.Exception
+				$typeLoadEx = $null
+				while ($verifyEx) {
+					if ($verifyEx -is [System.TypeLoadException]) { $typeLoadEx = $verifyEx; break }
+					$verifyEx = $verifyEx.InnerException
+				}
+				if ($typeLoadEx) {
+					Write-Host -Object "   ❌ Graph verification failed due to a DLL conflict." -ForegroundColor Yellow
+					Write-Warning -Message "TypeLoadException: $($typeLoadEx.Message)"
+					Write-Warning -Message "This typically occurs when another module (e.g. Az.Accounts) loaded an incompatible version of Microsoft.Graph.Core or related assemblies."
+					Write-Warning -Message "Please RESTART your PowerShell session and run Connect-ZtAssessment again, ensuring no other Microsoft modules are imported first."
+				}
+
 				Stop-PSFFunction -Message "Authenticated to Graph, but the requirements for the ZeroTrustAssessment are not met by the established session:`n$_" -ErrorRecord $_ -EnableException $true -Cmdlet $PSCmdlet
 			}
 		}
@@ -508,7 +591,7 @@ function Connect-ZtAssessment {
 				elseif ($isAzureConnected) {
 					Write-PSFMessage -Message "Connected to Azure with the same info as specified in parameters." -Level Debug
 					Add-ZtConnectedService -Service 'Azure'
-					Write-Host -Object "   ✅ Already connected." -ForegroundColor Green
+					Write-Host -Object "   ✅ Already connected to Azure." -ForegroundColor Green
 					continue
 				}
 
@@ -551,9 +634,22 @@ function Connect-ZtAssessment {
 					if ($tenantParam) { $azParams.Tenant = $tenantParam }
 				}
 
-				Write-Verbose -Message ("Connecting to Azure with parameters: {0}" -f ($azParams | Out-String))
+				# Log Azure connection parameters without sensitive credential material.
+				$safeAzLogParams = $azParams.Clone()
+				foreach ($sensitiveKey in @('Credential', 'CertificateThumbprint')) {
+					if ($safeAzLogParams.ContainsKey($sensitiveKey)) {
+						$safeAzLogParams[$sensitiveKey] = '***REDACTED***'
+					}
+				}
+				Write-Verbose -Message ("Connecting to Azure with parameters: {0}" -f ($safeAzLogParams | Out-String))
 				if ($azParams.ContainsKey('UseDeviceAuthentication') -and $azParams.UseDeviceAuthentication) {
+					if (Read-ZtDeviceCodeSkip -ServiceName 'Azure') {
+						Remove-ZtConnectedService -Service 'Azure'
+						Write-Host -Object '   ⏭️  Skipped Azure — tests requiring Azure will be skipped.' -ForegroundColor Yellow
+						continue
+					}
 					Write-Host -Object '   Requesting device code (watch for the sign-in prompt below)...' -ForegroundColor DarkGray
+					Open-ZtDeviceCodeBrowser
 					$null = Connect-AzAccount @azParams -ErrorAction Stop
 				}
 				elseif ($ManagedIdentity -or $ClientSecret -or $CertificateThumbprint -or $Certificate) {
@@ -563,7 +659,7 @@ function Connect-ZtAssessment {
 				else {
 					$null = Connect-AzAccount @azParams -ErrorAction Stop
 				}
-				Write-Host -Object "   ✅ Connected" -ForegroundColor Green
+				Write-Host -Object "   ✅ Connected to Azure." -ForegroundColor Green
 				Add-ZtConnectedService -Service 'Azure'
 			}
 			catch {
@@ -605,7 +701,7 @@ function Connect-ZtAssessment {
 					Write-PSFMessage -Message "Connecting to Azure Information Protection" -Level Verbose
 					# Connect-AipService does not have parameters for non-interactive auth, so it will use the existing Graph connection context if available, or prompt if not.
 					$null = Connect-AipService -ErrorAction Stop
-					Write-Host -Object "   ✅ Connected" -ForegroundColor Green
+					Write-Host -Object "   ✅ Connected to Azure Information Protection." -ForegroundColor Green
 					Add-ZtConnectedService -Service 'AipService'
 			}
 			catch {
@@ -645,7 +741,7 @@ function Connect-ZtAssessment {
 				}
 
 				if ($isExoConnected -and -not $Force.IsPresent) {
-					Write-Host -Object "   ✅ Already connected." -ForegroundColor Green
+					Write-Host -Object "   ✅ Already connected to Exchange Online." -ForegroundColor Green
 					Add-ZtConnectedService -Service 'ExchangeOnline'
 					continue
 				}
@@ -693,14 +789,19 @@ function Connect-ZtAssessment {
 					$null = Connect-ExchangeOnline @exoParams
 				}
 				elseif ($ClientSecret) {
-					# EXO does not support client secret for app-only auth
-					Write-Host -Object "   ⚠️ Exchange Online does not support client-secret app-only auth." -ForegroundColor Yellow
-					Write-Host -Object "      Use -CertificateThumbprint or -ManagedIdentity for unattended EXO access." -ForegroundColor Yellow
+					# Pre-flight should have skipped this — safety net for direct Connect-ZtAssessment calls
+					Write-PSFMessage -Message 'Exchange Online does not support client-secret auth — skipping.' -Level Warning
 					Remove-ZtConnectedService -Service 'ExchangeOnline'
 					continue
 				}
 				elseif ($UseDeviceCode) {
+					if (Read-ZtDeviceCodeSkip -ServiceName 'Exchange Online') {
+						Remove-ZtConnectedService -Service 'ExchangeOnline'
+						Write-Host -Object '   ⏭️  Skipped Exchange Online — tests requiring Exchange Online will be skipped.' -ForegroundColor Yellow
+						continue
+					}
 					Write-Host -Object '   Requesting device code (each service requires separate authentication)...' -ForegroundColor DarkGray
+					Open-ZtDeviceCodeBrowser
 					Connect-ExchangeOnline -ShowBanner:$false -Device:$UseDeviceCode -ExchangeEnvironmentName $ExchangeEnvironmentName -ErrorAction Stop
 				}
 				else {
@@ -715,7 +816,7 @@ function Connect-ZtAssessment {
 					}
 				}
 
-				Write-Host -Object "   ✅ Connected" -ForegroundColor Green
+				Write-Host -Object "   ✅ Connected to Exchange Online." -ForegroundColor Green
 				Add-ZtConnectedService -Service 'ExchangeOnline'
 			}
 			catch {
@@ -777,15 +878,13 @@ function Connect-ZtAssessment {
 			}
 
 			if ($ClientSecret -and -not ($CertificateThumbprint -or $Certificate)) {
-				# S&C does not support client secrets for app-only auth
-				Write-Host -Object "   ⚠️ Security & Compliance does not support client-secret app-only auth." -ForegroundColor Yellow
-				Write-Host -Object "      Use -CertificateThumbprint or interactive auth. Tests requiring S&C will be skipped." -ForegroundColor Yellow
+				# Pre-flight should have skipped this — safety net for direct Connect-ZtAssessment calls
+				Write-PSFMessage -Message 'Security & Compliance does not support client-secret auth — skipping.' -Level Warning
 				Remove-ZtConnectedService -Service 'SecurityCompliance'
 			}
 			elseif ($UseDeviceCode -and -not ($CertificateThumbprint -or $Certificate -or $ManagedIdentity)) {
-				Write-Host -Object "   ⚠️ Skipped: Security & Compliance does not support device code flow." -ForegroundColor Yellow
-				Write-Host -Object "      Tests requiring Security & Compliance will be skipped." -ForegroundColor Yellow
-				Write-Host -Object "      To connect, use interactive auth on Windows or app registration with certificate." -ForegroundColor DarkGray
+				# Pre-flight should have skipped this — safety net for direct Connect-ZtAssessment calls
+				Write-PSFMessage -Message 'Security & Compliance does not support device code flow — skipping.' -Level Warning
 				Remove-ZtConnectedService -Service 'SecurityCompliance'
 			}
 			elseif ($exoSnCModulesLoaded) {
@@ -857,7 +956,7 @@ function Connect-ZtAssessment {
 
 					Write-Verbose -Message "Connecting to Security & Compliance"
 					Connect-IPPSSession @ippSessionParams
-					Write-Host -Object "   ✅ Connected" -ForegroundColor Green
+					Write-Host -Object "   ✅ Connected to Security & Compliance." -ForegroundColor Green
 
 					# Fix for Get-Label visibility in other scopes
 					if (Get-Command -Name Get-Label -ErrorAction Ignore) {
@@ -979,6 +1078,9 @@ function Connect-ZtAssessment {
 						ErrorAction = 'Stop'
 					}
 
+					# Use the shared function to resolve the PnP client ID.
+					$pnpClientId = Get-ZtPnPClientId -ClientId $ClientId
+
 					if ($ManagedIdentity) {
 						$pnpParams.ManagedIdentity = $true
 						Write-Host -Object '   Authenticating (managed identity)...' -ForegroundColor DarkGray
@@ -1003,15 +1105,62 @@ function Connect-ZtAssessment {
 						Write-Host -Object '   Authenticating (app-only certificate)...' -ForegroundColor DarkGray
 					}
 					elseif ($UseDeviceCode) {
-						$pnpParams.DeviceLogin = $true
+						if (-not $pnpClientId) {
+							# Pre-flight should have skipped this — safety net
+							Write-Host -Object "   ❌ No Entra ID app registration for SharePoint. Set ENTRAID_APP_ID env var." -ForegroundColor Yellow
+							Remove-ZtConnectedService -Service 'SharePoint'
+							continue
+						}
+
+						# PnP.PowerShell's built-in DeviceLogin has a threading bug on Linux/PS7
+						# (the MSAL callback can't call WriteWarning from a background thread).
+						# Work around by doing the MSAL device code flow ourselves, then passing
+						# the access token to Connect-PnPOnline.
+						if (Read-ZtDeviceCodeSkip -ServiceName 'SharePoint') {
+							Remove-ZtConnectedService -Service 'SharePoint'
+							Write-Host -Object '   ⏭️  Skipped SharePoint — tests requiring SharePoint will be skipped.' -ForegroundColor Yellow
+							continue
+						}
 						Write-Host -Object '   Requesting device code (watch for the sign-in prompt below)...' -ForegroundColor DarkGray
+						Open-ZtDeviceCodeBrowser
+
+						$pnpTenant = if ($TenantId) { $TenantId }
+							elseif ($graphContext.TenantId) { $graphContext.TenantId }
+							else { 'common' }
+
+						# SharePoint resource scope: derive from admin URL
+						$spHost = ([uri]$adminUrl).Host -replace '-admin\.', '.'
+						$pnpScopes = [string[]]@("https://$spHost/.default")
+
+						$pnpApp = [Microsoft.Identity.Client.PublicClientApplicationBuilder]::Create($pnpClientId).WithAuthority(
+							"https://login.microsoftonline.com/$pnpTenant"
+						).WithDefaultRedirectUri().Build()
+
+						$pnpDeviceCodeCallback = [System.Func[Microsoft.Identity.Client.DeviceCodeResult, System.Threading.Tasks.Task]] {
+							param($dcr)
+							# Write directly to Console to avoid the cmdlet threading restriction
+							[Console]::Error.WriteLine('')
+							[Console]::Error.WriteLine("   $($dcr.Message)")
+							[Console]::Error.WriteLine('')
+							return [System.Threading.Tasks.Task]::CompletedTask
+						}
+
+						$pnpAuthResult = $pnpApp.AcquireTokenWithDeviceCode($pnpScopes, $pnpDeviceCodeCallback).ExecuteAsync().GetAwaiter().GetResult()
+						$pnpParams.AccessToken = $pnpAuthResult.AccessToken
 					}
 					else {
+						if (-not $pnpClientId) {
+							# Pre-flight should have skipped this — safety net
+							Write-Host -Object "   ❌ No Entra ID app registration for SharePoint. Set ENTRAID_APP_ID env var." -ForegroundColor Yellow
+							Remove-ZtConnectedService -Service 'SharePoint'
+							continue
+						}
+						$pnpParams.ClientId = $pnpClientId
 						$pnpParams.Interactive = $true
 					}
 
 					Connect-PnPOnline @pnpParams
-					Write-Host -Object "   ✅ Connected" -ForegroundColor Green
+					Write-Host -Object "   ✅ Connected to SharePoint." -ForegroundColor Green
 					Add-ZtConnectedService -Service 'SharePoint'
 				}
 				catch {
@@ -1019,9 +1168,48 @@ function Connect-ZtAssessment {
 					Write-Host -Object "   ❌ Failed to connect." -ForegroundColor Yellow
 					Write-Host -Object "      Tests requiring SharePoint will be skipped." -ForegroundColor Yellow
 					Write-Host -Object ("       Error details: {0}" -f $_.Exception.Message) -ForegroundColor Red
+					if ($_.Exception.Message -match 'AADSTS700016|not found in the directory') {
+						Write-Host -Object "       Hint: The Entra ID app is not registered or consented in this tenant." -ForegroundColor Yellow
+						Write-Host -Object "       Register your own app: https://pnp.github.io/powershell/articles/registerapplication.html" -ForegroundColor Yellow
+						Write-Host -Object "       Auth guide: https://pnp.github.io/powershell/articles/authentication.html" -ForegroundColor Yellow
+						Write-Host -Object "       Set default Client ID: https://pnp.github.io/powershell/articles/defaultclientid.html" -ForegroundColor Yellow
+						Write-Host -Object "       Then pass -ClientId or set ENTRAID_APP_ID / ENTRAID_CLIENT_ID / AZURE_CLIENT_ID env var." -ForegroundColor Yellow
+						Write-Host -Object "       Minimum permission: SharePoint > Delegated > AllSites.FullControl" -ForegroundColor Yellow
+						Write-Host -Object "       Ensure 'Allow public client flows' is enabled if using device code auth." -ForegroundColor Yellow
+					}
 					Remove-ZtConnectedService -Service 'SharePoint'
 				}
 			}
 		}
+	}
+
+	# Show connection summary after all services have been processed
+	$conn = Get-ZtConnectionState
+	if ($conn.IsConnected) {
+		Write-Host ''
+		Write-Host '── Connection Status ──' -ForegroundColor DarkCyan
+		Write-Host ''
+		if ($conn.Account) {
+			Write-Host "  Account   : $($conn.Account)" -ForegroundColor Gray
+		}
+		if ($conn.Tenant) {
+			Write-Host "  Tenant    : $($conn.Tenant)" -ForegroundColor Gray
+		}
+		$cloudEnv = $conn.CloudEnvironment
+		if ($cloudEnv) {
+			Write-Host "  Cloud     : $($cloudEnv.DisplayName)" -ForegroundColor Magenta
+		}
+		Write-Host "  Connected : $($conn.Services -join ', ')" -ForegroundColor Gray
+		Write-Host "  Token Cache: $(if ($UseTokenCache) { 'Enabled' } else { 'Disabled' })" -ForegroundColor Gray
+		Show-ZtLicenseStatus
+		Show-ZtPermissionStatus
+		Write-Host ''
+	}
+	else {
+		Write-Host ''
+		Write-Host '── Connection Status ──' -ForegroundColor DarkCyan
+		Write-Host ''
+		Write-Host '  Not connected to any services.' -ForegroundColor Yellow
+		Write-Host ''
 	}
 }

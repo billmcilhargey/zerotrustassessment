@@ -13,6 +13,7 @@ function Test-Assessment-21845{
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21845,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Temporary access pass is enabled',
     	UserImpact = 'Low'
     )]
@@ -41,7 +42,7 @@ function Test-Assessment-21845{
             Write-ZtProgress -Activity $activity -Status 'Getting conditional access policies'
 
             # Query 2: Get all enabled conditional access policies
-            $allCAPolicies = Invoke-ZtGraphRequest -RelativeUri 'identity/conditionalAccess/policies' -Filter "state eq 'enabled'" -ApiVersion 'v1.0'
+            $allCAPolicies = Get-ZtConditionalAccessPolicy -Filter "state eq 'enabled'"
 
             # Find policies targeting security information registration
             $securityInfoPolicies = $allCAPolicies | Where-Object {

@@ -13,6 +13,7 @@ function Test-Assessment-21941{
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21941,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Token protection policies are configured',
     	UserImpact = 'Low'
     )]
@@ -30,7 +31,7 @@ function Test-Assessment-21941{
 
     # Get all Conditional Access policies with Windows platform filtering
     $filter = "conditions/platforms/includePlatforms/any(p:p eq 'windows')"
-    $allCAPolicies = Invoke-ZtGraphRequest -RelativeUri "identity/conditionalAccess/policies" -ApiVersion 'beta' -Filter $filter
+    $allCAPolicies = Get-ZtConditionalAccessPolicy -Filter $filter -ApiVersion beta
 
     $policiesWithTokenProtection = $allCAPolicies | Where-Object {
         $_.sessionControls -and

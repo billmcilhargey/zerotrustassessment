@@ -69,6 +69,10 @@ function Write-ZtTestSummary {
 					# No result detail was written — test crashed before calling Add-ZtTestResultDetail
 					$status = 'Error'
 				}
+				elseif ($exec.Success -and -not $detail) {
+					# Test ran successfully but never called Add-ZtTestResultDetail (e.g. early return with no findings)
+					$status = 'Skipped'
+				}
 			}
 
 			if (-not $status) { $status = 'Error' }
@@ -188,6 +192,7 @@ function Write-ZtTestSummary {
 					'NotConnectedExchange'         { 'Exchange Online connection required' }
 					'NotConnectedSecurityCompliance' { 'Security & Compliance connection required' }
 					'NotSupported'                 { 'Platform not supported (e.g. Windows-only cmdlets)' }
+					'NotSupportedEnvironment'      { 'Cloud environment not supported' }
 					'NotDotGovDomain'              { 'Federal .gov domain required' }
 					'NoAzureAccess'                { 'Azure subscription access required' }
 					'TimeoutReached'               { 'Report execution timed out' }

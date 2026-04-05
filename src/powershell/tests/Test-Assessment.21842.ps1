@@ -13,6 +13,7 @@ function Test-Assessment-21842{
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 21842,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Block administrators from using SSPR',
     	UserImpact = 'Low'
     )]

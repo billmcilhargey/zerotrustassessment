@@ -13,6 +13,7 @@ function Test-Assessment-21787 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce'),
     	TestId = 21787,
+    	RequiredScopes = "Policy.Read.All",
     	Title = 'Permissions to create new tenants are limited to the Tenant Creator role',
     	UserImpact = 'Medium'
     )]

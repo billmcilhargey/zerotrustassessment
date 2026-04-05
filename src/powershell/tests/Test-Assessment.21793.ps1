@@ -13,6 +13,7 @@ function Test-Assessment-21793 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce','External'),
     	TestId = 21793,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Tenant restrictions v2 policy is configured',
     	UserImpact = 'Low'
     )]

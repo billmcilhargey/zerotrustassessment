@@ -67,7 +67,8 @@ function Add-ZtTestResultDetail {
 
 		[ValidateSet('NotConnectedAzure', 'NotConnectedExchange', 'NotConnectedSecurityCompliance', 'NotConnectedToService', 'NotLicensedEntraIDP1',
 		    'NotLicensedEntraIDP2', 'NotLicensedEntraIDGovernance', 'NotLicensedEntraWorkloadID', 'NotSupported', 'UnderConstruction',
-			'NotLicensedIntune', 'NoAzureAccess', 'NotApplicable', 'NotDotGovDomain', 'NoCompatibleLicenseFound', 'TimeoutReached'
+			'NotLicensedIntune', 'NoAzureAccess', 'NotApplicable', 'NotDotGovDomain', 'NoCompatibleLicenseFound', 'TimeoutReached',
+			'MissingRequiredScope', 'NotSupportedEnvironment'
 		)]
 		[string] $SkippedBecause,
 
@@ -94,7 +95,11 @@ function Add-ZtTestResultDetail {
 		[string] $CustomStatus,
 
 		[ValidateSet('Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePoint')]
-		[string[]] $NotConnectedService
+		[string[]] $NotConnectedService,
+
+		# Graph permission scopes that are missing from the current session.
+		# Used when SkippedBecause is 'MissingRequiredScope'.
+		[string[]] $MissingScopes
 	)
 
 	#region Resolve Test Item
@@ -127,6 +132,14 @@ function Add-ZtTestResultDetail {
 		elseif ($SkippedBecause -eq 'NoCompatibleLicenseFound') {
 			[string[]] $licenseGroupString = @($testMeta.CompatibleLicense).ForEach{ ($_ -split '&') -join '" AND "' }
 			$SkippedReason = (Get-ZtSkippedReason -SkippedBecause $SkippedBecause) -f ($licenseGroupString -join '") OR ("')
+		}
+		elseif ($SkippedBecause -eq 'MissingRequiredScope') {
+			$SkippedReason = (Get-ZtSkippedReason -SkippedBecause $SkippedBecause) -f ($MissingScopes -join '", "')
+		}
+		elseif ($SkippedBecause -eq 'NotSupportedEnvironment') {
+			$currentEnv = Get-ZtCloudEnvironment
+			$supportedEnvs = if ($testMeta.CloudEnvironment) { $testMeta.CloudEnvironment -join '", "' } else { 'Unknown' }
+			$SkippedReason = (Get-ZtSkippedReason -SkippedBecause $SkippedBecause) -f $currentEnv.DisplayName, $supportedEnvs
 		}
 		else {
 			$SkippedReason = Get-ZtSkippedReason -SkippedBecause $SkippedBecause

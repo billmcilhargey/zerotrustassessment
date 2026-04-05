@@ -13,6 +13,7 @@ function Test-Assessment-24551 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 24551,
+    	RequiredScopes = ("DeviceManagementConfiguration.Read.All", "Directory.Read.All"),
     	Title = 'Authentication on Windows uses Windows Hello for Business',
     	UserImpact = 'Medium'
     )]

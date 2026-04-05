@@ -1,4 +1,4 @@
-﻿<#!
+<#!
 .SYNOPSIS
 Checks that all enterprise applications have owners assigned and lists permission names with classifications.
 #>
@@ -14,6 +14,7 @@ function Test-Assessment-24518 {
     	SfiPillar = 'Protect engineering systems',
     	TenantType = ('Workforce'),
     	TestId = 24518,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Enterprise applications have owners',
     	UserImpact = 'Low'
     )]

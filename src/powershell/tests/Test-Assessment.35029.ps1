@@ -22,6 +22,7 @@ function Test-Assessment-35029 {
         SfiPillar = 'Protect tenants and production systems',
         TenantType = ('Workforce'),
         TestId = 35029,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Mail flow rules apply rights protection to sensitive messages',
         UserImpact = 'Medium'
     )]

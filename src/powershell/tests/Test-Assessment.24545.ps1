@@ -13,6 +13,7 @@ function Test-Assessment-24545 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce'),
     	TestId = 24545,
+    	RequiredScopes = ("DeviceManagementConfiguration.Read.All", "Directory.Read.All"),
     	Title = 'Compliance policies protect fully managed and corporate-owned Android devices',
     	UserImpact = 'Medium'
     )]

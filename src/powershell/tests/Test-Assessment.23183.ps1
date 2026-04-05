@@ -13,6 +13,7 @@ function Test-Assessment-23183 {
     	SfiPillar = 'Protect engineering systems',
     	TenantType = ('Workforce','External'),
     	TestId = 23183,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Service principals use safe redirect URIs',
     	UserImpact = 'Low'
     )]

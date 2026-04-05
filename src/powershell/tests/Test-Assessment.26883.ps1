@@ -25,6 +25,7 @@ function Test-Assessment-26883 {
         SfiPillar = 'Protect networks',
         TenantType = ('Workforce'),
         TestId = 26883,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Default Ruleset is assigned in Azure Front Door WAF',
         UserImpact = 'Low'
     )]

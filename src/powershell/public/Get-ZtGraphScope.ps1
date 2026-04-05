@@ -31,6 +31,8 @@ Function Get-ZtGraphScope {
     # /zerotrustassessment/website/docs/sections/permissions.md
 
     # Default read-only scopes required for the assessment.
+    # Principle of least privilege: only request what is needed, all scopes are .Read.
+    # Policy.Read.ConditionalAccess is NOT listed because Policy.Read.All already covers it.
     $scopes = @( #IMPORTANT: Read note above before adding any new scopes.
         'AuditLog.Read.All'
         'CrossTenantInformation.ReadBasic.All'
@@ -43,16 +45,15 @@ Function Get-ZtGraphScope {
         'DirectoryRecommendations.Read.All'
         'EntitlementManagement.Read.All'
         'IdentityRiskEvent.Read.All'
+        'IdentityRiskyServicePrincipal.Read.All'
         'IdentityRiskyUser.Read.All'
+        'NetworkAccess.Read.All'
         'Policy.Read.All'
-        'Policy.Read.ConditionalAccess'
         'Policy.Read.PermissionGrant'
         'PrivilegedAccess.Read.AzureAD'
         'Reports.Read.All'
         'RoleManagement.Read.All'
         'UserAuthenticationMethod.Read.All'
-        'NetworkAccess.Read.All'
-        'IdentityRiskyServicePrincipal.Read.All'
     )
 
     $scopes | Sort-Object -Unique

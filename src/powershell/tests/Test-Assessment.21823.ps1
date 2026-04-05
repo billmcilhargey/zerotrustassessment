@@ -13,6 +13,7 @@ function Test-Assessment-21823{
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce'),
     	TestId = 21823,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Guest self-service sign-up via user flow is disabled',
     	UserImpact = 'Low'
     )]

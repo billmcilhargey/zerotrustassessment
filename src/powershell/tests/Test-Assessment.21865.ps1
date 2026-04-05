@@ -13,6 +13,7 @@ function Test-Assessment-21865 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce','External'),
     	TestId = 21865,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Named locations are configured',
     	UserImpact = 'Low'
     )]

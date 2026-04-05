@@ -13,6 +13,7 @@ function Test-Assessment-21875 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce','External'),
     	TestId = 21875,
+    	RequiredScopes = ("Directory.Read.All", "EntitlementManagement.Read.All"),
     	Title = 'All entitlement management assignment policies that apply to external users require connected organizations',
     	UserImpact = 'Medium'
     )]

@@ -13,6 +13,7 @@ function Test-Assessment-21818 {
     	SfiPillar = 'Monitor and detect cyberthreats',
     	TenantType = ('Workforce'),
     	TestId = 21818,
+    	RequiredScopes = ("Directory.Read.All", "RoleManagement.Read.All"),
     	Title = 'Privileged role activations have monitoring and alerting configured',
     	UserImpact = 'Low'
     )]

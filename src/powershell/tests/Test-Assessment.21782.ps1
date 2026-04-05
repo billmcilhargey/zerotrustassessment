@@ -14,6 +14,7 @@ function Test-Assessment-21782 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 21782,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Privileged accounts have phishing-resistant methods registered',
     	UserImpact = 'Low'
     )]

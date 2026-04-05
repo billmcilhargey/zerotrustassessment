@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Assessment 21892 – Verifies that all sign-in activity is restricted to managed devices.
 #>
@@ -13,6 +13,7 @@ function Test-Assessment-21892 {
         SfiPillar = 'Protect identities and secrets',
         TenantType = ('Workforce', 'External'),
         TestId = 21892,
+        RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
         Title = 'All sign-in activity comes from managed devices',
         UserImpact = 'High'
     )]
@@ -28,8 +29,8 @@ function Test-Assessment-21892 {
     $activity = "Checking that all sign-in activity comes from managed devices"
     Write-ZtProgress -Activity $activity -Status "Getting Conditional Access policies"
 
-    # Get all enabled Conditional Access policies
-    $policies = Invoke-ZtGraphRequest -RelativeUri "identity/conditionalAccess/policies" -ApiVersion v1.0
+    # Get all Conditional Access policies (via shared helper)
+    $policies = Get-ZtConditionalAccessPolicy
 
     $matchingPolicies = @()
 

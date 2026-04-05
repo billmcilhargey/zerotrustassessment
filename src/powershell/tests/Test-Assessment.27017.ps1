@@ -24,6 +24,7 @@ function Test-Assessment-27017 {
         SfiPillar = 'Protect networks',
         TenantType = ('Workforce'),
         TestId = 27017,
+        RequiredScopes = "Directory.Read.All",
         Title = 'JavaScript Challenge is Enabled in Application Gateway WAF',
         UserImpact = 'Low'
     )]

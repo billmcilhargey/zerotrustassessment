@@ -23,6 +23,7 @@ function Test-Assessment-25378 {
         SfiPillar = 'Protect identities and secrets',
         TenantType = ('Workforce'),
         TestId = 25378,
+        RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
         Title = 'External collaboration is governed by explicit Cross-Tenant Access Policies',
         UserImpact = 'High'
     )]

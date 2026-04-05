@@ -61,6 +61,10 @@ function Set-TestMetadata {
 		[string]
 		$Category,
 
+		[ValidateSet('Commercial', 'GCC', 'GCCHigh', 'DoD', 'China', 'Germany', 'Global', 'USGovernment', 'Sovereign')]
+		[string[]]
+		$CloudEnvironment,
+
 		[ValidateSet('Low', 'Medium', 'High')]
 		[string]
 		$ImplementationCost,
@@ -221,6 +225,7 @@ function Set-TestMetadata {
 
 		$properties = [ordered]@{
 			Category           	= 'string'
+			CloudEnvironment   	= 'string[]'
 			ImplementationCost 	= 'string'
 			MinimumLicense     	= 'string[]'
 			CompatibleLicense  	= 'string[]'

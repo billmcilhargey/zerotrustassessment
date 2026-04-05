@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks Privileged users have short-lived sign-in sessions
 #>
@@ -29,6 +29,7 @@ function Test-Assessment-21825 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 21825,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All", "RoleManagement.Read.All"),
     	Title = 'Privileged users have short-lived sign-in sessions',
     	UserImpact = 'Medium'
     )]

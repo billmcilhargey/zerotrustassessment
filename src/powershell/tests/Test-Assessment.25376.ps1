@@ -23,6 +23,7 @@ function Test-Assessment-25376 {
         SfiPillar = 'Protect networks',
         TenantType = ('Workforce'),
         TestId = 25376,
+        RequiredScopes = ("NetworkAccess.Read.All", "Reports.Read.All"),
         Title = 'Microsoft 365 traffic is actively flowing through Global Secure Access',
         UserImpact = 'Low'
     )]

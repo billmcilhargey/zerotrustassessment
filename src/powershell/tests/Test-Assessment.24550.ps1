@@ -16,6 +16,7 @@ function Test-Assessment-24550 {
         SfiPillar = 'Protect identities and secrets',
         TenantType = ('Workforce'),
         TestId = 24550,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Data on Windows is protected by BitLocker encryption',
         UserImpact = 'Low'
     )]

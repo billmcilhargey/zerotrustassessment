@@ -13,6 +13,7 @@ function Test-Assessment-21810 {
     	SfiPillar = 'Protect engineering systems',
     	TenantType = ('Workforce','External'),
     	TestId = 21810,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Resource-specific consent is restricted',
     	UserImpact = 'Medium'
     )]

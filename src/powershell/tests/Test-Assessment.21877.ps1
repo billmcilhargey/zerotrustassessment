@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 Tests if all guest users have assigned sponsors in the tenant.
 #>
@@ -13,6 +13,7 @@ function Test-Assessment-21877 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce','External'),
     	TestId = 21877,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'All guests have a sponsor',
     	UserImpact = 'Medium'
     )]

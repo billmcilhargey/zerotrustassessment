@@ -22,6 +22,7 @@ function Test-Assessment-35021 {
         SfiPillar = 'Protect tenants and production systems',
         TenantType = ('Workforce'),
         TestId = 35021,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Auto-labeling policies are enabled for SharePoint and OneDrive',
         UserImpact = 'Low'
     )]

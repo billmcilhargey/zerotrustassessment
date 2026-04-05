@@ -17,6 +17,7 @@ function Test-Assessment-25398 {
         SfiPillar = 'Protect networks',
         TenantType = ('Workforce', 'External'),
         TestId = 25398,
+        RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
         Title = 'Domain controller RDP access is protected by phishing-resistant authentication through Global Secure Access',
         UserImpact = 'Low'
     )]
@@ -26,6 +27,12 @@ function Test-Assessment-25398 {
     )
 
     Write-PSFMessage '🟦 Start Global Secure Access DC RDP protection evaluation' -Tag Test -Level VeryVerbose
+
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
+        return
+    }
 
     $activity = 'Checking domain controller RDP access protection'
     Write-ZtProgress -Activity $activity -Status 'Checking Microsoft Graph connection'

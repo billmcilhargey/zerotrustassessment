@@ -13,6 +13,7 @@ function Test-Assessment-24548 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 24548,
+    	RequiredScopes = ("DeviceManagementApps.Read.All", "Directory.Read.All"),
     	Title = 'Data on iOS/iPadOS is protected by app protection policies',
     	UserImpact = 'High'
     )]

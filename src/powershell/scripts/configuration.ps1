@@ -12,8 +12,12 @@ Set-PSFConfig -Module ZeroTrustAssessment -Name 'Tests.UnlicensedAction' -Value 
 # ── Connection settings ──────────────────────────────────────────────────────
 Set-PSFConfig -Module ZeroTrustAssessment -Name 'Connection.UseTokenCache' -Value $true -Initialize -Validation bool -Description 'Cache authentication tokens to disk so they persist across PowerShell sessions. Avoids repeated sign-in prompts when re-running the assessment. Set to $false to require fresh authentication each time (tokens scoped to process only).'
 Set-PSFConfig -Module ZeroTrustAssessment -Name 'Connection.UseDeviceCode' -Value $false -Initialize -Validation bool -Description 'Use device code flow for authentication. Auto-enabled in Codespaces, dev containers, and headless environments. Set to $true to always use device code regardless of environment.'
+Set-PSFConfig -Module ZeroTrustAssessment -Name 'Connection.DeviceCodeTimeout' -Value 30 -Initialize -Validation integer -Description 'Seconds to wait before auto-continuing with device code authentication. During this window the user can press [S] to skip the service. Set to 0 to disable the skip prompt and authenticate immediately.'
 Set-PSFConfig -Module ZeroTrustAssessment -Name 'Connection.Environment' -Value 'Global' -Initialize -Validation string -Description 'The cloud environment to connect to. Supported values: Global, China, Germany, USGov, USGovDoD.'
 Set-PSFConfig -Module ZeroTrustAssessment -Name 'Connection.TenantId' -Value '' -Initialize -Validation string -Description 'Default tenant ID for connections. When set, Connect-ZtAssessment will use this tenant without requiring the -TenantId parameter.'
+
+# ── Assessment behavior ──────────────────────────────────────────────────
+Set-PSFConfig -Module ZeroTrustAssessment -Name 'Assessment.SkipGlobalSecureAccess' -Value $false -Initialize -Validation bool -Description 'Skip all Global Secure Access tests regardless of tenant configuration. Set to $true if you know the tenant does not use GSA and want to avoid the API call. When $false (default), GSA tests are automatically skipped if no forwarding profiles are enabled.'
 Set-PSFConfig -Module ZeroTrustAssessment -Name 'Connection.ClientId' -Value '' -Initialize -Validation string -Description 'Default application (client) ID for connections. When set, Connect-ZtAssessment will use this app registration without requiring the -ClientId parameter. Required for service principal and managed identity authentication.'
 
 # ── DuckDB settings ───────────────────────────────────────────────────────────

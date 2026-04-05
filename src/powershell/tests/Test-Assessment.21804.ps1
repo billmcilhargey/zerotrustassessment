@@ -13,6 +13,7 @@ function Test-Assessment-21804 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21804,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'SMS and Voice Call authentication methods are disabled',
     	UserImpact = 'Medium'
     )]
@@ -28,7 +29,7 @@ function Test-Assessment-21804 {
     $activity = "Checking Weak authentication methods are disabled"
     Write-ZtProgress -Activity $activity -Status "Getting policy"
 
- $authMethodsPolicy = Invoke-ZtGraphRequest -RelativeUri "policies/authenticationMethodsPolicy" -ApiVersion 'v1.0'
+ $authMethodsPolicy = Get-ZtAuthenticationMethodsPolicy
 $matchedMethods = $authMethodsPolicy.authenticationMethodConfigurations | Where-Object { $_.id -eq 'Sms' -or $_.id -eq 'Voice' }
 
 $testResultMarkdown = ""

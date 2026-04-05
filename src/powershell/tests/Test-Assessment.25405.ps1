@@ -22,6 +22,7 @@ function Test-Assessment-25405 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce'),
     	TestId = 25405,
+    	RequiredScopes = ("Directory.Read.All", "NetworkAccess.Read.All"),
     	Title = 'Intelligent Local Access is enabled and configured',
     	UserImpact = 'Medium'
     )]
@@ -31,6 +32,13 @@ function Test-Assessment-25405 {
 
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
+        return
+    }
+
     if ( -not (Get-ZtLicense EntraIDP1) ) {
         Add-ZtTestResultDetail -SkippedBecause NotLicensedEntraIDP1
         return

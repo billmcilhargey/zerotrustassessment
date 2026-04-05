@@ -13,6 +13,7 @@ function Test-Assessment-21889{
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21889,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Reduce the user-visible password surface area',
     	UserImpact = 'Medium'
     )]
@@ -29,7 +30,7 @@ function Test-Assessment-21889{
     Write-ZtProgress -Activity $activity -Status 'Getting authentication methods policy'
 
     # Get authentication methods policy
-    $authMethodsPolicy = Invoke-ZtGraphRequest -RelativeUri 'policies/authenticationMethodsPolicy' -ApiVersion beta
+    $authMethodsPolicy = Get-ZtAuthenticationMethodsPolicy -ApiVersion beta
 
     if (-not $authMethodsPolicy) {
         $testResultMarkdown = 'Unable to retrieve authentication methods policy.'

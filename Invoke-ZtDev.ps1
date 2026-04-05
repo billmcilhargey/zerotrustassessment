@@ -75,7 +75,7 @@ param(
                  'Status', 'Resume', 'Pester', 'PesterGeneral',
                  'PesterAssessments', 'PesterCommands', 'UpdateTestServices', 'AuditServices',
                  'DeleteResults', 'ListPlanned', 'RunPlanned', 'CheckPermissions', 'ViewReport',
-                 'CheckDependencies')]
+                 'CheckDependencies', 'ListReports')]
     [string] $Action,
 
     [ValidateSet('Identity', 'Devices', 'Network', 'Data', '')]
@@ -125,12 +125,30 @@ function Write-DevInfo {
 
     # Build info lines
     $os = if ($IsWindows) { "Windows" } elseif ($IsMacOS) { "macOS" } else { "Linux" }
-    $envLine = if ($env:CODESPACES -eq 'true') {
-        $csName = if ($env:CODESPACE_NAME) { " ($env:CODESPACE_NAME)" } else { '' }
-        "Codespaces$csName"
-    } elseif ($env:REMOTE_CONTAINERS -eq 'true') { "Dev Container" }
-    elseif (-not $env:DISPLAY -and -not $IsWindows) { "Headless/SSH" }
-    else { $null }
+
+    # Detect environment — delegate to module when loaded, otherwise inline
+    $envLine = $null
+    $browserNote = $null
+    $mod = Get-Module ZeroTrustAssessment -ErrorAction Ignore
+    if ($mod) {
+        $headless = & $mod { Test-ZtHeadlessEnvironment }
+        if ($headless.IsCodespaces) {
+            $csName = if ($env:CODESPACE_NAME) { " ($env:CODESPACE_NAME)" } else { '' }
+            $envLine = "Codespaces$csName"
+        } elseif ($headless.IsHeadless) { $envLine = "Headless/SSH" }
+        if ($headless.CanLaunchBrowser) { $browserNote = 'Browser available' }
+    }
+    else {
+        # Pre-import fallback: basic environment detection without the full module
+        $isContainer = ($env:CODESPACES -eq 'true') -or ($env:REMOTE_CONTAINERS -eq 'true') -or
+                       ($env:DEVCONTAINER -eq 'true') -or (Test-Path '/.dockerenv')
+        if ($env:CODESPACES -eq 'true') {
+            $csName = if ($env:CODESPACE_NAME) { " ($env:CODESPACE_NAME)" } else { '' }
+            $envLine = "Codespaces$csName"
+        } elseif ($isContainer) { $envLine = "Dev Container" }
+        elseif (-not $env:DISPLAY -and -not $env:WAYLAND_DISPLAY -and -not $IsWindows) { $envLine = "Headless/SSH" }
+        if ($env:BROWSER -and (Test-Path $env:BROWSER -ErrorAction Ignore)) { $browserNote = 'Browser available' }
+    }
 
     $infoLines = @(
         @{ Label = 'Mode'; Value = 'Developer'; Highlight = $true }
@@ -140,7 +158,8 @@ function Write-DevInfo {
         $infoLines += @{ Label = 'Module'; Value = "ZeroTrustAssessment $version (source)" }
     }
     if ($envLine) {
-        $infoLines += @{ Label = 'Environment'; Value = $envLine }
+        $envDisplay = if ($browserNote) { "$envLine ($browserNote)" } else { $envLine }
+        $infoLines += @{ Label = 'Environment'; Value = $envDisplay }
     }
 
     # Render each line inside the box
@@ -163,17 +182,85 @@ function Write-DevInfo {
     Write-Host ""
 }
 
+# Track whether the user explicitly provided -Path
+$script:IsDefaultPath = -not $PSBoundParameters.ContainsKey('Path')
+
+function Resolve-DevTenantPath {
+    # After connection/cache restore, update $script:Path to a tenant-specific
+    # subdirectory when using the default path. Delegates to the module's
+    # Resolve-ZtTenantReportPath when loaded, otherwise uses Get-MgContext directly.
+    if (-not $script:IsDefaultPath) { return }
+
+    $mod = Get-Module ZeroTrustAssessment -ErrorAction Ignore
+    $resolved = if ($mod) {
+        & $mod { param($b) Resolve-ZtTenantReportPath -BasePath $b -IsDefaultPath $true } $script:BasePath
+    }
+    else {
+        try {
+            $ctx = Get-MgContext -ErrorAction Ignore
+            if ($ctx -and $ctx.TenantId) { Join-Path $script:BasePath $ctx.TenantId } else { $script:BasePath }
+        }
+        catch { $script:BasePath }
+    }
+
+    if ($resolved -ne $script:Path) {
+        $script:Path = $resolved
+        Write-Host "  📁 Report path: $resolved" -ForegroundColor DarkGray
+    }
+}
+
+function Get-DevModuleParams {
+    # Builds the hashtable used to delegate to Start-ZtAssessment.
+    # Single source of truth — called wherever we need @moduleParams.
+    $params = @{ Path = $script:Path; Days = $script:Days }
+    if ($script:UseDeviceCode) { $params['UseDeviceCode'] = $true }
+    if ($script:TenantId)      { $params['TenantId'] = $script:TenantId }
+    if ($script:Service -and $script:Service -ne 'All') { $params['Service'] = $script:Service }
+    if ($script:ShowLog)       { $params['ShowLog'] = $true }
+    $params
+}
+
+function Get-DevConfig {
+    # Centralized configuration read — used by Write-DevStatus and Step-Configuration.
+    $mod = Get-Module ZeroTrustAssessment -ErrorAction Ignore
+    $tokenCache = if ($mod) { & $mod { Get-ZtTokenCacheEnabled } } else { $true }
+    $environment = try { Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Connection.Environment' -Fallback 'Global' } catch { 'Global' }
+    $clientId = try { Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Connection.ClientId' -Fallback '' } catch { '' }
+    $unlicensedAction = try { Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Tests.UnlicensedAction' -Fallback 'Skip' } catch { 'Skip' }
+    $exportThrottle = try { Get-PSFConfigValue -FullName 'ZeroTrustAssessment.ThrottleLimit.Export' -Fallback 5 } catch { 5 }
+    $testThrottle = try { Get-PSFConfigValue -FullName 'ZeroTrustAssessment.ThrottleLimit.Tests' -Fallback 5 } catch { 5 }
+    $testTimeout = try { Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Tests.Timeout' -Fallback '1h' } catch { '1h' }
+    @{
+        TokenCache       = $tokenCache
+        Environment      = $environment
+        ClientId         = $clientId
+        UnlicensedAction = $unlicensedAction
+        ExportThrottle   = $exportThrottle
+        TestThrottle     = $testThrottle
+        TestTimeout      = $testTimeout
+    }
+}
+
 function Write-DevStatus {
     # Shows Configuration, Services, and Tenant status
     $env:ZT_BANNER_SHOWN = '1'
     $conn = Get-DevConnectionState
-    $tokenCache = try { Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Connection.UseTokenCache' -Fallback $true } catch { $true }
+    $cfg = Get-DevConfig
 
     Write-Host "  ── Configuration ──" -ForegroundColor DarkCyan
-    Write-Host "    Path        : $($script:Path)" -ForegroundColor DarkGray
+    if ($script:IsDefaultPath -and $script:Path -ne $script:BasePath) {
+        Write-Host "    Base Path   : $($script:BasePath)" -ForegroundColor DarkGray
+        Write-Host "    Report Path : $($script:Path)" -ForegroundColor DarkGray
+    }
+    else {
+        Write-Host "    Path        : $($script:Path)$(if ($script:IsDefaultPath) { ' (auto)' } else { ' (custom)' })" -ForegroundColor DarkGray
+    }
     Write-Host "    Days        : $($script:Days)" -ForegroundColor DarkGray
     Write-Host "    Service     : $($script:Service -join ', ')" -ForegroundColor DarkGray
-    Write-Host "    Login Cache : $(if ($tokenCache) { 'Enabled' } else { 'Disabled' })" -ForegroundColor DarkGray
+    Write-Host "    Login Cache : $(if ($cfg.TokenCache) { 'Enabled' } else { 'Disabled' })" -ForegroundColor DarkGray
+    Write-Host "    Environment : $($cfg.Environment)" -ForegroundColor DarkGray
+    Write-Host "    DeviceCode  : $(if ($script:UseDeviceCode) { 'Enabled' } else { 'Auto' })" -ForegroundColor DarkGray
+    Write-Host "    Unlicensed  : $($cfg.UnlicensedAction)" -ForegroundColor DarkGray
     Write-Host ""
 
     Write-Host "  ── Services ──" -ForegroundColor DarkCyan
@@ -181,11 +268,13 @@ function Write-DevStatus {
     # Delegate to the module's shared service classification
     $mod = Get-Module ZeroTrustAssessment -ErrorAction Ignore
     $services = if ($mod) {
-        & $mod { Get-ZtServiceClassification }
+        $devUseDeviceCode = $script:UseDeviceCode
+        & $mod { param($dc) Get-ZtServiceClassification -UseDeviceCode:$dc } $devUseDeviceCode
     } else {
-        # Fallback when module isn't loaded — minimal hardcoded list
-        @('Graph', 'Azure', 'ExchangeOnline', 'SecurityCompliance', 'AipService', 'SharePoint') |
-            ForEach-Object { [PSCustomObject]@{ Name = $_; Available = $true; Reason = $null } }
+        # Fallback when module isn't loaded — use cached service names
+        $script:DevAllowedServices | ForEach-Object {
+            [PSCustomObject]@{ Name = $_; Available = $true; Reason = $null; ModuleVersion = $null }
+        }
     }
 
     foreach ($svc in $services) {
@@ -213,7 +302,28 @@ function Write-DevStatus {
 
     Write-Host "  ── Tenant ──" -ForegroundColor DarkCyan
     if ($conn.IsConnected) {
-        Write-Host "    $($conn.Account) ($($conn.Tenant))" -ForegroundColor Green
+        Write-Host "    Account    : $($conn.Account)" -ForegroundColor Magenta
+        Write-Host "    Tenant     : $($conn.Tenant)" -ForegroundColor Gray
+        if ($conn.CloudEnvironment) {
+            $envColor = if ($conn.CloudEnvironment.IsGovernment) { 'Cyan' } elseif ($conn.CloudEnvironment.IsSovereignCloud) { 'Yellow' } else { 'Magenta' }
+            Write-Host "    Cloud      : $($conn.CloudEnvironment.DisplayName)" -ForegroundColor $envColor
+        }
+        if ($conn.Services -and $conn.Services.Count -gt 0) {
+            Write-Host "    Connected  : $($conn.Services -join ', ')" -ForegroundColor Gray
+        }
+        Write-Host "    TokenCache : $(if ($cfg.TokenCache) { 'Enabled' } else { 'Disabled' })" -ForegroundColor Gray
+        if ($conn.ScopesValid) {
+            Write-Host '    Scopes     : All required scopes present' -ForegroundColor Green
+        }
+        else {
+            Write-Host "    Scopes     : $($conn.MissingScopes.Count) missing" -ForegroundColor Red
+        }
+
+        $mod = Get-Module ZeroTrustAssessment -ErrorAction Ignore
+        if ($mod) {
+            & $mod { Show-ZtLicenseStatus }
+            & $mod { Show-ZtPermissionStatus }
+        }
     }
     else {
         Write-Host "    Not connected" -ForegroundColor Yellow
@@ -238,7 +348,8 @@ function Test-CachedLogin {
     $conn = Get-DevConnectionState
     if ($conn.IsConnected) {
         Write-Host ""
-        Write-Host "  ✅ Cached login found: $($conn.Account) ($($conn.Tenant))" -ForegroundColor Green
+        $cloudTag = if ($conn.CloudEnvironment) { " [$($conn.CloudEnvironment.DisplayName)]" } else { '' }
+        Write-Host "  ✅ Cached login found: $($conn.Account) ($($conn.Tenant))$cloudTag" -ForegroundColor Green
         if ($conn.Services -and $conn.Services.Count -gt 0) {
             Write-Host "     Services: $($conn.Services -join ', ')" -ForegroundColor DarkGray
         }
@@ -266,40 +377,54 @@ function Write-StartupBanner {
 }
 
 function Step-Install {
+    Write-Host "  ── Module Import ──" -ForegroundColor DarkCyan
     $manifestPath = Join-Path $script:ModuleRoot 'ZeroTrustAssessment.psd1'
     if (-not (Test-Path $manifestPath)) {
-        Write-Host "ERROR: Module manifest not found at $manifestPath" -ForegroundColor Red
+        Write-Host "  ERROR: Module manifest not found at $manifestPath" -ForegroundColor Red
         return
     }
 
     try {
         $env:ZT_QUIET_INIT = '1'
-        Import-Module $manifestPath -Force -Global -ErrorAction Stop
+        Write-Host "  Loading ZeroTrustAssessment from source..." -ForegroundColor DarkGray -NoNewline
+        $sw = [System.Diagnostics.Stopwatch]::StartNew()
+        Import-Module $manifestPath -Force -Global -ErrorAction Stop -WarningAction SilentlyContinue 3>$null
+        $sw.Stop()
+        # Overwrite the loading line with the result
+        Write-Host "`r  ✅ Module loaded ($([math]::Round($sw.Elapsed.TotalSeconds, 1))s)                    " -ForegroundColor Green
     }
     catch {
-        Write-Host "Failed to import module from: $manifestPath" -ForegroundColor Red
-        Write-Host "  Error: $_" -ForegroundColor Red
-        Write-Host "Attempting dependency initialization..." -ForegroundColor Gray
+        Write-Host "" # newline after NoNewline
+        Write-Host "  Failed to import module from: $manifestPath" -ForegroundColor Red
+        Write-Host "    Error: $_" -ForegroundColor Red
+        Write-Host "  Attempting dependency initialization..." -ForegroundColor Gray
         $initScript = Join-Path $script:ModuleRoot 'Initialize-Dependencies.ps1'
         try {
             $env:ZT_QUIET_INIT = $null
             & $initScript
             Import-Module $manifestPath -Force -Global -ErrorAction Stop
-            Write-Host "Module imported successfully after dependency init." -ForegroundColor Green
+            Write-Host "  ✅ Module loaded (after dependency init)." -ForegroundColor Green
         }
         catch {
-            Write-Host "Still failed: $_" -ForegroundColor Red
-            Write-Host "Tip: & '$initScript'" -ForegroundColor Yellow
+            Write-Host "  Still failed: $_" -ForegroundColor Red
+            Write-Host "  Tip: & '$initScript'" -ForegroundColor Yellow
         }
     }
     finally {
         $env:ZT_QUIET_INIT = $null
     }
+    Write-Host ""
 }
 
 function Ensure-Module {
-    if (-not (Get-Module ZeroTrustAssessment)) {
+    $mod = Get-Module ZeroTrustAssessment
+    if (-not $mod) {
         Step-Install
+        $mod = Get-Module ZeroTrustAssessment -ErrorAction Ignore
+    }
+    # Refresh service list from module's source of truth (only if not yet populated)
+    if ($mod -and -not $script:DevAllowedServices) {
+        $script:DevAllowedServices = @(& $mod { $script:AllowedServices })
     }
 }
 
@@ -418,14 +543,17 @@ function Step-ListPlannedTests {
 
     $grouped = $plannedTests | Group-Object Pillar | Sort-Object Name
     $skipped = 0
-    $windowsOnlyServices = @('AipService')
+    $ztMod = Get-Module ZeroTrustAssessment
+    $classification = & $ztMod { param($dc) Get-ZtServiceClassification -UseDeviceCode:$dc } $script:UseDeviceCode
+    $unavailableSvcs = @($classification | Where-Object { -not $_.Available } | ForEach-Object { $_.Name })
     foreach ($group in $grouped) {
         Write-Host ""
         Write-Host "  ── $($group.Name) ($($group.Count) planned) ──" -ForegroundColor Magenta
         foreach ($test in ($group.Group | Sort-Object TestID)) {
-            $wOnly = -not $IsWindows -and $test.Service -and ($test.Service | Where-Object { $_ -in $windowsOnlyServices })
-            if ($wOnly) {
-                Write-Host ("    SKIP  {0}  {1}  (Windows only)" -f $test.TestID, $test.Title) -ForegroundColor DarkGray
+            $blockedSvc = if ($test.Service) { $test.Service | Where-Object { $_ -in $unavailableSvcs } } else { $null }
+            if ($blockedSvc) {
+                $svcReason = ($classification | Where-Object { $_.Name -eq $blockedSvc[0] }).Reason
+                Write-Host ("    SKIP  {0}  {1}  ({2})" -f $test.TestID, $test.Title, $svcReason) -ForegroundColor DarkGray
                 $skipped++
             }
             else {
@@ -474,40 +602,20 @@ function Step-CheckPermissions {
 
     Ensure-Module
 
-    try {
-        $context = Get-MgContext -ErrorAction Stop
-        if (-not $context) {
-            Write-Host "  Not connected to Microsoft Graph." -ForegroundColor Yellow
-            return
-        }
-
-        Write-Host "  Account   : $($context.Account)" -ForegroundColor Gray
-        Write-Host "  Tenant    : $($context.TenantId)" -ForegroundColor Gray
-        Write-Host "  Auth Type : $($context.AuthType)" -ForegroundColor Gray
-        Write-Host ""
-
-        $requiredScopes = Get-ZtGraphScope
-        $grantedCount = ($requiredScopes | Where-Object { $context.Scopes -contains $_ }).Count
-        Write-Host "  Graph Scopes: $grantedCount / $($requiredScopes.Count) granted" -ForegroundColor Gray
-        foreach ($scope in ($requiredScopes | Sort-Object)) {
-            if ($context.Scopes -contains $scope) {
-                Write-Host "    ✅ $scope" -ForegroundColor Green
-            }
-            else {
-                Write-Host "    ❌ $scope" -ForegroundColor Red
-            }
-        }
+    $mod = Get-Module ZeroTrustAssessment -ErrorAction Ignore
+    if ($mod) {
+        & $mod { Show-ZtPermissionStatus }
     }
-    catch {
-        Write-Host "  Cannot determine permissions: $_" -ForegroundColor Yellow
+    else {
+        Write-Host "  Module not loaded. Import ZeroTrustAssessment first." -ForegroundColor Yellow
     }
 }
 
 function Step-ViewReport {
     Write-MenuHeader "View Assessment Report"
 
-    $htmlReport = Join-Path $script:Path 'ZeroTrustAssessmentReport.html'
-    $jsonReport = Join-Path $script:Path 'zt-export' 'ZeroTrustAssessmentReport.json'
+    $htmlReport = Join-Path $script:Path $script:ZtReportFileName
+    $jsonReport = Join-Path $script:Path $script:ZtExportDirName $script:ZtReportJsonFileName
 
     if (-not (Test-Path $htmlReport)) {
         Write-Host "  No report found at: $htmlReport" -ForegroundColor Yellow
@@ -536,62 +644,10 @@ function Step-ViewReport {
 
     Write-Host ''
 
-    # Serve or open the report
-    if ($IsWindows) {
-        Invoke-Item $htmlReport | Out-Null
-    }
-    elseif (($env:CODESPACES -eq 'true') -or ($env:REMOTE_CONTAINERS -eq 'true') -or
-            (Test-Path '/.dockerenv') -or ($env:DEVCONTAINER -eq 'true')) {
-        $reportDir = Split-Path $htmlReport -Parent
-        $reportFile = Split-Path $htmlReport -Leaf
-        $port = 8080
-
-        # Find an available port (8080-8089)
-        for ($p = 8080; $p -le 8089; $p++) {
-            $inUse = $false
-            try {
-                $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $p)
-                $listener.Start()
-                $listener.Stop()
-            } catch { $inUse = $true }
-            if (-not $inUse) { $port = $p; break }
-        }
-
-        $hasNpx = Get-Command npx -ErrorAction Ignore
-        if ($hasNpx) {
-            Write-Host "  Starting HTTP server on port $port..." -ForegroundColor Cyan
-            $null = Start-Job -ScriptBlock {
-                param($dir, $port)
-                npx -y http-server $dir -p $port -s -c-1 2>&1 | Out-Null
-            } -ArgumentList $reportDir, $port
-
-            Start-Sleep -Milliseconds 1500
-            $reportUrl = "http://127.0.0.1:$port/$reportFile"
-
-            Write-Host "  Report URL: " -NoNewline -ForegroundColor White
-            Write-Host $reportUrl -ForegroundColor Green
-            Write-Host ''
-
-            if ($env:BROWSER) {
-                try { & $env:BROWSER $reportUrl } catch { }
-            }
-
-            Write-Host "  In Codespaces: check the Ports tab if it doesn't open automatically." -ForegroundColor Yellow
-            Write-Host "  The server will stop when the PowerShell session ends." -ForegroundColor DarkGray
-        }
-        else {
-            if ($env:BROWSER) { & $env:BROWSER $htmlReport }
-            else { Write-Host "  Open manually: $htmlReport" -ForegroundColor DarkGray }
-        }
-    }
-    elseif ($env:BROWSER) {
-        & $env:BROWSER $htmlReport
-    }
-    elseif (Get-Command xdg-open -ErrorAction Ignore) {
-        xdg-open $htmlReport
-    }
-    elseif ($IsMacOS -and (Get-Command open -ErrorAction Ignore)) {
-        open $htmlReport
+    # Delegate to the module's shared report opener
+    $ztMod = Get-Module ZeroTrustAssessment -ErrorAction Ignore
+    if ($ztMod) {
+        & $ztMod { param($p) Open-ZtReport -Path $p -ServeHttp } $htmlReport
     }
     else {
         Write-Host "  Open manually: $htmlReport" -ForegroundColor DarkGray
@@ -657,13 +713,13 @@ function Step-VerifyDependencyVersions {
     $ztMod = Get-Module ZeroTrustAssessment -ErrorAction Ignore
     if (-not $ztMod) { return }
 
-    $allServices = @('Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePoint')
-    $platformServices = @($allServices | Where-Object {
-        $IsWindows -or $_ -ne 'AipService'
-    })
+    $allServices = & $ztMod { $script:AllowedServices }
+    # Only check modules for services that can run on this platform (auth constraints don't affect module install)
+    $classification = & $ztMod { Get-ZtServiceClassification }
+    $platformServices = @($classification | Where-Object { $_.Available } | ForEach-Object { $_.Name })
 
     $resolved = & $ztMod { param($svc) Resolve-ZtServiceRequiredModule -Service $svc } $platformServices
-    $unavailable = @($resolved.Errors | Where-Object { $_.ErrorMessage -match 'below the required minimum|does not match required version|not found' })
+    $unavailable = @($resolved.Errors | Where-Object { $_.ErrorMessage -match 'below the required minimum|does not match required version|cannot be found' })
     if ($unavailable.Count -eq 0) { return }
 
     # Guard against re-triggering after we already tried to fix it this session
@@ -784,8 +840,17 @@ function Step-CheckDependencyUpgrades {
 
     Write-Host ""
     if ($hasUpgrade) {
-        Write-Host "  To update cached modules, run: Update-ZtRequiredModule" -ForegroundColor Yellow
-        Write-Host "  Then restart PowerShell and reimport the module." -ForegroundColor DarkGray
+        $answer = Read-Host "  Upgrades available. Apply now? (Y/N) [N]"
+        if ($answer.Trim().ToUpper() -eq 'Y') {
+            Write-Host ""
+            Update-ZtRequiredModule -Confirm:$false
+            Write-Host ""
+            Write-Host "  Reimporting module..." -ForegroundColor DarkGray
+            Step-Install
+        }
+        else {
+            Write-Host "  Skipped. Run Update-ZtRequiredModule manually to upgrade." -ForegroundColor DarkGray
+        }
     } else {
         Write-Host "  All dependencies are up to date." -ForegroundColor Green
     }
@@ -794,13 +859,38 @@ function Step-CheckDependencyUpgrades {
 # ── Interactive Menu ─────────────────────────────────────────────────────────
 
 function Get-DevConnectionState {
-    # Thin wrapper: delegates to the module's Get-ZtConnectionState when loaded,
-    # returns a minimal "not connected" state otherwise.
+    # Delegates to the module's Get-ZtConnectionState when loaded,
+    # returns a minimal "not connected" state before module import.
     $ztMod = Get-Module ZeroTrustAssessment -ErrorAction Ignore
     if ($ztMod) {
         return (& $ztMod { Get-ZtConnectionState })
     }
-    return [PSCustomObject]@{ IsConnected = $false; Account = $null; Tenant = $null; Services = @(); ScopesValid = $false; MissingScopes = @() }
+    [PSCustomObject]@{ IsConnected = $false; Account = $null; Tenant = $null; CloudEnvironment = $null; Services = @(); ScopesValid = $false; MissingScopes = @() }
+}
+
+function Test-DevConnected {
+    param([switch] $ShowWarning)
+    $conn = Get-DevConnectionState
+    if (-not $conn.IsConnected -and $ShowWarning) {
+        Write-Host "Not connected. Use [1] to login first." -ForegroundColor Yellow
+    }
+    $conn.IsConnected
+}
+
+function Read-PostAssessment {
+    Write-Host ''
+    Write-Host '  Press [Q] to quit or any key to return to the menu...' -ForegroundColor DarkCyan
+    try {
+        $key = [Console]::ReadKey($true)
+        if ($key.Key -eq [ConsoleKey]::Q) {
+            Write-Host '  Bye!' -ForegroundColor Cyan
+            return $true
+        }
+    }
+    catch {
+        # Non-interactive — fall through to menu
+    }
+    return $false
 }
 
 function Show-Menu {
@@ -822,8 +912,8 @@ function Show-Menu {
 
     # ── Tests ──
     Write-Host "  ── Tests ──" -ForegroundColor DarkCyan
-    Write-Host "  [2]  List available tests" -ForegroundColor White
-    Write-Host "  [L]  List planned tests (under construction)" -ForegroundColor White
+    Write-Host "  [2]  List available tests" -ForegroundColor $(if ($conn.IsConnected) { 'White' } else { $dimColor })
+    Write-Host "  [L]  List planned tests (under construction)" -ForegroundColor $(if ($conn.IsConnected) { 'White' } else { $dimColor })
     Write-Host "  [5]  Run specific TEST(s) by ID" -ForegroundColor $(if ($conn.IsConnected) { 'White' } else { $dimColor })
     Write-Host ""
 
@@ -838,7 +928,7 @@ function Show-Menu {
     Write-Host ""
 
     # ── Report ──
-    $hasReport = Test-Path (Join-Path $script:Path 'ZeroTrustAssessmentReport.html')
+    $hasReport = Test-Path (Join-Path $script:Path $script:ZtReportFileName)
     $hasResults = Test-Path $script:Path
     $hasAny = $hasReport -or $hasResults
     Write-Host "  ── Report ──" -ForegroundColor DarkCyan
@@ -848,6 +938,7 @@ function Show-Menu {
     else {
         Write-Host "  [V]  View last assessment report (no report found)" -ForegroundColor DarkGray
     }
+    Write-Host "  [T]  Browse all tenant reports" -ForegroundColor White
     if ($hasAny) {
         Write-Host "  [9]  Delete all reports and test results" -ForegroundColor White
     }
@@ -862,25 +953,195 @@ function Show-Menu {
     Write-Host "  [8]  Update test Service metadata" -ForegroundColor White
     Write-Host "  [A]  Audit test Service metadata (dry run)" -ForegroundColor White
     Write-Host "  [D]  Check dependency upgrades" -ForegroundColor White
+    Write-Host "  [S]  Connection status & permissions" -ForegroundColor $(if ($conn.IsConnected) { 'White' } else { $dimColor })
     Write-Host "  [C]  Configuration" -ForegroundColor White
+
+    # ── Docs Site (context-aware) ──
+    $docsRunning = Test-DocsServerRunning
+    if ($docsRunning) {
+        Write-Host "  [W]  Stop docs site" -ForegroundColor White -NoNewline
+        Write-Host "  ● running on :3000" -ForegroundColor Green
+        Write-Host "  [B]  Rebuild docs site" -ForegroundColor White
+    }
+    else {
+        Write-Host "  [W]  Start docs site (Docusaurus)" -ForegroundColor White
+        Write-Host "  [B]  Build docs site" -ForegroundColor White
+    }
+
     Write-Host "  [Q]  Quit" -ForegroundColor White
     Write-Host ""
 }
 
+# ── Docs site helpers ────────────────────────────────────────────────────────
+
+function Test-DocsServerRunning {
+    try {
+        $tcp = [System.Net.Sockets.TcpClient]::new()
+        $tcp.Connect('localhost', 3000)
+        $tcp.Close()
+        $true
+    }
+    catch { $false }
+}
+
+function Stop-DocsServerProcess {
+    # Kill anything listening on port 3000
+    $pids = & lsof -ti :3000 2>$null
+    if ($pids) {
+        $pids -split "`n" | ForEach-Object {
+            $p = $_.Trim()
+            if ($p) { Stop-Process -Id $p -Force -ErrorAction Ignore }
+        }
+    }
+}
+
+function Ensure-DocsNodeModules {
+    param([string]$DocsDir)
+    if (-not (Test-Path (Join-Path $DocsDir 'node_modules'))) {
+        Write-Host "  Installing dependencies..." -ForegroundColor Gray
+        Push-Location $DocsDir
+        try { npm install } finally { Pop-Location }
+    }
+}
+
+function Step-DocsStart {
+    Write-MenuHeader "Start Docs Site (Docusaurus)"
+
+    $docsDir = Join-Path $PSScriptRoot 'src' 'react'
+    if (-not (Test-Path (Join-Path $docsDir 'package.json'))) {
+        Write-Host "  Docs site not found at: $docsDir" -ForegroundColor Red
+        return
+    }
+
+    if (Test-DocsServerRunning) {
+        Write-Host "  Docs server is already running on port 3000." -ForegroundColor Yellow
+        return
+    }
+
+    Ensure-DocsNodeModules -DocsDir $docsDir
+
+    Write-Host "  Starting Docusaurus dev server on port 3000..." -ForegroundColor Cyan
+    Start-Process -FilePath 'bash' -ArgumentList '-c', "cd '$docsDir' && npm run start > /dev/null 2>&1" -NoNewWindow
+    # Wait briefly for the server to spin up
+    $attempts = 0
+    while ($attempts -lt 15 -and -not (Test-DocsServerRunning)) {
+        Start-Sleep -Milliseconds 500
+        $attempts++
+    }
+    if (Test-DocsServerRunning) {
+        Write-Host "  Docs server running on http://localhost:3000" -ForegroundColor Green
+    }
+    else {
+        Write-Host "  Server starting (may take a moment)... check port 3000" -ForegroundColor Yellow
+    }
+}
+
+function Step-DocsStop {
+    Write-MenuHeader "Stop Docs Site"
+
+    if (-not (Test-DocsServerRunning)) {
+        Write-Host "  Docs server is not running." -ForegroundColor Yellow
+        return
+    }
+
+    Write-Host "  Stopping docs server..." -ForegroundColor Cyan
+    Stop-DocsServerProcess
+    Start-Sleep -Milliseconds 500
+    if (Test-DocsServerRunning) {
+        Write-Host "  Server may still be shutting down." -ForegroundColor Yellow
+    }
+    else {
+        Write-Host "  Docs server stopped." -ForegroundColor Green
+    }
+}
+
+function Step-DocsBuild {
+    $wasRunning = Test-DocsServerRunning
+    $label = if ($wasRunning) { 'Rebuild' } else { 'Build' }
+    Write-MenuHeader "$label Docs Site"
+
+    $docsDir = Join-Path $PSScriptRoot 'src' 'react'
+    if (-not (Test-Path (Join-Path $docsDir 'package.json'))) {
+        Write-Host "  Docs site not found at: $docsDir" -ForegroundColor Red
+        return
+    }
+
+    Ensure-DocsNodeModules -DocsDir $docsDir
+
+    if ($wasRunning) {
+        Write-Host "  Stopping running server first..." -ForegroundColor Gray
+        Stop-DocsServerProcess
+        Start-Sleep -Milliseconds 500
+    }
+
+    Write-Host "  Building Docusaurus site..." -ForegroundColor Cyan
+    Push-Location $docsDir
+    try {
+        npm run build
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "  Build complete! Output in: $(Join-Path $docsDir 'build')" -ForegroundColor Green
+        }
+        else {
+            Write-Host "  Build failed (exit code $LASTEXITCODE)." -ForegroundColor Red
+            return
+        }
+    }
+    finally { Pop-Location }
+
+    if ($wasRunning) {
+        Write-Host "  Restarting dev server..." -ForegroundColor Gray
+        Start-Process -FilePath 'bash' -ArgumentList '-c', "cd '$docsDir' && npm run start > /dev/null 2>&1" -NoNewWindow
+        $attempts = 0
+        while ($attempts -lt 15 -and -not (Test-DocsServerRunning)) {
+            Start-Sleep -Milliseconds 500
+            $attempts++
+        }
+        if (Test-DocsServerRunning) {
+            Write-Host "  Docs server restarted on http://localhost:3000" -ForegroundColor Green
+        }
+        else {
+            Write-Host "  Server restarting (may take a moment)..." -ForegroundColor Yellow
+        }
+    }
+}
+
 function Step-Configuration {
     while ($true) {
-        $tokenCache = Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Connection.UseTokenCache' -Fallback $true
+        $cfg = Get-DevConfig
+        $tokenCache = $cfg.TokenCache
+        $environment = $cfg.Environment
+        $clientId = $cfg.ClientId
+        $unlicensedAction = $cfg.UnlicensedAction
+        $exportThrottle = $cfg.ExportThrottle
+        $testThrottle = $cfg.TestThrottle
+        $testTimeout = $cfg.TestTimeout
 
         Write-Host ""
         Write-Host "  ── Configuration ──" -ForegroundColor DarkCyan
         Write-Host ""
-        Write-Host "  [1]  Path        : $($script:Path)" -ForegroundColor Gray
-        Write-Host "  [2]  Days        : $($script:Days)" -ForegroundColor Gray
-        Write-Host "  [3]  Service     : $($script:Service -join ', ')" -ForegroundColor Gray
-        Write-Host "  [4]  Login Cache : $(if ($tokenCache) { 'Enabled' } else { 'Disabled' })" -ForegroundColor Gray
-        Write-Host "  [5]  TenantId    : $(if ($script:TenantId) { $script:TenantId } else { '(not set)' })" -ForegroundColor Gray
-        Write-Host "  [6]  ShowLog     : $(if ($script:ShowLog) { 'Yes' } else { 'No' })" -ForegroundColor Gray
-        Write-Host "  [7]  PesterOutput: $($script:PesterOutput)" -ForegroundColor Gray
+        if ($script:IsDefaultPath -and $script:Path -ne $script:BasePath) {
+            Write-Host "  [1]  Base Path      : $($script:BasePath)" -ForegroundColor Gray
+            Write-Host "       Report Path    : $($script:Path)" -ForegroundColor DarkGray
+        }
+        else {
+            Write-Host "  [1]  Path           : $($script:Path)$(if ($script:IsDefaultPath) { ' (auto — resolves per tenant)' } else { '' })" -ForegroundColor Gray
+        }
+        Write-Host "  [2]  Days           : $($script:Days)" -ForegroundColor Gray
+        Write-Host "  [3]  Service        : $($script:Service -join ', ')" -ForegroundColor Gray
+        Write-Host "  [4]  Login Cache    : $(if ($tokenCache) { 'Enabled' } else { 'Disabled' })" -ForegroundColor Gray
+        Write-Host "  [5]  TenantId       : $(if ($script:TenantId) { $script:TenantId } else { '(not set)' })" -ForegroundColor Gray
+        Write-Host "  [6]  ShowLog        : $(if ($script:ShowLog) { 'Yes' } else { 'No' })" -ForegroundColor Gray
+        Write-Host "  [7]  PesterOutput   : $($script:PesterOutput)" -ForegroundColor Gray
+        Write-Host ""
+        Write-Host "  ── Advanced ──" -ForegroundColor DarkCyan
+        Write-Host ""
+        Write-Host "  [8]  Environment    : $environment" -ForegroundColor Gray
+        Write-Host "  [9]  ClientId       : $(if ($clientId) { $clientId } else { '(not set)' })" -ForegroundColor Gray
+        Write-Host "  [E]  ExportThrottle : $exportThrottle" -ForegroundColor Gray
+        Write-Host "  [T]  TestThrottle   : $testThrottle" -ForegroundColor Gray
+        Write-Host "  [O]  TestTimeout    : $testTimeout" -ForegroundColor Gray
+        Write-Host "  [U]  UnlicensedAction: $unlicensedAction" -ForegroundColor Gray
+        Write-Host "  [X]  DeviceCode     : $(if ($script:UseDeviceCode) { 'Enabled' } else { 'Auto' })" -ForegroundColor Gray
         Write-Host ""
         Write-Host "  [B]  Back to main menu" -ForegroundColor White
         Write-Host ""
@@ -889,8 +1150,28 @@ function Step-Configuration {
 
         switch ($pick.Trim().ToUpper()) {
             '1' {
-                $val = Read-Host "  New Path [$($script:Path)]"
-                if ($val) { $script:Path = $val; Write-Host "  → Path set to: $val" -ForegroundColor Green }
+                if ($script:IsDefaultPath) {
+                    Write-Host "  Current base path: $($script:BasePath)" -ForegroundColor DarkGray
+                    Write-Host "  Reports auto-resolve to: {base}/{tenantId}/ per tenant" -ForegroundColor DarkGray
+                }
+                else {
+                    Write-Host "  Explicit path (no auto tenant resolution)" -ForegroundColor DarkGray
+                }
+                Write-Host "  Enter new base path, 'R' to reset to default, or empty to keep:" -ForegroundColor DarkGray
+                $val = Read-Host "  Path [$($script:BasePath)]"
+                if ($val.Trim().ToUpper() -eq 'R') {
+                    $script:BasePath = $script:ZtDefaultReportPath
+                    $script:IsDefaultPath = $true
+                    $script:Path = $script:BasePath
+                    Resolve-DevTenantPath
+                    Write-Host "  → Reset to default: $($script:BasePath) (auto tenant resolution enabled)" -ForegroundColor Green
+                }
+                elseif ($val) {
+                    $script:Path = $val
+                    $script:BasePath = $val
+                    $script:IsDefaultPath = $false
+                    Write-Host "  → Path set to: $val (tenant auto-resolution disabled)" -ForegroundColor Green
+                }
             }
             '2' {
                 $val = Read-Host "  New Days (1-30) [$($script:Days)]"
@@ -900,11 +1181,11 @@ function Step-Configuration {
                 elseif ($val) { Write-Host "  Invalid. Must be 1-30." -ForegroundColor Red }
             }
             '3' {
-                Write-Host "  Available: All, Graph, Azure, ExchangeOnline, SecurityCompliance, AipService, SharePoint" -ForegroundColor DarkGray
+                Write-Host "  Available: All, $($script:DevAllowedServices -join ', ')" -ForegroundColor DarkGray
                 $val = Read-Host "  Service(s) comma-separated [$($script:Service -join ', ')]"
                 if ($val) {
                     $services = $val -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
-                    $valid = @('All', 'Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePoint')
+                    $valid = @('All') + $script:DevAllowedServices
                     $invalid = $services | Where-Object { $_ -notin $valid }
                     if ($invalid) { Write-Host "  Invalid service(s): $($invalid -join ', ')" -ForegroundColor Red }
                     else { $script:Service = $services; Write-Host "  → Service set to: $($services -join ', ')" -ForegroundColor Green }
@@ -940,6 +1221,67 @@ function Step-Configuration {
                 }
                 elseif ($val) { Write-Host "  Invalid. Use: None, Normal, Detailed, Diagnostic" -ForegroundColor Red }
             }
+            '8' {
+                Write-Host "  Available: Global, China, Germany, USGov, USGovDoD" -ForegroundColor DarkGray
+                $val = Read-Host "  Environment [$environment]"
+                if ($val -in 'Global', 'China', 'Germany', 'USGov', 'USGovDoD') {
+                    Set-PSFConfig -Module ZeroTrustAssessment -Name 'Connection.Environment' -Value $val
+                    Write-Host "  → Environment set to: $val" -ForegroundColor Green
+                }
+                elseif ($val) { Write-Host "  Invalid. Use: Global, China, Germany, USGov, USGovDoD" -ForegroundColor Red }
+            }
+            '9' {
+                $val = Read-Host "  ClientId (GUID or empty to clear) [$clientId]"
+                Set-PSFConfig -Module ZeroTrustAssessment -Name 'Connection.ClientId' -Value $val
+                if ($val) { Write-Host "  → ClientId set to: $val" -ForegroundColor Green }
+                else { Write-Host "  → ClientId cleared" -ForegroundColor Green }
+            }
+            'E' {
+                $val = Read-Host "  Export throttle limit (1-20) [$exportThrottle]"
+                if ($val -match '^\d+$' -and [int]$val -ge 1 -and [int]$val -le 20) {
+                    Set-PSFConfig -Module ZeroTrustAssessment -Name 'ThrottleLimit.Export' -Value ([int]$val)
+                    Write-Host "  → ExportThrottle set to: $val" -ForegroundColor Green
+                }
+                elseif ($val) { Write-Host "  Invalid. Must be 1-20." -ForegroundColor Red }
+            }
+            'T' {
+                $val = Read-Host "  Test throttle limit (1-20) [$testThrottle]"
+                if ($val -match '^\d+$' -and [int]$val -ge 1 -and [int]$val -le 20) {
+                    Set-PSFConfig -Module ZeroTrustAssessment -Name 'ThrottleLimit.Tests' -Value ([int]$val)
+                    Write-Host "  → TestThrottle set to: $val" -ForegroundColor Green
+                }
+                elseif ($val) { Write-Host "  Invalid. Must be 1-20." -ForegroundColor Red }
+            }
+            'O' {
+                Write-Host "  Format: e.g. '1h', '30m', '2h'. Use '0' to disable." -ForegroundColor DarkGray
+                $val = Read-Host "  TestTimeout [$testTimeout]"
+                if ($val) {
+                    try {
+                        $ts = [timespan]$val
+                        Set-PSFConfig -Module ZeroTrustAssessment -Name 'Tests.Timeout' -Value $val
+                        Write-Host "  → TestTimeout set to: $val" -ForegroundColor Green
+                    }
+                    catch { Write-Host "  Invalid timespan format." -ForegroundColor Red }
+                }
+            }
+            'U' {
+                Write-Host "  Skip = silently skip unlicensed tests. Warn = show as failed." -ForegroundColor DarkGray
+                $val = Read-Host "  UnlicensedAction (Skip/Warn) [$unlicensedAction]"
+                if ($val -in 'Skip', 'Warn') {
+                    Set-PSFConfig -Module ZeroTrustAssessment -Name 'Tests.UnlicensedAction' -Value $val
+                    Write-Host "  → UnlicensedAction set to: $val" -ForegroundColor Green
+                }
+                elseif ($val) { Write-Host "  Invalid. Use: Skip, Warn" -ForegroundColor Red }
+            }
+            'X' {
+                $current = if ($script:UseDeviceCode) { 'Enabled' } else { 'Auto' }
+                Write-Host "  Auto = detect headless environment. Enabled = always use device code." -ForegroundColor DarkGray
+                $val = Read-Host "  DeviceCode (A=Auto/E=Enabled) [$current]"
+                switch ($val.Trim().ToUpper()) {
+                    'A' { $script:UseDeviceCode = $false; Write-Host "  → DeviceCode: Auto" -ForegroundColor Green }
+                    'E' { $script:UseDeviceCode = $true; Write-Host "  → DeviceCode: Enabled" -ForegroundColor Green }
+                }
+            }
             'B' { return }
             default { Write-Host "  Invalid option: $pick" -ForegroundColor Red }
         }
@@ -947,81 +1289,93 @@ function Step-Configuration {
 }
 
 function Invoke-InteractiveMenu {
+    $firstLoop = $true
     while ($true) {
-        Write-StartupBanner
-        Write-DevInfo
-        Write-DevStatus
+        if ($firstLoop) {
+            # First iteration: startup already displayed banner + dev info — just add status + menu
+            Write-DevStatus
+            $firstLoop = $false
+        }
+        else {
+            Write-StartupBanner
+            Write-DevInfo
+            Write-DevStatus
+        }
         Show-Menu
         $choice = Read-Host "Select an option"
         if ([string]::IsNullOrWhiteSpace($choice)) { continue }
         Clear-Host
-        $env:ZT_BANNER_SHOWN = $null
+        # Show our own banner header, suppress Start-ZtAssessment's duplicate
+        Write-StartupBanner
+        Write-DevInfo
+        $env:ZT_BANNER_SHOWN = '1'
 
-        # Build params for Start-ZtAssessment delegation
-        $moduleParams = @{ Path = $script:Path; Days = $script:Days }
-        if ($script:UseDeviceCode) { $moduleParams['UseDeviceCode'] = $true }
-        if ($script:TenantId)      { $moduleParams['TenantId'] = $script:TenantId }
-        if ($script:Service -and $script:Service -ne 'All') { $moduleParams['Service'] = $script:Service }
-        if ($script:ShowLog)       { $moduleParams['ShowLog'] = $true }
+        $moduleParams = Get-DevModuleParams
 
         switch ($choice.Trim().ToUpper()) {
             '1' {
-                if ((Get-DevConnectionState).IsConnected) {
+                if (Test-DevConnected) {
                     Ensure-Module
                     Start-ZtAssessment -Action Disconnect
+                    # Reset path to base after disconnect so next connect resolves fresh
+                    if ($script:IsDefaultPath) { $script:Path = $script:BasePath }
                 }
                 else {
-                    Step-Install
+                    Ensure-Module
+                    Step-VerifyDependencyVersions
                     Start-ZtAssessment -Action Connect @moduleParams
+                    Resolve-DevTenantPath
                 }
             }
             '2' {
                 Ensure-Module
-                Start-ZtAssessment -Action ListTests @moduleParams
+                if (Test-DevConnected -ShowWarning) {
+                    Start-ZtAssessment -Action ListTests @moduleParams
+                }
             }
             '3' {
                 Ensure-Module
-                if ((Get-DevConnectionState).IsConnected) {
+                if (Test-DevConnected -ShowWarning) {
                     Start-ZtAssessment -Action RunAll @moduleParams
+                    if (Read-PostAssessment) { return }
                 }
-                else { Write-Host "Not connected. Use [1] to login first." -ForegroundColor Yellow }
             }
             'F' {
                 Ensure-Module
-                if ((Get-DevConnectionState).IsConnected) {
+                if (Test-DevConnected -ShowWarning) {
                     Start-ZtAssessment -Action RunAll @moduleParams
+                    if (Read-PostAssessment) { return }
                 }
-                else { Write-Host "Not connected. Use [1] to login first." -ForegroundColor Yellow }
             }
             '4' {
                 Ensure-Module
-                if ((Get-DevConnectionState).IsConnected) {
+                if (Test-DevConnected -ShowWarning) {
                     $p = Read-Host "Which pillar? (Identity/Devices/Network/Data)"
                     if ($p -in 'Identity', 'Devices', 'Network', 'Data') {
                         Start-ZtAssessment -Action RunPillar -Pillar $p @moduleParams
+                        if (Read-PostAssessment) { return }
                     }
                     else { Write-Host "Invalid pillar: $p" -ForegroundColor Red }
                 }
-                else { Write-Host "Not connected. Use [1] to login first." -ForegroundColor Yellow }
             }
             '5' {
                 Ensure-Module
-                if ((Get-DevConnectionState).IsConnected) {
+                if (Test-DevConnected -ShowWarning) {
                     $ids = Read-Host "Enter test ID(s), comma-separated"
                     $testIds = $ids -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
                     if ($testIds) {
                         Start-ZtAssessment -Action RunTests -Tests $testIds @moduleParams
+                        if (Read-PostAssessment) { return }
                     }
                     else { Write-Host "No test IDs entered." -ForegroundColor Red }
                 }
-                else { Write-Host "Not connected. Use [1] to login first." -ForegroundColor Yellow }
             }
             '6' {
                 Ensure-Module
-                if ((Get-DevConnectionState).IsConnected) {
+                if (Test-DevConnected -ShowWarning) {
                     Start-ZtAssessment -Action Resume @moduleParams
+                    if (Read-PostAssessment) { return }
                 }
-                else { Write-Host "Not connected. Use [1] to login first." -ForegroundColor Yellow }
             }
             '7' {
                 Ensure-Module
@@ -1041,19 +1395,31 @@ function Invoke-InteractiveMenu {
                 Start-ZtAssessment -Action DeleteResults @moduleParams
             }
             'V' { Step-ViewReport }
-            'L' { Step-ListPlannedTests }
+            'T' {
+                Ensure-Module
+                Start-ZtAssessment -Action ListReports -Path $script:BasePath
+            }
+            'L' { if (Test-DevConnected -ShowWarning) { Step-ListPlannedTests } }
             'R' {
-                if ((Get-DevConnectionState).IsConnected) { Step-RunPlannedTests }
-                else { Write-Host "Not connected. Use [1] to login first." -ForegroundColor Yellow }
+                if (Test-DevConnected -ShowWarning) { Step-RunPlannedTests }
             }
             'P' {
-                if ((Get-DevConnectionState).IsConnected) { Step-CheckPermissions }
-                else { Write-Host "Not connected. Use [1] to login first." -ForegroundColor Yellow }
+                if (Test-DevConnected -ShowWarning) { Step-CheckPermissions }
+            }
+            'S' {
+                Ensure-Module
+                if (Test-DevConnected -ShowWarning) {
+                    Start-ZtAssessment -Action Status @moduleParams
+                }
             }
             'C' { Step-Configuration }
+            'W' { if (Test-DocsServerRunning) { Step-DocsStop } else { Step-DocsStart } }
+            'B' { Step-DocsBuild }
             'Q' { Write-Host "Bye!" -ForegroundColor Cyan; return }
             default { Write-Host "Invalid option: $choice" -ForegroundColor Red }
         }
+        # Reset banner flag so next Invoke-ZtAssessment call shows its own banner if needed
+        $env:ZT_BANNER_SHOWN = $null
         Write-Host ""
     }
 }
@@ -1065,30 +1431,50 @@ $script:UseTokenCache = $UseTokenCache
 $script:TenantId = $TenantId
 $script:Service = $Service
 $script:Path = $Path
+$script:BasePath = $Path  # Original base path (before tenant resolution) for ListReports
 $script:Days = $Days
 $script:ShowLog = $ShowLog
 $script:Pillar = $Pillar
 $script:PesterOutput = $PesterOutput
 
+# Canonical service list — loaded from manifest when available, hardcoded fallback for pre-import.
+# Refreshed after module import so everything stays in sync.
+$script:DevAllowedServices = @('Graph', 'Azure', 'AipService', 'ExchangeOnline', 'SecurityCompliance', 'SharePoint')
+
 # Apply UseTokenCache to PSFConfig so the module picks it up (default: always on)
 Set-PSFConfig -Module ZeroTrustAssessment -Name 'Connection.UseTokenCache' -Value $true
 
-# Build common params for Start-ZtAssessment delegation
-$moduleParams = @{ Path = $Path; Days = $Days }
-if ($UseDeviceCode) { $moduleParams['UseDeviceCode'] = $true }
-if ($TenantId)      { $moduleParams['TenantId'] = $TenantId }
-if ($Service -and $Service -ne 'All') { $moduleParams['Service'] = $Service }
-if ($ShowLog)       { $moduleParams['ShowLog'] = $true }
-
 Clear-Host
+
+function Initialize-DevPostImport {
+    # Shared post-import initialization: refresh service list, auto-detect device code,
+    # verify dependencies, check cached login, and resolve tenant-specific path.
+    $mod = Get-Module ZeroTrustAssessment -ErrorAction Ignore
+    if ($mod) {
+        $script:DevAllowedServices = @(& $mod { $script:AllowedServices })
+        # Pull module constants into dev script scope so post-import code can use them.
+        $script:ZtReportFileName     = & $mod { $script:ZtReportFileName }
+        $script:ZtReportJsonFileName = & $mod { $script:ZtReportJsonFileName }
+        $script:ZtExportDirName      = & $mod { $script:ZtExportDirName }
+        $script:ZtDefaultReportPath  = & $mod { $script:ZtDefaultReportPath }
+        if (-not $script:UseDeviceCode) {
+            if (& $mod { Get-ZtEffectiveDeviceCode }) { $script:UseDeviceCode = $true }
+        }
+    }
+    Step-VerifyDependencyVersions
+    Test-CachedLogin
+    Resolve-DevTenantPath
+}
 
 if ($Action) {
     # Show banner and info first, then import
     Write-StartupBanner
     Write-DevInfo
     Step-Install
-    Step-VerifyDependencyVersions
-    Test-CachedLogin
+    Initialize-DevPostImport
+
+    $moduleParams = Get-DevModuleParams
+
     Write-DevStatus
 
     switch ($Action) {
@@ -1113,19 +1499,18 @@ if ($Action) {
         'UpdateTestServices' { Step-UpdateTestServices }
         'AuditServices'      { Step-UpdateTestServices -AuditOnly }
         'DeleteResults'      { Start-ZtAssessment -Action DeleteResults @moduleParams }
-        'ListPlanned'        { Step-ListPlannedTests }
+        'ListPlanned'        { if (Test-DevConnected -ShowWarning) { Step-ListPlannedTests } }
         'RunPlanned'         { Step-RunPlannedTests }
         'CheckPermissions'   { Step-CheckPermissions }
         'ViewReport'         { Step-ViewReport }
         'CheckDependencies'  { Step-CheckDependencyUpgrades }
+        'ListReports'        { Start-ZtAssessment -Action ListReports -Path $script:BasePath }
     }
 }
 else {
     Write-StartupBanner
     Write-DevInfo
     Step-Install
-    Step-VerifyDependencyVersions
-    Test-CachedLogin
-    Clear-Host
+    Initialize-DevPostImport
     Invoke-InteractiveMenu
 }

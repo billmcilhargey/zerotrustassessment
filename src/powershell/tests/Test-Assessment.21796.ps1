@@ -13,6 +13,7 @@ function Test-Assessment-21796 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 21796,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Block legacy authentication policy is configured',
     	UserImpact = 'High'
     )]

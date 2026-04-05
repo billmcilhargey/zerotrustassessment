@@ -17,6 +17,7 @@ function Test-Assessment-26886 {
 
     [ZtTest(
         Category = 'Azure Network Security',
+        CloudEnvironment = ('Global'),
         ImplementationCost = 'Low',
         MinimumLicense = ('DDoS_Network_Protection', 'DDoS_IP_Protection'),
         Pillar = 'Network',
@@ -24,6 +25,7 @@ function Test-Assessment-26886 {
         SfiPillar = 'Protect networks',
         TenantType = ('Workforce'),
         TestId = 26886,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Diagnostic logging is enabled for DDoS-protected public IPs',
         UserImpact = 'Low'
     )]
@@ -149,12 +151,9 @@ function Test-Assessment-26886 {
         return
     }
 
-    # Check the supported environment
-    Write-ZtProgress -Activity $activity -Status 'Checking Azure environment'
-
-    if ($azContext.Environment.Name -ne 'AzureCloud') {
-        Write-PSFMessage 'This test is only applicable to the AzureCloud environment.' -Tag Test -Level VeryVerbose
-        Add-ZtTestResultDetail -SkippedBecause NotSupported
+    # Check the supported cloud environment
+    if (-not (Test-ZtCloudEnvironment -SupportedCloudType 'Global')) {
+        Add-ZtTestResultDetail -SkippedBecause NotSupportedEnvironment
         return
     }
 

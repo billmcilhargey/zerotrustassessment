@@ -22,6 +22,7 @@ function Test-Assessment-35019 {
     	SfiPillar = 'Protect tenants and production systems',
     	TenantType = ('Workforce'),
     	TestId = 35019,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Auto-labeling policies are configured for all Microsoft 365 workloads',
     	UserImpact = 'Low'
     )]

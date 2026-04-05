@@ -94,7 +94,7 @@ function Invoke-ZtAssessment {
 		# The path to the folder folder to output the report to. If not specified, the report will be output to the current directory.
 		[Parameter(ParameterSetName = 'Default')]
 		[string]
-		$Path = "./ZeroTrustReport",
+		$Path = $script:ZtDefaultReportPath,
 
 		# Optional. Number of days (between 1 and 30) to query sign-in logs. Defaults to last two days.
 		[Parameter(ParameterSetName = 'Default')]
@@ -208,6 +208,7 @@ function Invoke-ZtAssessment {
 	Write-Host
 
 	# Handle configuration file parameter
+	$pathSetByConfig = $false
 	if ($ConfigurationFile) {
 		try {
 			Write-Host "📄 " -NoNewline -ForegroundColor Blue
@@ -234,6 +235,7 @@ function Invoke-ZtAssessment {
 				}
 				else {
 					Set-Variable -Name $paramName -Value $configContent.$paramName
+					if ($paramName -eq 'Path') { $pathSetByConfig = $true }
 				}
 			}
 
@@ -275,29 +277,156 @@ function Invoke-ZtAssessment {
 		$licColor = if ($licenseCheck.Passed) { 'Green' } else { 'Yellow' }
 		$licIcon = if ($licenseCheck.Passed) { '✅' } else { '⚠️' }
 		Write-Host "$licIcon License: $($licenseCheck.Detail)" -ForegroundColor $licColor
-		if (-not $licenseCheck.Passed -and $licenseCheck.LicenseTier -eq 'Free') {
-			Write-Host "   Some tests require Entra ID P1/P2 and will be skipped" -ForegroundColor DarkYellow
+	}
+
+	# Show cloud environment info from preflight
+	$cloudEnvCheck = $preflight.Checks | Where-Object { $_.Check -eq 'CloudEnvironment' }
+	if ($cloudEnvCheck) {
+		$envColor = if ($cloudEnvCheck.Passed) { 'Green' } else { 'Yellow' }
+		$envIcon = if ($cloudEnvCheck.Passed) { '☁️' } else { '⚠️' }
+		Write-Host "$envIcon Cloud: $($cloudEnvCheck.Detail)" -ForegroundColor $envColor
+	}
+
+	# Unified skip summary — gather ALL reasons tests will be skipped and display once.
+	$allTests = Get-ZtTest
+	$skipReasons = [System.Collections.Generic.List[object]]::new()
+
+	# 1. Service coverage gaps (missing/unavailable services)
+	$coverage = $preflight.Coverage
+	if (-not $coverage.FullCoverage) {
+		foreach ($gap in $coverage.ServiceGaps) {
+			$reason = if ($gap.Reason) { $gap.Reason }
+				elseif ($gap.IsWindowsOnly) { 'Requires Windows' }
+				elseif ($gap.NoDeviceCode) { 'No device code flow support' }
+				elseif ($gap.RequiresCustomApp) { 'No app registration setup' }
+				elseif ($gap.NoClientSecret) { 'No client-secret auth' }
+				else { 'Service not connected' }
+			$skipReasons.Add([pscustomobject]@{
+				Category = 'Service'
+				Label    = "$($gap.Service)"
+				Reason   = $reason
+				Count    = $gap.TestsAffected
+			})
 		}
 	}
 
-	# Show coverage warnings (missing services won't block the run, tests will be skipped)
-	$coverage = $preflight.Coverage
-	if (-not $coverage.FullCoverage) {
-		Write-Host "⚠️ " -NoNewline -ForegroundColor Yellow
-		Write-Host "Service coverage gaps detected — $($coverage.SkippedTestCount) test(s) will be skipped" -ForegroundColor Yellow
-		foreach ($gap in $coverage.ServiceGaps) {
-			$extra = if ($gap.IsWindowsOnly) { ' (Windows only)' } else { '' }
-			Write-Host "   • $($gap.Service): $($gap.TestsAffected) test(s)$extra" -ForegroundColor DarkYellow
+	# 1b. Cloud environment gaps — tests whose CloudEnvironment metadata excludes the current cloud
+	$currentCloudEnv = $cloudEnvCheck.CloudEnvironment
+	if ($currentCloudEnv -and $currentCloudEnv.CloudType -ne 'Unknown') {
+		$envSkipCount = 0
+		foreach ($test in $allTests) {
+			if ($test.CloudEnvironment -and $test.CloudEnvironment.Count -gt 0) {
+				if (-not (Test-ZtCloudEnvironment -SupportedCloudType $test.CloudEnvironment)) {
+					$envSkipCount++
+				}
+			}
 		}
-		Write-Host
+		if ($envSkipCount -gt 0) {
+			$skipReasons.Add([pscustomobject]@{
+				Category = 'Environment'
+				Label    = $currentCloudEnv.DisplayName
+				Reason   = "Not supported in $($currentCloudEnv.DisplayName)"
+				Count    = $envSkipCount
+			})
+		}
+	}
+
+	# 2. Licensing gaps (MinimumLicense / CompatibleLicense)
+	if ($licenseCheck) {
+		$licSummary = Get-ZtLicenseSkipSummary -Tests $allTests
+		foreach ($entry in $licSummary.SkipsByTier.GetEnumerator()) {
+			$skipReasons.Add([pscustomobject]@{
+				Category = 'License'
+				Label    = $entry.Key
+				Reason   = $entry.Key
+				Count    = $entry.Value
+			})
+		}
+	}
+
+	# 3. Permission/scope gaps — tests whose RequiredScopes are not in the current session.
+	$ctx = Get-MgContext -ErrorAction Ignore
+	if ($ctx) {
+		$currentScopes = @($ctx.Scopes)
+		$scopeSkipCount = @{}
+		foreach ($test in $allTests) {
+			if (-not $test.RequiredScopes -or $test.RequiredScopes.Count -eq 0) { continue }
+			$missingForTest = @($test.RequiredScopes | Where-Object { $currentScopes -notcontains $_ })
+			if ($missingForTest.Count -gt 0) {
+				foreach ($scope in $missingForTest) {
+					if (-not $scopeSkipCount.ContainsKey($scope)) { $scopeSkipCount[$scope] = 0 }
+					$scopeSkipCount[$scope]++
+				}
+			}
+		}
+		foreach ($entry in $scopeSkipCount.GetEnumerator()) {
+			$skipReasons.Add([pscustomobject]@{
+				Category = 'Permission'
+				Label    = $entry.Key
+				Reason   = "Missing scope: $($entry.Key)"
+				Count    = $entry.Value
+			})
+		}
+	}
+
+	# Display unified skip summary
+	if ($skipReasons.Count -gt 0) {
+		$totalSkipped = ($skipReasons | Measure-Object -Property Count -Sum).Sum
+		Write-Host ''
+		Write-Host "⚠️ " -NoNewline -ForegroundColor Yellow
+		Write-Host "$totalSkipped test(s) will be skipped:" -ForegroundColor Yellow
+
+		$svcReasons = @($skipReasons | Where-Object Category -eq 'Service')
+		if ($svcReasons.Count -gt 0) {
+			$svcTotal = ($svcReasons | Measure-Object -Property Count -Sum).Sum
+			Write-Host "   Services ($svcTotal):" -ForegroundColor DarkYellow
+			foreach ($r in $svcReasons | Sort-Object Count -Descending) {
+				Write-Host "     • $($r.Label): $($r.Count) test(s) — $($r.Reason)" -ForegroundColor DarkYellow
+			}
+		}
+
+		$licReasons = @($skipReasons | Where-Object Category -eq 'License')
+		if ($licReasons.Count -gt 0) {
+			$licTotal = ($licReasons | Measure-Object -Property Count -Sum).Sum
+			Write-Host "   Licensing ($licTotal):" -ForegroundColor DarkYellow
+			foreach ($r in $licReasons | Sort-Object Count -Descending) {
+				Write-Host "     • $($r.Count) test(s) — $($r.Reason)" -ForegroundColor DarkYellow
+			}
+		}
+
+		$permReasons = @($skipReasons | Where-Object Category -eq 'Permission')
+		if ($permReasons.Count -gt 0) {
+			$permTotal = ($permReasons | Measure-Object -Property Count -Sum).Sum
+			Write-Host "   Permissions ($permTotal):" -ForegroundColor DarkYellow
+			foreach ($r in $permReasons | Sort-Object Count -Descending) {
+				Write-Host "     • $($r.Count) test(s) — $($r.Reason)" -ForegroundColor DarkYellow
+			}
+		}
+
+		$envReasons = @($skipReasons | Where-Object Category -eq 'Environment')
+		if ($envReasons.Count -gt 0) {
+			$envTotal = ($envReasons | Measure-Object -Property Count -Sum).Sum
+			Write-Host "   Cloud environment ($envTotal):" -ForegroundColor DarkYellow
+			foreach ($r in $envReasons | Sort-Object Count -Descending) {
+				Write-Host "     • $($r.Count) test(s) — $($r.Reason)" -ForegroundColor DarkYellow
+			}
+		}
+		Write-Host ''
+	}
+
+	# When using the default path, organize reports by tenant ID automatically.
+	# Skip if the user explicitly set -Path on the CLI or via a configuration file.
+	$isDefaultPath = -not $PSBoundParameters.ContainsKey('Path') -and -not $pathSetByConfig
+	if ($isDefaultPath) {
+		$Path = Resolve-ZtTenantReportPath -BasePath $Path -IsDefaultPath $true
 	}
 
 	# Resolve to absolute paths so .NET APIs (DuckDB, System.IO) use the correct location.
 	# .NET resolves relative paths against [Environment]::CurrentDirectory, which can differ
 	# from PowerShell's Get-Location after Set-Location / cd.
 	$Path = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($Path)
-	$exportPath = Join-Path $Path "zt-export"
-	$dbPath = Join-Path $exportPath 'db' 'zt.db'
+	$exportPath = Join-Path $Path $script:ZtExportDirName
+	$dbPath = Join-Path $exportPath $script:ZtDbDirName $script:ZtDbFileName
 
 	# Stop if folder has items inside it
 	if (-not $Resume -and (Test-Path $Path)) {
@@ -316,6 +445,10 @@ function Invoke-ZtAssessment {
 			if ($deleteFolder -eq "y") {
 				Write-Host "🗑️ " -NoNewline -ForegroundColor Red
 				Write-Host "Cleaning up existing files..." -ForegroundColor White
+				# Close any open module-managed database connection before deleting
+				if ($script:_DatabaseConnection) {
+					try { Disconnect-Database } catch { }
+				}
 				Remove-Item -Path $Path -Recurse -Force -ErrorAction Stop -ProgressAction SilentlyContinue | Out-Null
 				Write-Host "✅ " -NoNewline -ForegroundColor Green
 				Write-Host "Folder cleaned successfully" -ForegroundColor Green
@@ -414,12 +547,12 @@ function Invoke-ZtAssessment {
 	Write-PSFMessage -Message "Stage 5: Writing Assessment report data" -Tag stage
 	Write-ZtProgress -Activity "Generating report" -Status "Writing report data"
 	$assessmentResultsJson = $assessmentResults | ConvertTo-Json -Depth 10
-	$resultsJsonPath = Join-Path -Path $exportPath -ChildPath "ZeroTrustAssessmentReport.json"
+	$resultsJsonPath = Join-Path -Path $exportPath -ChildPath $script:ZtReportJsonFileName
 	$assessmentResultsJson | Set-PSFFileContent -Path $resultsJsonPath
 
 	Write-PSFMessage -Message "Stage 6: Generating Html Report" -Tag stage
 	Write-ZtProgress -Activity "Generating report" -Status "Building HTML report"
-	$htmlReportPath = Join-Path -Path $Path -ChildPath "ZeroTrustAssessmentReport.html"
+	$htmlReportPath = Join-Path -Path $Path -ChildPath $script:ZtReportFileName
 	$output = Get-HtmlReport -AssessmentResults $assessmentResultsJson -Path $Path
 	$output | Set-PSFFileContent -Path $htmlReportPath -Encoding UTF8NoBom
 

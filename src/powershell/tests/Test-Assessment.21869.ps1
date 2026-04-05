@@ -13,6 +13,7 @@ function Test-Assessment-21869 {
     	SfiPillar = 'Protect engineering systems',
     	TenantType = ('Workforce','External'),
     	TestId = 21869,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Enterprise applications must require explicit assignment or scoped provisioning',
     	UserImpact = 'Medium'
     )]

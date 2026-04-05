@@ -24,6 +24,7 @@ function Test-Assessment-27016 {
         SfiPillar = 'Protect networks',
         TenantType = ('Workforce'),
         TestId = 27016,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Rate Limiting is Enabled in Application Gateway WAF',
         UserImpact = 'Low'
     )]

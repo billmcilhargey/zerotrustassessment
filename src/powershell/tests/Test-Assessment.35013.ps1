@@ -26,6 +26,7 @@ function Test-Assessment-35013 {
         SfiPillar = 'Protect tenants and production systems',
         TenantType = ('Workforce', 'External'),
         TestId = 35013,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Sensitivity labels with encryption are configured',
         UserImpact = 'High'
     )]

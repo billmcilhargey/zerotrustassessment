@@ -13,6 +13,7 @@ function Test-Assessment-21888{
     	SfiPillar = 'Protect engineering systems',
     	TenantType = ('Workforce','External'),
     	TestId = 21888,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'App registrations must not have dangling or abandoned domain redirect URIs',
     	UserImpact = 'Low'
     )]

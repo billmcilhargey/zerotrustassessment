@@ -2,10 +2,22 @@
 class ZtTest : System.Attribute
 {
 	[string]$Category
+
+	# Supported cloud environments for this test.
+	# When specified, the test is automatically skipped in unsupported environments.
+	# Values: Commercial, GCC, GCCHigh, DoD, China, Germany
+	# Shorthand groups: Global (Commercial+GCC), USGovernment (GCC+GCCHigh+DoD), Sovereign (GCCHigh+DoD+China+Germany)
+	# If omitted, the test runs in all environments.
+	[string[]]$CloudEnvironment
+
 	[ValidateSet('Low','Medium','High')][string]$ImplementationCost
 	[string[]]$MinimumLicense
 
 	[string[]]$CompatibleLicense
+
+	# Required Microsoft Graph permission scopes for this test (e.g. 'Policy.Read.All').
+	# Tests are pre-skipped when the connected session lacks any listed scope.
+	[string[]]$RequiredScopes
 
 	[string[]]$Service
 

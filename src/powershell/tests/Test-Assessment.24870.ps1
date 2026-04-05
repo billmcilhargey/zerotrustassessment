@@ -13,6 +13,7 @@ function Test-Assessment-24870 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce'),
     	TestId = 24870,
+    	RequiredScopes = ("DeviceManagementConfiguration.Read.All", "Directory.Read.All"),
     	Title = 'Secure Wi-Fi profiles protect macOS devices from unauthorized network access',
     	UserImpact = 'Low'
     )]

@@ -54,7 +54,7 @@
 			$isRetryable = Test-ZtRetryableError -ErrorRecord $_
 
 			if (-not $isRetryable) {
-				Write-PSFMessage -Level Warning -Message "Non-retryable error encountered: {0}. Failing immediately." -StringValues $_.Exception.Message -ErrorRecord $_ -Tag Retry
+				Write-PSFMessage -Level Verbose -Message "Non-retryable error encountered: {0}. Failing immediately." -StringValues $_.Exception.Message -ErrorRecord $_ -Tag Retry
 				$PSCmdlet.ThrowTerminatingError($_)
 			}
 

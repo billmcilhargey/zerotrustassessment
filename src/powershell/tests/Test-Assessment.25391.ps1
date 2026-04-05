@@ -23,6 +23,7 @@ function Test-Assessment-25391 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce'),
     	TestId = 25391,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Private network connectors are active and healthy to maintain Zero Trust access to internal resources',
     	UserImpact = 'Medium'
     )]
@@ -31,6 +32,12 @@ function Test-Assessment-25391 {
 
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
+        return
+    }
 
     $activity = 'Checking Private Network Connector versions'
     Write-ZtProgress -Activity $activity -Status 'Getting connectors'

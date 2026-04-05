@@ -13,6 +13,7 @@ function Test-Assessment-21780 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21780,
+    	RequiredScopes = ("Directory.Read.All", "DirectoryRecommendations.Read.All"),
     	Title = 'No usage of ADAL in the tenant',
     	UserImpact = 'Low'
     )]

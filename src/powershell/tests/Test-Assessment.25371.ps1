@@ -29,6 +29,7 @@ function Test-Assessment-25371 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce'),
     	TestId = 25371,
+    	RequiredScopes = ("Directory.Read.All", "NetworkAccess.Read.All", "Policy.Read.All"),
     	Title = 'Network validation is configured through Universal Continuous Access Evaluation',
     	UserImpact = 'Low'
     )]

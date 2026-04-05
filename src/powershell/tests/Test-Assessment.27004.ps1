@@ -30,6 +30,7 @@ function Test-Assessment-27004 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce'),
     	TestId = 27004,
+    	RequiredScopes = "NetworkAccess.Read.All",
     	Title = 'TLS inspection custom bypass rules don''t duplicate system bypass destinations',
     	UserImpact = 'Low'
     )]
@@ -43,6 +44,12 @@ function Test-Assessment-27004 {
 
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
+        return
+    }
 
     $activity = 'Checking TLS inspection bypass rules for redundant system destinations'
     Write-ZtProgress -Activity $activity -Status 'Loading system bypass reference list'

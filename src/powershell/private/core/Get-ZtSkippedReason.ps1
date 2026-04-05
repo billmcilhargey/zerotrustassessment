@@ -20,11 +20,13 @@ function Get-ZtSkippedReason {
         "NotLicensedEntraWorkloadID" { "This test is for tenants that are licensed for Entra Workload ID. See [Entra Workload ID licensing](https://learn.microsoft.com/entra/workload-id/workload-identities-faqs)"; break}
         "NotLicensedIntune" { "This test is for tenants that are licensed for Microsoft Intune. See [Microsoft Intune licensing](https://learn.microsoft.com/intune/intune-service/fundamentals/licenses)"; break}
         "NotSupported" { "This test relies on capabilities not currently available (e.g., cmdlets that are not available on all platforms, Resolve-DnsName)"; break}
+        "NotSupportedEnvironment" { "This test is not supported in the current cloud environment (`"{0}`"). It requires one of: `"{1}`". See [Microsoft Graph national cloud deployments](https://learn.microsoft.com/graph/deployments)."; break}
         "NoAzureAccess" { "The signed in user does not have access to the Azure subscription to perform this test."; break}
         "NotApplicable" { "This test is not applicable to the current environment."; break}
         "NotConnectedToService" { "This test requires connection to the service(s) `"{0}`" currently disconnected.  Please use _Connect-ZtAssessment_ to connect."; break}
         "NoCompatibleLicenseFound" { "This test requires one of the following licenses: (`"{0}`").  Please ensure your tenant has the appropriate licenses to run this test.  See [Licensing & Service Plans](https://learn.microsoft.com/entra/identity/users/licensing-service-plan-reference)"; break}
         "TimeoutReached" { "This test was not completed because the report execution exceeded the expected time frame. This could be due to a large number of objects in the tenants. Please consider adding ``-Timeout '03:00:00:00'`` to ``Invoke-ZtAssessment``."; break}
+        "MissingRequiredScope" { "This test requires Microsoft Graph permission scope(s) `"{0}`" not granted in the current session. Please reconnect with the required scopes using _Connect-ZtAssessment_."; break}
         default { $SkippedBecause; break}
     }
 }

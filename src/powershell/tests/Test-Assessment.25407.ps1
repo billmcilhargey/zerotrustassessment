@@ -14,6 +14,7 @@ function Test-Assessment-25407 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce','External'),
     	TestId = 25407,
+    	RequiredScopes = ("NetworkAccess.Read.All", "Policy.Read.All"),
     	Title = 'Web content filtering integrates with Conditional Access',
     	UserImpact = 'Low'
     )]
@@ -22,6 +23,12 @@ function Test-Assessment-25407 {
 
     #region Data Collection
     Write-PSFMessage '🟦 Start GSA Conditional Access evaluation (security profiles via CA)' -Tag Test -Level VeryVerbose
+
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
+        return
+    }
 
     $activity = "Checking web content filtering integration with Conditional Access"
     Write-ZtProgress -Activity $activity

@@ -20,32 +20,45 @@ function Get-ZtConnectionState {
 	param ()
 
 	$state = [PSCustomObject]@{
-		IsConnected   = $false
-		Account       = $null
-		Tenant        = $null
-		Services      = @()
-		ScopesValid   = $false
-		MissingScopes = @()
+		IsConnected      = $false
+		Account          = $null
+		Tenant           = $null
+		CloudEnvironment = $null
+		Services         = @()
+		ScopesValid      = $false
+		MissingScopes    = @()
 	}
 
 	try {
+		# Sync tracked services with live session state (re-adds sessions
+		# removed by transient errors, removes truly dead sessions).
+		Sync-ZtConnectedServices
+
 		$ctx = Get-MgContext -ErrorAction Ignore
 		if ($null -ne $ctx) {
-			# If Graph context exists but ConnectedService was reset (e.g. module reimport),
-			# re-register Graph so the services list stays accurate.
-			if ($script:ConnectedService -notcontains 'Graph') {
-				Add-ZtConnectedService -Service 'Graph'
-			}
-
 			$state.IsConnected = $true
 			$state.Account = $ctx.Account
 			$state.Tenant = $ctx.TenantId
+			$state.CloudEnvironment = Get-ZtCloudEnvironment
 			$state.Services = @($script:ConnectedService)
 
 			$required = Get-ZtGraphScope
 			$missing = @($required | Where-Object { $ctx.Scopes -notcontains $_ })
 			$state.MissingScopes = $missing
 			$state.ScopesValid = $missing.Count -eq 0
+		}
+		elseif ($script:ConnectedService.Count -gt 0) {
+			# Non-Graph services connected (e.g. Azure, Exchange) but Graph was skipped
+			$state.IsConnected = $true
+			$state.Services = @($script:ConnectedService)
+			$state.CloudEnvironment = Get-ZtCloudEnvironment
+
+			# Try to get account/tenant from Azure context as fallback
+			$azCtx = Get-AzContext -ErrorAction Ignore
+			if ($null -ne $azCtx) {
+				$state.Account = $azCtx.Account.Id
+				$state.Tenant = $azCtx.Tenant.Id
+			}
 		}
 	}
 	catch {

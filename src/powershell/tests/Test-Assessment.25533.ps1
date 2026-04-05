@@ -8,6 +8,7 @@ function Test-Assessment-25533 {
         SfiPillar = 'Protect networks',
         TenantType = ('Workforce', 'External'),
         TestId = 25533,
+        RequiredScopes = "Directory.Read.All",
         Title = 'DDoS Protection is enabled for all Public IP Addresses in VNETs',
         UserImpact = 'Low'
     )]

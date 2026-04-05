@@ -159,9 +159,11 @@ function Get-ZtTestMetadata {
 				Command            = $commandItem.Name
 				TestId             = $commandItem.Ast.Name -replace '^Test-Assessment-'
 				Category           = $null
+				CloudEnvironment   = $null
 				ImplementationCost = $null
 				MinimumLicense     = $null
 				CompatibleLicense  = $null
+				RequiredScopes     = $null
 				Service            = $null
 				Pillar             = $null
 				RiskLevel          = $null

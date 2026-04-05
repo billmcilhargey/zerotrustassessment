@@ -13,6 +13,7 @@ function Test-Assessment-21858 {
         SfiPillar = 'Protect tenants and isolate production systems',
         TenantType = ('Workforce', 'External'),
         TestId = 21858,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Inactive guest identities are disabled or removed from the tenant',
         UserImpact = 'Low'
     )]

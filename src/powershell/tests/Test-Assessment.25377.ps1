@@ -24,6 +24,7 @@ function Test-Assessment-25377 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce','External'),
     	TestId = 25377,
+    	RequiredScopes = ("Directory.Read.All", "NetworkAccess.Read.All", "Policy.Read.All"),
     	Title = 'Universal tenant restrictions block unauthorized external tenant access',
     	UserImpact = 'Low'
     )]
@@ -32,6 +33,13 @@ function Test-Assessment-25377 {
 
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
+        return
+    }
+
     $activity = 'Checking Universal Tenant Restrictions configuration'
     Write-ZtProgress -Activity $activity -Status 'Querying Global Secure Access network packet tagging status'
 

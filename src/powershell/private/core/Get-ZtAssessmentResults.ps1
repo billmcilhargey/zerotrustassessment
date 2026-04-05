@@ -82,12 +82,25 @@ function Get-ZtAssessmentResults {
 	# Sort by risk then by status
 	$tests = $script:__ZtSession.TestResultDetail.Value.values | Sort-Object -Property @{Expression = { $_.TestRisk } }, @{Expression = { $_.TestStatus } }
 
+	# Get cloud environment info for the report
+	$cloudEnv = Get-ZtCloudEnvironment
+	$cloudEnvironmentInfo = if ($cloudEnv) {
+		[PSCustomObject]@{
+			CloudType        = $cloudEnv.CloudType
+			DisplayName      = $cloudEnv.DisplayName
+			IsGovernment     = $cloudEnv.IsGovernment
+			IsSovereignCloud = $cloudEnv.IsSovereignCloud
+			GraphEndpoint    = $cloudEnv.GraphEndpoint
+		}
+	} else { $null }
+
 	$ztTestResults = [PSCustomObject][ordered]@{
 		ExecutedAt        = Get-Date
 		TenantId          = $mgContext.TenantId
 		TenantName        = $org.TenantName
 		Domain            = $org.Domain
 		Account           = $mgContext.Account
+		CloudEnvironment  = $cloudEnvironmentInfo
 		CurrentVersion    = $PSCmdlet.MyInvocation.MyCommand.Module.Version.ToString()
 		LatestVersion     = Get-ModuleLatestVersion
 		TestResultSummary = Get-TestResultSummary -TestResults $script:__ZtSession.TestResultDetail.Value.values -PreviewEnabled $script:__ZtSession.PreviewEnabled

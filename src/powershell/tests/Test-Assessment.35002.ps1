@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks if Microsoft Rights Management Services (RMS) is allowed in Cross-Tenant Access Policies (XTAP).
 
@@ -28,6 +28,7 @@ function Test-Assessment-35002 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce'),
     	TestId = 35002,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Cross-tenant access settings configured to allow encrypted content sharing',
     	UserImpact = 'Low'
     )]

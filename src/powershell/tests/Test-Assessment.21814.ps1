@@ -14,6 +14,7 @@ function Test-Assessment-21814 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 21814,
+    	RequiredScopes = "RoleManagement.Read.All",
     	Title = 'Privileged accounts are cloud native identities',
     	UserImpact = 'Low'
     )]

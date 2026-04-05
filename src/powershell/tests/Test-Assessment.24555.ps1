@@ -13,6 +13,7 @@ function Test-Assessment-24555 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce'),
     	TestId = 24555,
+    	RequiredScopes = ("DeviceManagementConfiguration.Read.All", "Directory.Read.All"),
     	Title = 'Scope tag configuration is enforced to support delegated administration and least-privilege access',
     	UserImpact = 'Low'
     )]

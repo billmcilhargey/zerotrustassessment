@@ -16,6 +16,7 @@ function Test-Assessment-24546 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce'),
     	TestId = 24546,
+    	RequiredScopes = ("DeviceManagementConfiguration.Read.All", "Directory.Read.All", "Policy.Read.All"),
     	Title = 'Windows automatic device enrollment is enforced to eliminate risks from unmanaged endpoints',
     	UserImpact = 'Low'
     )]

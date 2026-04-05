@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Tests if all enterprise applications with high privilege permissions have at least two owners.
 #>
@@ -13,6 +13,7 @@ function Test-Assessment-21867 {
     	SfiPillar = 'Monitor and detect cyberthreats',
     	TenantType = ('Workforce','External'),
     	TestId = 21867,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Enterprise applications with high privilege Microsoft Graph API permissions have owners',
     	UserImpact = 'Low'
     )]

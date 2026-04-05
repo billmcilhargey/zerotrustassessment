@@ -17,8 +17,8 @@ function Test-ZtResumeAvailable {
 		[string]$Path
 	)
 
-	$exportPath = Join-Path $Path 'zt-export'
-	$configPath = Join-Path $exportPath 'ztConfig.json'
+	$exportPath = Join-Path $Path $script:ZtExportDirName
+	$configPath = Join-Path $exportPath $script:ZtConfigFileName
 
 	if (-not (Test-Path $configPath)) {
 		return $false

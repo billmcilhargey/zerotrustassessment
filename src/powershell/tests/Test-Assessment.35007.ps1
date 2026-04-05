@@ -22,6 +22,7 @@ function Test-Assessment-35007 {
         SfiPillar = '',
         TenantType = ('Workforce'),
         TestId = 35007,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Information Rights Management is enabled in SharePoint Online',
         UserImpact = 'Low'
     )]

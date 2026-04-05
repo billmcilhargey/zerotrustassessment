@@ -13,6 +13,7 @@ function Test-Assessment-21815 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 21815,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'All privileged role assignments are activated just in time and not permanently active',
     	UserImpact = 'Low'
     )]

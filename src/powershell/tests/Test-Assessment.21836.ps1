@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks Workload Identities are not assigned privileged roles
 #>
@@ -13,6 +13,7 @@ function Test-Assessment-21836{
     	SfiPillar = 'Protect engineering systems',
     	TenantType = ('Workforce','External'),
     	TestId = 21836,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Workload Identities are not assigned privileged roles',
     	UserImpact = 'Low'
     )]

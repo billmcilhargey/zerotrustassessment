@@ -17,6 +17,7 @@ function Test-Assessment-26889 {
 
     [ZtTest(
         Category = 'Azure Network Security',
+        CloudEnvironment = ('Global'),
         ImplementationCost = 'Low',
         MinimumLicense = ('Azure_FrontDoor_Standard', 'Azure_FrontDoor_Premium'),
         Pillar = 'Network',
@@ -24,6 +25,7 @@ function Test-Assessment-26889 {
         SfiPillar = 'Monitor and detect cyberthreats',
         TenantType = ('Workforce'),
         TestId = 26889,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Diagnostic logging is enabled in Azure Front Door WAF',
         UserImpact = 'Low'
     )]
@@ -55,12 +57,9 @@ function Test-Assessment-26889 {
         return
     }
 
-    # Check the supported environment
-    Write-ZtProgress -Activity $activity -Status 'Checking Azure environment'
-
-    if ($azContext.Environment.Name -ne 'AzureCloud') {
-        Write-PSFMessage 'This test is only applicable to the AzureCloud environment.' -Tag Test -Level VeryVerbose
-        Add-ZtTestResultDetail -SkippedBecause NotSupported
+    # Check the supported cloud environment
+    if (-not (Test-ZtCloudEnvironment -SupportedCloudType 'Global')) {
+        Add-ZtTestResultDetail -SkippedBecause NotSupportedEnvironment
         return
     }
 

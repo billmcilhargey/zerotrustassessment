@@ -96,23 +96,130 @@
 	}
 
 	# Filter based on service connection. If no service is specified in the test metadata, it will be run.
+	# Sync tracked services with live session state — earlier errors (e.g. DLL conflicts)
+	# may have removed services even though the sessions are still active.
+	Sync-ZtConnectedServices
+	$ConnectedService = @($script:ConnectedService)
+
 	$skippedTestsForService = $testsToRun.Where{ $_.Service.count -gt 0 -and $_.Service.Count -notin $_.Service.Where{ $_ -in $ConnectedService}.count }
 	$skippedTestsForService.ForEach{
 		$notConnectedService = ($_).Service.Where{ $_ -notin $ConnectedService }
 		# Mark the test as skipped.
 		Add-ZtTestResultDetail -SkippedBecause NotConnectedToService -TestId $_.TestId -NotConnectedService $notConnectedService
 	}
-
+	# Log a summary of tests skipped per missing service so users have clear visibility
+	if ($skippedTestsForService.Count -gt 0) {
+		$skippedByService = @{}
+		foreach ($skippedTest in $skippedTestsForService) {
+			foreach ($missingSvc in $skippedTest.Service.Where{ $_ -notin $ConnectedService }) {
+				if (-not $skippedByService.ContainsKey($missingSvc)) { $skippedByService[$missingSvc] = 0 }
+				$skippedByService[$missingSvc]++
+			}
+		}
+		foreach ($entry in $skippedByService.GetEnumerator()) {
+			Write-PSFMessage -Message ('Skipping {0} test(s) — service "{1}" is not connected.' -f $entry.Value, $entry.Key) -Level Important
+		}
+	}
 	$testsToRun = $testsToRun.Where{ $_.TestId -notin $skippedTestsForService.TestId }
 
-	# Filter based on Compatible licenses
-	$skippedTestsForLicense = $testsToRun.Where{$_.CompatibleLicense.Count -gt 0 -and (-not (Test-ZtLicense -CompatibleLicense $_.CompatibleLicense)) }
-	$skippedTestsForLicense.ForEach{
-		Write-PSFMessage -Message ('Test {0} is skipped because no compatible license was found' -f $_.TestId) -Level Verbose
-		Add-ZtTestResultDetail -SkippedBecause NoCompatibleLicenseFound -TestId $_.TestId
+	# Filter based on licensing (CompatibleLicense + MinimumLicense)
+	# Build tier cache once via Get-ZtLicenseSkipSummary
+	$licSummary = Get-ZtLicenseSkipSummary -Tests $testsToRun
+	$tierCache = $licSummary.TierCache
+
+	# Map product names to SkippedBecause reasons for result detail recording
+	$productToSkipReason = @{
+		'EntraIDP1'         = 'NotLicensedEntraIDP1'
+		'EntraIDP2'         = 'NotLicensedEntraIDP2'
+		'EntraIDGovernance' = 'NotLicensedEntraIDGovernance'
+		'Intune'            = 'NotLicensedIntune'
+		'EntraWorkloadID'   = 'NotLicensedEntraWorkloadID'
 	}
 
+	$skippedTestsForLicense = [System.Collections.Generic.List[object]]::new()
+	foreach ($test in $testsToRun) {
+		$skipReason = Test-ZtTestLicenseSkip -Test $test -TierCache $tierCache
+		if (-not $skipReason) { continue }
+
+		$skippedTestsForLicense.Add($test)
+
+		# Determine the specific SkippedBecause value for result detail
+		if ($test.CompatibleLicense.Count -gt 0) {
+			Add-ZtTestResultDetail -SkippedBecause NoCompatibleLicenseFound -TestId $test.TestId
+		}
+		else {
+			# Map first unmet MinimumLicense tier to its skip reason
+			$detailReason = $null
+			foreach ($tier in @($test.MinimumLicense)) {
+				$product = $script:ZtLicenseTierToProduct[$tier]
+				if ($product -and -not $tierCache[$tier] -and $productToSkipReason[$product]) {
+					$detailReason = $productToSkipReason[$product]
+					break
+				}
+			}
+			if ($detailReason) {
+				Add-ZtTestResultDetail -SkippedBecause $detailReason -TestId $test.TestId
+			}
+		}
+	}
+	if ($skippedTestsForLicense.Count -gt 0) {
+		$skippedByLabel = @{}
+		foreach ($t in $skippedTestsForLicense) {
+			$label = if ($t.CompatibleLicense.Count -gt 0) { 'compatible license' }
+			         else { ($t.MinimumLicense -join '/') }
+			if (-not $skippedByLabel[$label]) { $skippedByLabel[$label] = 0 }
+			$skippedByLabel[$label]++
+		}
+		foreach ($entry in $skippedByLabel.GetEnumerator()) {
+			Write-PSFMessage -Message ('Skipping {0} test(s) — requires {1} license (not active).' -f $entry.Value, $entry.Key) -Level Important
+		}
+	}
 	$testsToRun = $testsToRun.Where{ $_.TestId -notin $skippedTestsForLicense.TestId }
+
+	# Filter based on required Graph permission scopes (RequiredScopes attribute).
+	# Pre-skip tests whose declared scopes are not present in the current MgGraph context.
+	$skippedTestsForScope = [System.Collections.Generic.List[object]]::new()
+	$scopeCheckCache = @{} # scope → bool
+	foreach ($test in $testsToRun) {
+		if (-not $test.RequiredScopes -or $test.RequiredScopes.Count -eq 0) { continue }
+		$missingForTest = @()
+		foreach ($scope in $test.RequiredScopes) {
+			if (-not $scopeCheckCache.ContainsKey($scope)) {
+				$scopeCheckCache[$scope] = Test-ZtRequiredScope -RequiredScopes @($scope)
+			}
+			if (-not $scopeCheckCache[$scope]) {
+				$missingForTest += $scope
+			}
+		}
+		if ($missingForTest.Count -gt 0) {
+			$skippedTestsForScope.Add($test)
+			Add-ZtTestResultDetail -SkippedBecause MissingRequiredScope -TestId $test.TestId -MissingScopes $missingForTest
+		}
+	}
+	if ($skippedTestsForScope.Count -gt 0) {
+		$allMissingScopes = @($skippedTestsForScope.RequiredScopes | Sort-Object -Unique)
+		$sessionMissing = @($allMissingScopes | Where-Object { -not $scopeCheckCache[$_] })
+		Write-PSFMessage -Message ('Skipping {0} test(s) — missing Graph scope(s): {1}.' -f $skippedTestsForScope.Count, ($sessionMissing -join ', ')) -Level Important
+	}
+	$testsToRun = $testsToRun.Where{ $_.TestId -notin $skippedTestsForScope.TestId }
+
+	# Filter based on cloud environment (CloudEnvironment attribute).
+	# Pre-skip tests whose declared CloudEnvironment does not include the current cloud.
+	$skippedTestsForEnv = [System.Collections.Generic.List[object]]::new()
+	$currentCloudEnv = Get-ZtCloudEnvironment
+	if ($currentCloudEnv -and $currentCloudEnv.CloudType -ne 'Unknown') {
+		foreach ($test in $testsToRun) {
+			if (-not $test.CloudEnvironment -or $test.CloudEnvironment.Count -eq 0) { continue }
+			if (-not (Test-ZtCloudEnvironment -SupportedCloudType $test.CloudEnvironment)) {
+				$skippedTestsForEnv.Add($test)
+				Add-ZtTestResultDetail -SkippedBecause NotSupportedEnvironment -TestId $test.TestId
+			}
+		}
+		if ($skippedTestsForEnv.Count -gt 0) {
+			Write-PSFMessage -Message ('Skipping {0} test(s) — not supported in {1} cloud environment.' -f $skippedTestsForEnv.Count, $currentCloudEnv.DisplayName) -Level Important
+		}
+	}
+	$testsToRun = $testsToRun.Where{ $_.TestId -notin $skippedTestsForEnv.TestId }
 
 	# Separate Sync Tests (Compliance/ExchangeOnline/SharePoint) from Parallel Tests (because of DLL order to manage in runspaces & remoting into WPS)
 	[int[]]$syncTestIds   = $testsToRun.Where{ $_.Pillar -eq 'Data'}.TestId

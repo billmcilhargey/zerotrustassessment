@@ -16,6 +16,7 @@ function Test-Assessment-24823 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce'),
     	TestId = 24823,
+    	RequiredScopes = ("DeviceManagementConfiguration.Read.All", "Directory.Read.All"),
     	Title = 'Company Portal branding and support settings enhance user experience and trust',
     	UserImpact = 'Low'
     )]

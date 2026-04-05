@@ -13,6 +13,7 @@ function Test-Assessment-21812 {
     	SfiPillar = 'Protect engineering systems',
     	TenantType = ('Workforce'),
     	TestId = 21812,
+    	RequiredScopes = ("Directory.Read.All", "RoleManagement.Read.All"),
     	Title = 'Maximum number of Global Administrators doesn''t exceed eight users',
     	UserImpact = 'Low'
     )]

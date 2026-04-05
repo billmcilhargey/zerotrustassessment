@@ -7,5 +7,5 @@
         $ExportPath
     )
 
-    Join-Path -Path $ExportPath -ChildPath "ztConfig.json"
+    Join-Path -Path $ExportPath -ChildPath $script:ZtConfigFileName
 }

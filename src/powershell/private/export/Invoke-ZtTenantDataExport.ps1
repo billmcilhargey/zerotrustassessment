@@ -142,6 +142,11 @@
 				$workflow.Data[$Export.Name].Status = 'Done'
 				$workflow.Data[$Export.Name].Updated = Get-Date
 			}
+			elseif ($_ -match 'AadPremiumLicenseRequired') {
+				Write-PSFMessage -Level Verbose -Message "Export '{0}' skipped: requires Entra ID P2 or Governance license" -StringValues $Export.Name -Target $Export
+				$workflow.Data[$Export.Name].Status = 'Done'
+				$workflow.Data[$Export.Name].Updated = Get-Date
+			}
 			else {
 				Write-PSFMessage -Level Warning -Message "Error executing export '{0}'" -StringValues $Export.Name -Target $Export -ErrorRecord $_
 				$workflow.Data[$Export.Name].Status = 'Failed'

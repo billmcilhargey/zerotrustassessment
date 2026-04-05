@@ -445,3 +445,11 @@ msal_*_cache.*
 
 # DevProxy output
 /devproxy/*.log
+
+# Merge / rebase artifacts
+*.orig
+
+# Editor backup files
+*~
+*.bak
+*.swp

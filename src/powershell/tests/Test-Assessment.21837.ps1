@@ -13,6 +13,7 @@ function Test-Assessment-21837{
     	SfiPillar = 'Protect engineering systems',
     	TenantType = ('Workforce'),
     	TestId = 21837,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Limit the maximum number of devices per user to 10',
     	UserImpact = 'Medium'
     )]

@@ -14,6 +14,7 @@ function Test-Assessment-21801 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21801,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Users have strong authentication methods configured',
     	UserImpact = 'Medium'
     )]

@@ -24,6 +24,7 @@ function Test-Assessment-25381 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce'),
     	TestId = 25381,
+    	RequiredScopes = "NetworkAccess.Read.All",
     	Title = 'Network traffic is routed through Global Secure Access for security policy enforcement',
     	UserImpact = 'Low'
     )]

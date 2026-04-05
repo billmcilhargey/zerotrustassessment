@@ -26,6 +26,7 @@ function Test-Assessment-35034 {
         SfiPillar = 'Protect tenants and production systems',
         TenantType = ('Workforce', 'External'),
         TestId = 35034,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Exact Data Match is configured for sensitive information detection',
         UserImpact = 'Medium'
     )]

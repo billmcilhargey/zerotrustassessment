@@ -26,6 +26,7 @@ function Test-Assessment-35033 {
         SfiPillar = 'Protect tenants and production systems',
         TenantType = ('Workforce'),
         TestId = 35033,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Custom sensitive information types are configured',
         UserImpact = 'Medium'
     )]

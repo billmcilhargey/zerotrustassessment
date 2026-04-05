@@ -23,6 +23,7 @@ function Test-Assessment-25543 {
         SfiPillar = 'Protect networks',
         TenantType = ('Workforce'),
         TestId = 25543,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Azure Front Door WAF is Enabled in Prevention Mode',
         UserImpact = 'Low'
     )]

@@ -13,6 +13,7 @@ function Test-Assessment-21790 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce','External'),
     	TestId = 21790,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Outbound cross-tenant access settings are configured',
     	UserImpact = 'Medium'
     )]

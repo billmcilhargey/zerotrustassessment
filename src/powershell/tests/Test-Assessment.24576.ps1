@@ -16,6 +16,7 @@ function Test-Assessment-24576 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce'),
     	TestId = 24576,
+    	RequiredScopes = ("DeviceManagementConfiguration.Read.All", "Directory.Read.All"),
     	Title = 'Endpoint Analytics is enabled to help identify risks on Windows devices',
     	UserImpact = 'Low'
     )]

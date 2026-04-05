@@ -16,7 +16,7 @@
 	"forwardPorts": [3000, 8080],
 	"portsAttributes": {
 		"3000": { "label": "Docusaurus Site", "onAutoForward": "notify" },
-		"8080": { "label": "Assessment Report", "onAutoForward": "openBrowser" }
+		"8080": { "label": "Assessment Report", "onAutoForward": "silent" }
 	},
 
 	// Install root + react site npm deps, create PS Scripts dir, install PS modules

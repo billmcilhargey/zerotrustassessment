@@ -26,6 +26,7 @@ function Test-Assessment-25416 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce','External'),
     	TestId = 25416,
+    	RequiredScopes = ("Directory.Read.All", "NetworkAccess.Read.All"),
     	Title = 'Global Secure Access cloud firewall protects branch office internet traffic',
     	UserImpact = 'Low'
     )]
@@ -37,6 +38,13 @@ function Test-Assessment-25416 {
 
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
+        return
+    }
+
     $activity = 'Checking Branch office internet traffic is protected by Cloud Firewall policies through Global Secure Access'
     Write-ZtProgress -Activity $activity -Status 'Querying remote networks'
 

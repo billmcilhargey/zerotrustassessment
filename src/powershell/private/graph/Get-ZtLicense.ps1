@@ -22,33 +22,16 @@ function Get-ZtLicense {
     )
 
     process {
-        # Use cached service plan IDs if available (populated by preflight or prior call)
-        if ($script:__ZtLicensePlanIds) {
-            $skus = $script:__ZtLicensePlanIds
-        }
-        else {
-            $skus = Invoke-ZtGraphRequest -RelativeUri "subscribedSkus" | Select-Object -ExpandProperty servicePlans | Where-Object { $_.capabilityStatus -ne 'Deleted' } | Select-Object -ExpandProperty servicePlanId
-            $script:__ZtLicensePlanIds = $skus
-        }
+        $skus = Get-ZtActiveServicePlanId
+        $sp = $script:ZtServicePlanIds
+
         switch ($Product) {
-            'EntraIDP1' {
-                return '41781fb2-bc02-4b7c-bd55-b576c07bb09d' -in $skus
-            }
-            'EntraIDP2' {
-                return 'eec0eb4f-6444-4f95-aba0-50c24d67f998' -in $skus
-            }
-            'EntraIDGovernance' {
-                return 'e866a266-3cff-43a3-acca-0c90a7e00c8b' -in $skus
-            }
-            'EntraWorkloadID' { #P1 or P2
-                return '84c289f0-efcb-486f-8581-07f44fc9efad' -in $skus -or '7dc0e92d-bf15-401d-907e-0884efe7c760' -in $skus
-            }
-            'Intune' { #Intune P1 or Intune P1 education
-                return 'c1ec4a95-1f05-45b3-a911-aa3fa01094f5' -in $skus -or 'da24caf9-af8e-485c-b7c8-e73336da2693' -in $skus
-            }
-            Default {
-                return $false
-            }
+            'EntraIDP1'        { return $sp.EntraIDP1 -in $skus }
+            'EntraIDP2'        { return $sp.EntraIDP2 -in $skus }
+            'EntraIDGovernance' { return $sp.EntraIDGovernance -in $skus }
+            'EntraWorkloadID'  { return $sp.WorkloadIDP1 -in $skus -or $sp.WorkloadIDP2 -in $skus }
+            'Intune'           { return $sp.IntuneP1 -in $skus -or $sp.IntuneP1Education -in $skus }
+            Default            { return $false }
         }
     }
 }

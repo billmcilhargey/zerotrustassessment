@@ -13,6 +13,7 @@ function Test-Assessment-21817 {
     	SfiPillar = 'Protect engineering systems',
     	TenantType = ('Workforce'),
     	TestId = 21817,
+    	RequiredScopes = ("Directory.Read.All", "RoleManagement.Read.All"),
     	Title = 'Global Administrator role activation triggers an approval workflow',
     	UserImpact = 'Low'
     )]

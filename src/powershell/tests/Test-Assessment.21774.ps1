@@ -13,6 +13,7 @@ function Test-Assessment-21774 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21774,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Microsoft services applications don''t have credentials configured',
     	UserImpact = 'Low'
     )]

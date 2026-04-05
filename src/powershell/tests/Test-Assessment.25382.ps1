@@ -24,6 +24,7 @@ function Test-Assessment-25382 {
         SfiPillar = 'Protect networks',
         TenantType = ('Workforce'),
         TestId = 25382,
+        RequiredScopes = ("Directory.Read.All", "NetworkAccess.Read.All"),
         Title = 'Traffic forwarding profiles are scoped to appropriate users and groups for controlled deployment',
         UserImpact = 'Low'
     )]

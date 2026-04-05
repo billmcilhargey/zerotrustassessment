@@ -10,6 +10,7 @@
 function Test-Assessment-25535 {
     [ZtTest(
         Category = 'Azure Network Security',
+        CloudEnvironment = ('Global'),
         ImplementationCost = 'Medium',
         MinimumLicense = ('Azure_Firewall_Basic', 'Azure_Firewall_Standard', 'Azure_Firewall_Premium'),
         Pillar = 'Network',
@@ -17,6 +18,7 @@ function Test-Assessment-25535 {
         SfiPillar = 'Protect networks',
         TenantType = ('Workforce', 'External'),
         TestId = 25535,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Outbound traffic from VNET integrated workloads is routed through Azure Firewall',
         UserImpact = 'Low'
     )]
@@ -269,9 +271,8 @@ function Test-Assessment-25535 {
         return
     }
 
-    if ($azContext.Environment.name -ne 'AzureCloud') {
-        Write-PSFMessage "This test is only applicable to the Global environment." -Tag Test -Level VeryVerbose
-        Add-ZtTestResultDetail -SkippedBecause NotSupported
+    if (-not (Test-ZtCloudEnvironment -SupportedCloudType 'Global')) {
+        Add-ZtTestResultDetail -SkippedBecause NotSupportedEnvironment
         return
     }
 
@@ -322,6 +323,7 @@ function Test-Assessment-25535 {
     #region Assessment Logic
     if ($nicFindings.Count -eq 0) {
         Write-PSFMessage "No workload NICs found to evaluate." -Tag Test -Level Verbose
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
         return
     }
 

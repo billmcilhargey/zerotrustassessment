@@ -13,6 +13,7 @@ function Test-Assessment-21822 {
         SfiPillar = 'Protect identities and secrets',
         TenantType = ('Workforce'),
         TestId = 21822,
+        RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
         Title = 'Guest access is limited to approved tenants',
         UserImpact = 'Medium'
     )]

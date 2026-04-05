@@ -13,6 +13,7 @@ function Test-Assessment-24570 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 24570,
+    	RequiredScopes = ("Directory.Read.All", "RoleManagement.Read.All"),
     	Title = 'Entra Connect Sync is configured with Service Principal Credentials',
     	UserImpact = 'Low'
     )]

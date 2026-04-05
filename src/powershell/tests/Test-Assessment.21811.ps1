@@ -13,6 +13,7 @@ function Test-Assessment-21811 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21811,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Password expiration is disabled',
     	UserImpact = 'Low'
     )]

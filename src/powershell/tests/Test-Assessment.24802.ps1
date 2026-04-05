@@ -13,6 +13,7 @@ function Test-Assessment-24802 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce'),
     	TestId = 24802,
+    	RequiredScopes = ("DeviceManagementConfiguration.Read.All", "Directory.Read.All"),
     	Title = 'Device cleanup rules maintain tenant hygiene by hiding inactive devices',
     	UserImpact = 'Low'
     )]

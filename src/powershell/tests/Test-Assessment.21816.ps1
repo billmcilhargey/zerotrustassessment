@@ -13,6 +13,7 @@ function Test-Assessment-21816 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 21816,
+    	RequiredScopes = ("Directory.Read.All", "RoleManagement.Read.All"),
     	Title = 'All Microsoft Entra privileged role assignments are managed with PIM',
     	UserImpact = 'Low'
     )]

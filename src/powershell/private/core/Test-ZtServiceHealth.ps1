@@ -23,6 +23,11 @@ function Test-ZtServiceHealth {
 
 	$results = [System.Collections.Generic.List[PSCustomObject]]::new()
 
+	# First, sync state so any sessions removed by transient errors get re-added
+	# and any truly dead sessions get removed. This ensures the health loop below
+	# covers all real sessions rather than just whatever happened to be tracked.
+	Sync-ZtConnectedServices
+
 	foreach ($svc in @($script:ConnectedService)) {
 		$healthy = $false
 		$detail = $null

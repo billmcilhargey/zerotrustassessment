@@ -12,6 +12,7 @@ function Test-Assessment-21808{
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21808,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Restrict device code flow',
     	UserImpact = 'Medium'
     )]

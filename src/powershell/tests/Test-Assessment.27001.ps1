@@ -24,6 +24,7 @@ function Test-Assessment-27001 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce'),
     	TestId = 27001,
+    	RequiredScopes = "NetworkAccess.Read.All",
     	Title = 'TLS inspection bypass rules are regularly reviewed',
     	UserImpact = 'Low'
     )]
@@ -32,6 +33,12 @@ function Test-Assessment-27001 {
 
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
+        return
+    }
 
     $activity = 'Checking TLS inspection policy review status'
 

@@ -23,7 +23,7 @@ function Restore-ZtCachedConnection {
 	[OutputType([bool])]
 	param ()
 
-	$tokenCache = Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Connection.UseTokenCache' -Fallback $true
+	$tokenCache = Get-ZtTokenCacheEnabled
 	if (-not $tokenCache) { return $false }
 
 	# Already connected?
@@ -41,12 +41,16 @@ function Restore-ZtCachedConnection {
 	}
 
 	# Try silent connect from cached tokens (no user interaction).
-	# In headless/container environments, Connect-MgGraph without -UseDeviceCode
-	# may fall back to an interactive device code prompt that appears to hang.
-	# Only attempt if we're in a windowed environment (not container/SSH).
-	$isHeadless = ($env:CODESPACES -eq 'true') -or ($env:REMOTE_CONTAINERS -eq 'true') -or (-not $IsWindows -and -not $env:DISPLAY)
-	if ($isHeadless) {
-		Write-PSFMessage -Message "Skipping silent Connect-MgGraph in headless environment (would trigger interactive auth)." -Level Debug
+	# MSAL will attempt to acquire tokens from cache/refresh token first.
+	# Without -UseDeviceCode, MSAL falls back to interactive browser auth if
+	# no cached token exists. In containers, the browser opens on the host but
+	# MSAL's localhost redirect can't reach back into the container, causing a
+	# white-screen hang. Detect this and skip the full connect attempt.
+	$envInfo = Test-ZtHeadlessEnvironment
+	if ($envInfo.IsCodespaces) {
+		# In containers, MSAL's interactive browser redirect to localhost will hang.
+		# Only the existing-context check above can succeed; skip the Connect-MgGraph call.
+		Write-PSFMessage -Message "Container detected — skipping Connect-MgGraph silent attempt (localhost redirect unavailable)." -Level Debug
 		return $false
 	}
 
@@ -55,6 +59,7 @@ function Restore-ZtCachedConnection {
 			NoWelcome = $true
 			Scopes    = (Get-ZtGraphScope)
 		}
+
 		$null = Connect-MgGraph @silentParams -ErrorAction Stop
 		$ctx = Get-MgContext -ErrorAction Ignore
 		if ($null -ne $ctx) {

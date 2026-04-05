@@ -14,6 +14,7 @@
 function Test-Assessment-25537 {
     [ZtTest(
         Category = 'Azure Network Security',
+        CloudEnvironment = ('Global'),
         ImplementationCost = 'Low',
         MinimumLicense = ('Azure_Firewall_Standard', 'Azure_Firewall_Premium'),
         Pillar = 'Network',
@@ -33,10 +34,9 @@ function Test-Assessment-25537 {
     $activity = 'Azure Firewall Threat Intelligence'
     Write-ZtProgress  -Activity $activity -Status 'Enumerating Firewall Policies'
 
-    $context = Get-AzContext
-    if (($context).Environment.name -ne 'AzureCloud') {
-        Write-PSFMessage "This test is only applicable to the Global environment." -Tag Test -Level VeryVerbose
-        Add-ZtTestResultDetail -SkippedBecause NotSupported
+    # Check the supported cloud environment
+    if (-not (Test-ZtCloudEnvironment -SupportedCloudType 'Global')) {
+        Add-ZtTestResultDetail -SkippedBecause NotSupportedEnvironment
         return
     }
 

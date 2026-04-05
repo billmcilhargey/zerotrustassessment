@@ -24,6 +24,7 @@ function Test-Assessment-25541 {
         SfiPillar = 'Protect networks',
         TenantType = ('Workforce'),
         TestId = 25541,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Application Gateway WAF is Enabled in Prevention mode',
         UserImpact = 'Low'
     )]

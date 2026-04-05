@@ -13,6 +13,7 @@ function Test-Assessment-21828 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21828,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Authentication transfer is blocked',
     	UserImpact = 'Low'
     )]

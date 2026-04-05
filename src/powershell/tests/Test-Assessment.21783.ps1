@@ -13,6 +13,7 @@ function Test-Assessment-21783 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 21783,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Privileged Microsoft Entra built-in roles are targeted with Conditional Access policies to enforce phishing-resistant methods',
     	UserImpact = 'Low'
     )]

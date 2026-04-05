@@ -26,6 +26,7 @@ function Test-Assessment-35024 {
     	SfiPillar = 'Protect tenants and production systems',
     	TenantType = ('Workforce'),
     	TestId = 35024,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Azure Rights Management service is enabled',
     	UserImpact = 'High'
     )]

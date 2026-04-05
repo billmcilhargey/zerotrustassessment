@@ -16,6 +16,7 @@ function Test-Assessment-26884 {
 
     [ZtTest(
         Category = 'Azure Network Security',
+        CloudEnvironment = ('Global'),
         ImplementationCost = 'Low',
         MinimumLicense = ('Azure_Front_Door_Premium'),
         Pillar = 'Network',
@@ -23,6 +24,7 @@ function Test-Assessment-26884 {
         SfiPillar = 'Protect networks',
         TenantType = ('Workforce'),
         TestId = 26884,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Bot protection ruleset is enabled and assigned in Azure Front Door WAF',
         UserImpact = 'Low'
     )]
@@ -44,12 +46,9 @@ function Test-Assessment-26884 {
         return
     }
 
-    # Check the supported environment
-    Write-ZtProgress -Activity $activity -Status 'Checking Azure environment'
-
-    if ($azContext.Environment.Name -ne 'AzureCloud') {
-        Write-PSFMessage 'This test is only applicable to the AzureCloud environment.' -Tag Test -Level VeryVerbose
-        Add-ZtTestResultDetail -SkippedBecause NotSupported
+    # Check the supported cloud environment
+    if (-not (Test-ZtCloudEnvironment -SupportedCloudType 'Global')) {
+        Add-ZtTestResultDetail -SkippedBecause NotSupportedEnvironment
         return
     }
 

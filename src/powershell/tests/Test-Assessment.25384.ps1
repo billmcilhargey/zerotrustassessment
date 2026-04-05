@@ -23,6 +23,7 @@ function Test-Assessment-25384 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 25384,
+    	RequiredScopes = ("Directory.Read.All", "NetworkAccess.Read.All", "RoleManagement.Read.All"),
     	Title = 'Application admin rights are constrained to specific Private Access apps',
     	UserImpact = 'Low'
     )]

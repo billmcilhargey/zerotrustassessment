@@ -13,6 +13,7 @@ function Test-Assessment-21786 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21786,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'User sign-in activity uses token protection',
     	UserImpact = 'Low'
     )]

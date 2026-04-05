@@ -13,6 +13,7 @@ function Test-Assessment-21883 {
     	SfiPillar = 'Accelerate response and remediation',
     	TenantType = ('Workforce','External'),
     	TestId = 21883,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Workload Identities are configured with risk-based policies',
     	UserImpact = 'High'
     )]

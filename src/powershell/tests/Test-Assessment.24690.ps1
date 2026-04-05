@@ -16,6 +16,7 @@ function Test-Assessment-24690 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce'),
     	TestId = 24690,
+    	RequiredScopes = ("DeviceManagementConfiguration.Read.All", "Directory.Read.All"),
     	Title = 'Update policies for macOS are enforced to reduce risk from unpatched vulnerabilities',
     	UserImpact = 'Medium'
     )]

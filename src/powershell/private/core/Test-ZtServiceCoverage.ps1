@@ -36,7 +36,12 @@ function Test-ZtServiceCoverage {
 		$Pillar = 'All',
 
 		[string[]]
-		$Tests
+		$Tests,
+
+		# Forward auth-method context to Get-ZtServiceClassification for accurate gap reasons.
+		[switch] $UseDeviceCode,
+		[switch] $UseClientSecret,
+		[switch] $HasCertificateOrMI
 	)
 
 	# Get all tests that would run for this pillar/test-set
@@ -57,13 +62,25 @@ function Test-ZtServiceCoverage {
 	$skippedTestCount = 0
 	$serviceGaps = [System.Collections.Generic.List[PSCustomObject]]::new()
 
+	# Get classification info to provide richer reason for each gap
+	$classifyParams = @{}
+	if ($UseDeviceCode) { $classifyParams.UseDeviceCode = $true }
+	if ($UseClientSecret) { $classifyParams.UseClientSecret = $true }
+	if ($HasCertificateOrMI) { $classifyParams.HasCertificateOrMI = $true }
+	$serviceClassification = Get-ZtServiceClassification @classifyParams
+
 	foreach ($svc in $missingServices) {
 		$count = $serviceTestMap[$svc]
 		$skippedTestCount += $count
+		$classification = $serviceClassification | Where-Object { $_.Name -eq $svc }
 		$serviceGaps.Add([PSCustomObject]@{
-			Service         = $svc
-			TestsAffected   = $count
-			IsWindowsOnly   = $svc -in $script:WindowsOnlyServices
+			Service           = $svc
+			TestsAffected     = $count
+			IsWindowsOnly     = if ($classification) { $classification.WindowsOnly } else { $false }
+			RequiresCustomApp = if ($classification) { $classification.RequiresCustomApp } else { $false }
+			NoDeviceCode      = if ($classification) { $classification.NoDeviceCode } else { $false }
+			NoClientSecret    = if ($classification) { $classification.NoClientSecret } else { $false }
+			Reason            = if ($classification) { $classification.Reason } else { $null }
 		})
 	}
 

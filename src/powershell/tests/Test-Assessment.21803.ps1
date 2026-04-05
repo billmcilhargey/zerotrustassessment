@@ -13,6 +13,7 @@ function Test-Assessment-21803 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21803,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Migrate from legacy MFA and SSPR policies',
     	UserImpact = 'Medium'
     )]
@@ -28,7 +29,7 @@ function Test-Assessment-21803 {
     $activity = 'Checking Migrate from legacy MFA and SSPR policies'
     Write-ZtProgress -Activity $activity -Status 'Getting policy'
 
-    $result = Invoke-ZtGraphRequest -RelativeUri 'policies/authenticationMethodsPolicy' -ApiVersion beta
+    $result = Get-ZtAuthenticationMethodsPolicy -ApiVersion beta
     if ($null -eq $result) {
         Write-ZtProgress -Activity $activity -Status 'Failed to retrieve policy'
         Add-ZtTestResultDetail -SkippedBecause NotApplicable

@@ -14,6 +14,7 @@ function Test-Assessment-35016 {
         SfiPillar = 'Protect tenants and production systems',
         TenantType = ('Workforce','External'),
         TestId = 35016,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Mandatory labeling is enabled in sensitivity label policies',
         UserImpact = 'High'
     )]

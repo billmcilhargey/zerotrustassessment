@@ -21,6 +21,7 @@ function Test-Assessment-25399 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce','External'),
     	TestId = 25399,
+    	RequiredScopes = ("Directory.Read.All", "NetworkAccess.Read.All"),
     	Title = 'Private DNS is configured for internal name resolution',
     	UserImpact = 'Low'
     )]
@@ -29,6 +30,13 @@ function Test-Assessment-25399 {
 
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
+        return
+    }
+
     $activity = 'Checking Private DNS configuration for Quick Access (Entra Private Access)'
     Write-ZtProgress -Activity $activity -Status 'Querying Quick Access application'
 

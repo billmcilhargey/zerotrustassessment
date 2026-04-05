@@ -13,6 +13,7 @@ function Test-Assessment-21850 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21850,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Smart lockout threshold set to 10 or less',
     	UserImpact = 'Low'
     )]

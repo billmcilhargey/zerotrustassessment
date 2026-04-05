@@ -13,6 +13,7 @@ function Test-Assessment-21807 {
     	SfiPillar = 'Protect engineering systems',
     	TenantType = ('Workforce'),
     	TestId = 21807,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Creating new applications and service principals is restricted to privileged users',
     	UserImpact = 'Low'
     )]

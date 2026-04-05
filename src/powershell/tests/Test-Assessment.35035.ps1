@@ -26,6 +26,7 @@ function Test-Assessment-35035 {
     	SfiPillar = 'Protect tenants and production systems',
     	TenantType = ('Workforce'),
     	TestId = 35035,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Named entity sensitive information types are used in auto-labeling and data loss prevention policies',
     	UserImpact = 'Medium'
     )]

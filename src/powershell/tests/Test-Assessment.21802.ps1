@@ -13,6 +13,7 @@ function Test-Assessment-21802 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21802,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Microsoft Authenticator app shows sign-in context',
     	UserImpact = 'Low'
     )]

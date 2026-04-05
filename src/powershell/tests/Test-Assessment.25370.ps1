@@ -15,6 +15,7 @@ function Test-Assessment-25370 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce','External'),
     	TestId = 25370,
+    	RequiredScopes = ("Directory.Read.All", "NetworkAccess.Read.All"),
     	Title = 'Source IP restoration is enabled',
     	UserImpact = 'Low'
     )]

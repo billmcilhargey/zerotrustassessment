@@ -19,6 +19,7 @@ function Test-Assessment-21784 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21784,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'All user sign in activity uses phishing-resistant authentication methods',
     	UserImpact = 'Low'
     )]
@@ -98,7 +99,7 @@ function Test-Assessment-21784 {
     $policies = @()
 
     Write-ZtProgress -Activity $activity -Status 'Getting policies'
-    $enabledPolicies = Invoke-ZtGraphRequest -RelativeUri 'identity/conditionalAccess/policies' -Filter "state eq 'enabled'" -ApiVersion beta
+    $enabledPolicies = Get-ZtConditionalAccessPolicy -Filter "state eq 'enabled'"
     $policies = $enabledPolicies
 
     # Get authentication strength policies

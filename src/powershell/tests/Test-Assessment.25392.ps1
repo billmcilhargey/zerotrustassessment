@@ -24,6 +24,7 @@ function Test-Assessment-25392 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce'),
     	TestId = 25392,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Private network connectors are running the latest version',
     	UserImpact = 'Low'
     )]

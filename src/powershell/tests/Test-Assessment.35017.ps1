@@ -25,6 +25,7 @@ function Test-Assessment-35017 {
         SfiPillar = 'Protect tenants and production systems',
         TenantType = ('Workforce'),
         TestId = 35017,
+        RequiredScopes = "Directory.Read.All",
         Title = 'A default sensitivity label is configured in label policies',
         UserImpact = 'Medium'
     )]

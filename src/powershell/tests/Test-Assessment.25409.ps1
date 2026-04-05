@@ -23,6 +23,7 @@ function Test-Assessment-25409 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce','External'),
     	TestId = 25409,
+    	RequiredScopes = ("NetworkAccess.Read.All", "Policy.Read.All"),
     	Title = 'Web content filtering uses category-based rules',
     	UserImpact = 'Medium'
     )]
@@ -34,6 +35,13 @@ function Test-Assessment-25409 {
 
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
+        return
+    }
+
     $activity = 'Checking Global Secure Access web content filtering by website categories'
     Write-ZtProgress -Activity $activity -Status 'Querying Web Content Filtering policies'
 

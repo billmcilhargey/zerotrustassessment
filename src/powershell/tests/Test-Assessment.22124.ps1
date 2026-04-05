@@ -13,6 +13,7 @@ function Test-Assessment-22124 {
     	SfiPillar = 'Monitor and detect cyberthreats',
     	TenantType = ('Workforce','External'),
     	TestId = 22124,
+    	RequiredScopes = ("Directory.Read.All", "DirectoryRecommendations.Read.All"),
     	Title = 'High priority Microsoft Entra recommendations are addressed',
     	UserImpact = 'Medium'
     )]

@@ -14,6 +14,7 @@ function Test-Assessment-21847 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 21847,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Password protection for on-premises is enabled',
     	UserImpact = 'Low'
     )]

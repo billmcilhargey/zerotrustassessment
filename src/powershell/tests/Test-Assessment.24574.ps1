@@ -13,6 +13,7 @@ function Test-Assessment-24574 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce'),
     	TestId = 24574,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Attack Surface Reduction rules are applied to Windows devices to prevent exploitation of vulnerable system components',
     	UserImpact = 'Medium'
     )]

@@ -24,6 +24,7 @@ function Test-Assessment-25372 {
         SfiPillar = 'Protect networks',
         TenantType = ('Workforce'),
         TestId = 25372,
+        RequiredScopes = ("Directory.Read.All", "NetworkAccess.Read.All", "Reports.Read.All"),
         Title = 'Global Secure Access client is deployed on all managed endpoints',
         UserImpact = 'Low'
     )]
@@ -34,6 +35,12 @@ function Test-Assessment-25372 {
 
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
+        return
+    }
 
     $activity = 'Checking Global Secure Access client deployment'
     Write-ZtProgress -Activity $activity -Status 'Getting GSA device usage summary'

@@ -13,6 +13,7 @@ function Test-Assessment-21829{
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 21829,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Use cloud authentication',
     	UserImpact = 'High'
     )]

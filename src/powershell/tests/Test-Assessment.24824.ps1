@@ -13,6 +13,7 @@ function Test-Assessment-24824 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce'),
     	TestId = 24824,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Conditional Access policies block access from noncompliant devices',
     	UserImpact = 'Medium'
     )]

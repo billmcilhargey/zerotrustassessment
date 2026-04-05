@@ -151,8 +151,6 @@ function Add-ZtDeviceCompliancePolicies {
 
     $compliancePolicies = Invoke-ZtGraphRequest -RelativeUri 'deviceManagement/deviceCompliancePolicies' -QueryParameters @{ '$expand' = 'assignments,scheduledActionsForRule($expand=scheduledActionConfigurations)' } -ApiVersion 'beta'
 
-    #$linuxCompliancePolicies = Invoke-ZtGraphRequest -RelativeUri 'deviceManagement/deviceCompliancePolicies' -QueryParameters @{ '$expand' = 'assignments,scheduledActionsForRule($expand=scheduledActionConfigurations)' } -ApiVersion 'beta'
-
     # Create the table data structure
     $tableData = @()
     foreach ($policy in $compliancePolicies) {
@@ -216,11 +214,6 @@ function Add-ZtDeviceCompliancePolicies {
                 $typeName = $policy.'@odata.type' -replace '#microsoft.graph.', ''
                 $policyView = Get-CompliancePolicyView -Policy $policy -Platform $typeName
             }
-
-            # foreach($policy in $linuxCompliancePolicies){
-            #     $tableData += Get-LinuxCompliancePolicy -Policy $policy
-            # }
-
 
         }
         $tableData += $policyView

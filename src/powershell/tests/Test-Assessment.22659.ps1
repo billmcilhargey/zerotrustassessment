@@ -1,4 +1,4 @@
-﻿
+
 
 
 
@@ -17,6 +17,7 @@ function Test-Assessment-22659 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 22659,
+    	RequiredScopes = ("Directory.Read.All", "IdentityRiskyServicePrincipal.Read.All"),
     	Title = 'All risky workload identity sign-ins are triaged',
     	UserImpact = 'Low'
     )]

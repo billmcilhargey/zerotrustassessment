@@ -23,6 +23,7 @@ function Test-Assessment-35030 {
         SfiPillar = 'Protect tenants and production systems',
         TenantType = ('Workforce'),
         TestId = 35030,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Data loss prevention policies are enabled',
         UserImpact = 'Medium'
     )]

@@ -120,9 +120,8 @@ as
 	Write-ZtProgress -Activity $activity -Status "Starting"
 
 	Write-PSFMessage "Importing data from $ExportPath" -Tag Import
-	$dbFolderName = 'db'
-	$dbFolder = Join-Path $ExportPath $dbFolderName
-	$dbPath = Join-Path $ExportPath $dbFolderName "zt.db"
+	$dbFolder = Join-Path $ExportPath $script:ZtDbDirName
+	$dbPath = Join-Path $dbFolder $script:ZtDbFileName
 
 	if (Test-Path $dbFolder) {
 		Write-PSFMessage "Clearing previous db $dbFolder" -Tag Import
@@ -179,5 +178,47 @@ as
 		New-ViewRole -Database $database
 	}
 
+	# ── Create indexes on frequently joined/filtered columns ─────────────────
+	Write-ZtProgress -Activity $activity -Status "Creating indexes"
+	New-DatabaseIndexes -Database $database -Pillar $Pillar
+
 	$database
+}
+
+
+function New-DatabaseIndexes {
+	<#
+	.SYNOPSIS
+		Creates indexes on commonly queried columns to accelerate test execution.
+	#>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[DuckDB.NET.Data.DuckDBConnection]
+		$Database,
+
+		[string]
+		$Pillar = 'All'
+	)
+
+	$indexes = @()
+	if ($Pillar -in ('All', 'Identity', 'Network')) {
+		$indexes += 'CREATE INDEX IF NOT EXISTS idx_sp_id ON ServicePrincipal(id)'
+		$indexes += 'CREATE INDEX IF NOT EXISTS idx_sp_appId ON ServicePrincipal(appId)'
+		$indexes += 'CREATE INDEX IF NOT EXISTS idx_app_appId ON Application(appId)'
+		$indexes += 'CREATE INDEX IF NOT EXISTS idx_rd_id ON RoleDefinition(id)'
+		$indexes += 'CREATE INDEX IF NOT EXISTS idx_user_id ON "User"(id)'
+	}
+	if ($Pillar -in ('All', 'Devices')) {
+		$indexes += 'CREATE INDEX IF NOT EXISTS idx_device_id ON Device(id)'
+	}
+
+	foreach ($sql in $indexes) {
+		try {
+			Invoke-DatabaseQuery -Database $Database -Sql $sql -NonQuery
+		}
+		catch {
+			Write-PSFMessage "Index creation skipped: $($_.Exception.Message)" -Level Debug -Tag DB
+		}
+	}
 }

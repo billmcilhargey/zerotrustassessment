@@ -34,8 +34,9 @@ function Get-GraphPermissionRisk {
 	$permKey = $PermissionType + $Permission
 	$permRootKey = $PermissionType + $Permission.Split(".")[0]
 
-	if ($Script:_GraphPermissions[$permKey]) {
-		return $Script:_GraphPermissions[$permKey]
+	$cached = $null
+	if ($Script:_GraphPermissions.TryGetValue($permKey, [ref]$cached)) {
+		return $cached
 	}
 
 	$permsHash = $script:_GraphPermissionsHash # Loaded during module import in variables.ps1
@@ -50,13 +51,13 @@ function Get-GraphPermissionRisk {
 		# Matches top level e.g. Application.
 		$risk = $permsHash[$permRootKey].Privilege
 	}
-	elseif ($type -eq "Application") {
+	elseif ($PermissionType -eq "Application") {
 		# Application permissions without exact or root matches with write scope
 		$risk = "Medium"
-		if ($scope -like "*Write*") {
+		if ($Permission -like "*Write*") {
 			$risk = "High"
 		}
 	}
-	$Script:_GraphPermissions[$permKey] = $risk
-	$Script:_GraphPermissions[$permKey]
+	$null = $Script:_GraphPermissions.TryAdd($permKey, $risk)
+	$risk
 }

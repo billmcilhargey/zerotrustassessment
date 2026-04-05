@@ -14,6 +14,7 @@ function Test-Assessment-21772 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21772,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Applications don''t have client secrets configured',
     	UserImpact = 'Low'
     )]

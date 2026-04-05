@@ -23,6 +23,7 @@ function Test-Assessment-21775{
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21775,
+    	RequiredScopes = "Policy.Read.All",
     	Title = 'Enforce standards for app secrets and certificates',
     	UserImpact = 'Low'
     )]

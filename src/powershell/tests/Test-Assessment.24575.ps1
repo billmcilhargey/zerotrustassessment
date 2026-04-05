@@ -13,6 +13,7 @@ function Test-Assessment-24575 {
         SfiPillar = 'Protect networks',
         TenantType = ('Workforce'),
         TestId = 24575,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Defender Antivirus policies protect Windows devices from malware',
         UserImpact = 'Low'
     )]

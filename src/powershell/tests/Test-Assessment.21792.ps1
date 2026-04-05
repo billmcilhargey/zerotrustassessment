@@ -14,6 +14,7 @@ function Test-Assessment-21792 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce'),
     	TestId = 21792,
+    	RequiredScopes = "Policy.Read.All",
     	Title = 'Guests have restricted access to directory objects',
     	UserImpact = 'Medium'
     )]

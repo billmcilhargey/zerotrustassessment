@@ -26,6 +26,7 @@ function Test-Assessment-35040 {
         SfiPillar = 'Protect tenants and production systems',
         TenantType = ('Workforce'),
         TestId = 35040,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Communication compliance monitoring is configured for enterprise AI tools',
         UserImpact = 'Medium'
     )]

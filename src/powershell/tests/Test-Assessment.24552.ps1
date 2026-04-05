@@ -15,6 +15,7 @@ function Test-Assessment-24552 {
         SfiPillar = 'Protect networks',
         TenantType = ('Workforce'),
         TestId = 24552,
+        RequiredScopes = "Directory.Read.All",
         Title = 'macOS Firewall policies protect against unauthorized network access',
         UserImpact = 'High'
     )]

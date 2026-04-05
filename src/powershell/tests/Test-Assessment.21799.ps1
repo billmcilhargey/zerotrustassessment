@@ -13,6 +13,7 @@ function Test-Assessment-21799 {
     	SfiPillar = 'Accelerate response and remediation',
     	TenantType = ('Workforce','External'),
     	TestId = 21799,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Restrict high risk sign-ins',
     	UserImpact = 'Medium'
     )]
@@ -28,8 +29,8 @@ function Test-Assessment-21799 {
     $activity = "Checking Block high risk sign-ins"
     Write-ZtProgress -Activity $activity -Status "Getting policy"
 
-    $authMethodPolicy = Invoke-ZtGraphRequest -RelativeUri "policies/authenticationMethodsPolicy" -ApiVersion 'v1.0'
-    $allCAPolicies = Invoke-ZtGraphRequest -RelativeUri "identity/conditionalAccess/policies" -ApiVersion 'v1.0'
+    $authMethodPolicy = Get-ZtAuthenticationMethodsPolicy
+    $allCAPolicies = Get-ZtConditionalAccessPolicy
     $matchedPolicies = $null
 
     if (($authMethodPolicy.authenticationMethodConfigurations.state -eq 'enabled').count -gt 0) {

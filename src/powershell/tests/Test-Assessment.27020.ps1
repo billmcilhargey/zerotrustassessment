@@ -17,6 +17,7 @@ function Test-Assessment-27020 {
 
     [ZtTest(
         Category = 'Azure Network Security',
+        CloudEnvironment = ('Global'),
         ImplementationCost = 'Low',
         MinimumLicense = ('Azure WAF'),
         Pillar = 'Network',
@@ -24,6 +25,7 @@ function Test-Assessment-27020 {
         SfiPillar = 'Protect networks',
         TenantType = ('Workforce'),
         TestId = 27020,
+        RequiredScopes = "Directory.Read.All",
         Title = 'CAPTCHA challenge is enabled in Azure Front Door WAF',
         UserImpact = 'Medium'
     )]
@@ -48,9 +50,8 @@ function Test-Assessment-27020 {
     # Check supported environment (Global cloud only)
     Write-ZtProgress -Activity $activity -Status 'Checking Azure environment'
 
-    if ($azContext.Environment.Name -ne 'AzureCloud') {
-        Write-PSFMessage 'This test is only applicable to the AzureCloud environment.' -Tag Test -Level VeryVerbose
-        Add-ZtTestResultDetail -SkippedBecause NotSupported
+    if (-not (Test-ZtCloudEnvironment -SupportedCloudType 'Global')) {
+        Add-ZtTestResultDetail -SkippedBecause NotSupportedEnvironment
         return
     }
 

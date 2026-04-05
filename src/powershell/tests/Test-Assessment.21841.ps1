@@ -13,6 +13,7 @@ function Test-Assessment-21841{
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21841,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Microsoft Authenticator app report suspicious activity setting is enabled',
     	UserImpact = 'Low'
     )]
@@ -28,7 +29,7 @@ function Test-Assessment-21841{
     $activity = "Checking Authenticator app report suspicious activity is enabled"
     Write-ZtProgress -Activity $activity -Status "Getting policy"
 
-    $authMethodPolicy = Invoke-ZtGraphRequest -RelativeUri "policies/authenticationMethodsPolicy" -ApiVersion 'beta'
+    $authMethodPolicy = Get-ZtAuthenticationMethodsPolicy -ApiVersion beta
 
     $result = $false
 

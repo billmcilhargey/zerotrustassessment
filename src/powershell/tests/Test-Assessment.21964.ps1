@@ -106,7 +106,7 @@ function Get-ProtectedActionCAPolicy {
 
     # Get protected action CA Policy details
     $filter = "conditions/applications/includeAuthenticationContextClassReferences/any(c:c eq '$AuthenticationContextId')"
-    $policyResult = Invoke-ZtGraphRequest -RelativeUri "identity/conditionalAccess/policies" -ApiVersion Beta -Filter $filter
+    $policyResult = Get-ZtConditionalAccessPolicy -Filter $filter -ApiVersion beta
 
     $results = @()
     foreach ($policy in $policyResult) {
@@ -131,6 +131,7 @@ function Test-Assessment-21964 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce','External'),
     	TestId = 21964,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All", "RoleManagement.Read.All"),
     	Title = 'Enable protected actions to secure Conditional Access policy creation and changes',
     	UserImpact = 'Low'
     )]

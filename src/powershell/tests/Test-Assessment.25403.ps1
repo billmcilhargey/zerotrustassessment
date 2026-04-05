@@ -23,6 +23,7 @@ function Test-Assessment-25403 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce'),
     	TestId = 25403,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Private Access sensors are enforcing strong authentication policies on domain controllers',
     	UserImpact = 'Medium'
     )]

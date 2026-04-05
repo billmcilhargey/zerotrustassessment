@@ -24,6 +24,7 @@ function Test-Assessment-26879 {
         SfiPillar = 'Protect networks',
         TenantType = ('Workforce'),
         TestId = 26879,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Request Body Inspection is enabled in Application Gateway WAF',
         UserImpact = 'Low'
     )]

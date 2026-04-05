@@ -13,6 +13,7 @@ function Test-Assessment-21929{
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce','External'),
     	TestId = 21929,
+    	RequiredScopes = ("Directory.Read.All", "EntitlementManagement.Read.All"),
     	Title = 'All entitlement management packages that apply to guests have expirations or access reviews configured in their assignment policies',
     	UserImpact = 'Medium'
     )]

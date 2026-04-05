@@ -111,9 +111,13 @@ Note: Avoid using the same names as used for the "General Parameters" section of
 	MaximumQueryTime = '%MaximumSignInLogQueryTime%'
 }
 @{
+	# Least-privilege: only select properties actually consumed by assessment tests.
+	# Removed unused sensitive properties: passwordProfile, deviceKeys, securityIdentifier,
+	# onPremisesSecurityIdentifier, refreshTokensValidFromDateTime, authorizationInfo,
+	# onPremisesObjectIdentifier, cloudRealtimeCommunicationInfo, onPremisesSipInfo, infoCatalogs
 	Name = 'User'
 	Uri = 'beta/users'
-	QueryString = '$top=999&$select=deletedDateTime, userType, streetAddress, onPremisesSipInfo, displayName, preferredLanguage, postalCode, faxNumber, onPremisesUserPrincipalName, serviceProvisioningErrors, cloudRealtimeCommunicationInfo, createdDateTime, signInSessionsValidFromDateTime, creationType, city, onPremisesDomainName, onPremisesProvisioningErrors, externalUserStateChangeDateTime, proxyAddresses, imAddresses, refreshTokensValidFromDateTime, onPremisesLastSyncDateTime, passwordPolicies, employeeLeaveDateTime, surname, employeeId, showInAddressList, usageLocation, isManagementRestricted, assignedPlans, authorizationInfo, id, provisionedPlans, userPrincipalName, accountEnabled, passwordProfile, onPremisesObjectIdentifier, state, ageGroup, isLicenseReconciliationNeeded, mobilePhone, employeeHireDate, securityIdentifier, onPremisesSyncEnabled, identities, jobTitle, onPremisesSecurityIdentifier, companyName, legalAgeGroupClassification, otherMails, mailNickname, employeeOrgData, assignedLicenses, employeeType, onPremisesSamAccountName, externalUserState, businessPhones, isResourceAccount, mail, infoCatalogs, deviceKeys, onPremisesImmutableId, externalUserConvertedOn, department, onPremisesExtensionAttributes, givenName, preferredDataLocation, officeLocation, onPremisesDistinguishedName, consentProvidedForMinor, country, signInActivity'
+	QueryString = '$top=999&$select=deletedDateTime, userType, streetAddress, displayName, preferredLanguage, postalCode, faxNumber, onPremisesUserPrincipalName, serviceProvisioningErrors, createdDateTime, signInSessionsValidFromDateTime, creationType, city, onPremisesDomainName, onPremisesProvisioningErrors, externalUserStateChangeDateTime, proxyAddresses, imAddresses, onPremisesLastSyncDateTime, passwordPolicies, employeeLeaveDateTime, surname, employeeId, showInAddressList, usageLocation, isManagementRestricted, assignedPlans, id, provisionedPlans, userPrincipalName, accountEnabled, state, ageGroup, isLicenseReconciliationNeeded, mobilePhone, employeeHireDate, onPremisesSyncEnabled, identities, jobTitle, companyName, legalAgeGroupClassification, otherMails, mailNickname, employeeOrgData, assignedLicenses, employeeType, onPremisesSamAccountName, externalUserState, businessPhones, isResourceAccount, mail, onPremisesImmutableId, externalUserConvertedOn, department, onPremisesExtensionAttributes, givenName, preferredDataLocation, officeLocation, onPremisesDistinguishedName, consentProvidedForMinor, country, signInActivity'
 	RelatedPropertyNames = @()
 	Type = 'Default' # PrivilegedGroup
 
@@ -124,9 +128,11 @@ Note: Avoid using the same names as used for the "General Parameters" section of
 	# MaximumQueryTime = '%MaximumSignInLogQueryTime%'
 }
 @{
+	# Least-privilege: only select properties actually consumed by assessment tests.
+	# Removed unused sensitive properties (see entry above for full list).
 	Name = 'User'
 	Uri = 'beta/users'
-	QueryString = '$top=999&$select=deletedDateTime, userType, streetAddress, onPremisesSipInfo, displayName, preferredLanguage, postalCode, faxNumber, onPremisesUserPrincipalName, serviceProvisioningErrors, cloudRealtimeCommunicationInfo, createdDateTime, signInSessionsValidFromDateTime, creationType, city, onPremisesDomainName, onPremisesProvisioningErrors, externalUserStateChangeDateTime, proxyAddresses, imAddresses, refreshTokensValidFromDateTime, onPremisesLastSyncDateTime, passwordPolicies, employeeLeaveDateTime, surname, employeeId, showInAddressList, usageLocation, isManagementRestricted, assignedPlans, authorizationInfo, id, provisionedPlans, userPrincipalName, accountEnabled, passwordProfile, onPremisesObjectIdentifier, state, ageGroup, isLicenseReconciliationNeeded, mobilePhone, employeeHireDate, securityIdentifier, onPremisesSyncEnabled, identities, jobTitle, onPremisesSecurityIdentifier, companyName, legalAgeGroupClassification, otherMails, mailNickname, employeeOrgData, assignedLicenses, employeeType, onPremisesSamAccountName, externalUserState, businessPhones, isResourceAccount, mail, infoCatalogs, deviceKeys, onPremisesImmutableId, externalUserConvertedOn, department, onPremisesExtensionAttributes, givenName, preferredDataLocation, officeLocation, onPremisesDistinguishedName, consentProvidedForMinor, country'
+	QueryString = '$top=999&$select=deletedDateTime, userType, streetAddress, displayName, preferredLanguage, postalCode, faxNumber, onPremisesUserPrincipalName, serviceProvisioningErrors, createdDateTime, signInSessionsValidFromDateTime, creationType, city, onPremisesDomainName, onPremisesProvisioningErrors, externalUserStateChangeDateTime, proxyAddresses, imAddresses, onPremisesLastSyncDateTime, passwordPolicies, employeeLeaveDateTime, surname, employeeId, showInAddressList, usageLocation, isManagementRestricted, assignedPlans, id, provisionedPlans, userPrincipalName, accountEnabled, state, ageGroup, isLicenseReconciliationNeeded, mobilePhone, employeeHireDate, onPremisesSyncEnabled, identities, jobTitle, companyName, legalAgeGroupClassification, otherMails, mailNickname, employeeOrgData, assignedLicenses, employeeType, onPremisesSamAccountName, externalUserState, businessPhones, isResourceAccount, mail, onPremisesImmutableId, externalUserConvertedOn, department, onPremisesExtensionAttributes, givenName, preferredDataLocation, officeLocation, onPremisesDistinguishedName, consentProvidedForMinor, country'
 	RelatedPropertyNames = @()
 	Type = 'Default' # PrivilegedGroup
 
@@ -164,7 +170,7 @@ Note: Avoid using the same names as used for the "General Parameters" section of
 }
 @{
 	Name = 'RoleAssignment'
-	Uri = 'beta/roleManagement/directory/roleAssignments'
+	Uri = 'v1.0/roleManagement/directory/roleAssignments'
 	QueryString = '$expand=principal'
 	RelatedPropertyNames = @()
 	Type = 'Default' # PrivilegedGroup

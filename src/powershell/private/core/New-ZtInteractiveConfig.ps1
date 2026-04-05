@@ -96,7 +96,7 @@ function New-ZtInteractiveConfig {
         Write-SpectreHost "[dim]Where would you like to save the assessment report?[/]"
         Write-Host
 
-        $reportPath = Read-SpectreText -Prompt "[cyan1]Report output path[/]" -DefaultAnswer "./ZeroTrustReport"
+        $reportPath = Read-SpectreText -Prompt "[cyan1]Report output path[/]" -DefaultAnswer $script:ZtDefaultReportPath
         $configData.Path = $reportPath
         Write-SpectreHost "[green]✅ Report will be saved to: $reportPath[/]"
         Write-Host

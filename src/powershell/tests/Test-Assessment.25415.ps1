@@ -18,6 +18,7 @@ function Test-Assessment-25415 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce'),
     	TestId = 25415,
+    	RequiredScopes = ("Directory.Read.All", "NetworkAccess.Read.All", "Policy.Read.All"),
     	Title = 'AI Gateway protects enterprise generative AI applications from prompt injection attacks',
     	UserImpact = 'Low'
     )]
@@ -29,6 +30,12 @@ function Test-Assessment-25415 {
 
     #region Data Collection
     Write-PSFMessage '🟦 Start Prompt Shield evaluation' -Tag Test -Level VeryVerbose
+
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
+        return
+    }
 
     $activity = 'Checking Prompt Shield configuration for AI Gateway protection'
     Write-ZtProgress -Activity $activity -Status 'Querying prompt policies'

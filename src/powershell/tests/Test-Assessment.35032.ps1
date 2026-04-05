@@ -30,6 +30,7 @@ function Test-Assessment-35032 {
         SfiPillar = 'Protect tenants and production systems',
         TenantType = ('Workforce'),
         TestId = 35032,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Adaptive Protection is enabled in data loss prevention policies',
         UserImpact = 'Medium'
     )]

@@ -31,6 +31,7 @@ function Test-Assessment-25375 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce'),
     	TestId = 25375,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Global Secure Access licenses are available in the tenant and assigned to users',
     	UserImpact = 'Low'
     )]

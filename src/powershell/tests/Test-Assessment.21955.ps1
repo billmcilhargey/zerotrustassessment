@@ -13,6 +13,7 @@ function Test-Assessment-21955 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce','External'),
     	TestId = 21955,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Manage the local administrators on Microsoft Entra joined devices',
     	UserImpact = 'Low'
     )]

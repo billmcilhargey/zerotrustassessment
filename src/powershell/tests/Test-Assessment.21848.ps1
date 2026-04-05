@@ -13,6 +13,7 @@ function Test-Assessment-21848 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21848,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Add organizational terms to the banned password list',
     	UserImpact = 'Low'
     )]

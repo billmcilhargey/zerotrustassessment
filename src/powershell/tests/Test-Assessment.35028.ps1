@@ -28,6 +28,7 @@ function Test-Assessment-35028 {
         SfiPillar = 'Protect tenants and production systems',
         TenantType = ('Workforce', 'External'),
         TestId = 35028,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Email retention policies are configured',
         UserImpact = 'Medium'
     )]

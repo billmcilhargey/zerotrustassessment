@@ -40,10 +40,16 @@ function Open-ZtReport {
 		elseif ($isContainer -and $ServeHttp) {
 			$reportDir = Split-Path $Path -Parent
 			$reportFile = Split-Path $Path -Leaf
-			$port = 8080
+			$port = $script:ZtHttpPortStart
 
-			# Find an available port (try 8080-8089)
-			for ($p = 8080; $p -le 8089; $p++) {
+			# Kill any stale http-server jobs so the port is freed
+			Get-Job | Where-Object { $_.Command -match 'http-server' } | Stop-Job -PassThru | Remove-Job -Force -ErrorAction Ignore
+			# Also kill orphan http-server processes
+			try { Get-Process -Name 'http-server','node' -ErrorAction Ignore | Where-Object { $_.CommandLine -match 'http-server' } | Stop-Process -Force -ErrorAction Ignore } catch { }
+			Start-Sleep -Milliseconds 500
+
+			# Find an available port
+			for ($p = $script:ZtHttpPortStart; $p -le $script:ZtHttpPortEnd; $p++) {
 				$inUse = $false
 				try {
 					$listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $p)
@@ -66,7 +72,7 @@ function Open-ZtReport {
 				} -ArgumentList $reportDir, $port
 
 				Start-Sleep -Milliseconds 1500
-				$reportUrl = "http://127.0.0.1:$port/$reportFile"
+				$reportUrl = "http://localhost:$port/$reportFile"
 
 				Write-Host "  📄 Report URL: " -NoNewline -ForegroundColor White
 				Write-Host $reportUrl -ForegroundColor Green

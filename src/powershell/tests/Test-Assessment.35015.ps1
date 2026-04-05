@@ -22,6 +22,7 @@ function Test-Assessment-35015 {
     	SfiPillar = 'Protect tenants and production systems',
     	TenantType = ('Workforce'),
     	TestId = 35015,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Globally published sensitivity labels don''t exceed the recommended maximum',
     	UserImpact = 'High'
     )]

@@ -8,6 +8,7 @@ function Test-Assessment-21830 {
     	SfiPillar = 'Protect engineering systems',
     	TenantType = ('Workforce'),
     	TestId = 21830,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Conditional Access policies for Privileged Access Workstations are configured',
     	UserImpact = 'Low'
     )]
@@ -23,8 +24,8 @@ function Test-Assessment-21830 {
     $activity = "Checking Highly privileged roles are only activated in a PAW/SAW device"
     Write-ZtProgress -Activity $activity -Status "Getting policy"
 
-    # Get all Conditional Access policies
-    $allCAPolicies = Invoke-ZtGraphRequest -RelativeUri 'identity/conditionalAccess/policies' -ApiVersion 'v1.0'
+    # Get all Conditional Access policies (via shared helper)
+    $allCAPolicies = Get-ZtConditionalAccessPolicy
 
     # Filter for enabled policies on client side
     $enabledCAPolicies = $allCAPolicies | Where-Object { $_.state -eq 'enabled' }

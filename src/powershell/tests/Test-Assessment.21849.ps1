@@ -13,6 +13,7 @@ function Test-Assessment-21849{
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21849,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Smart lockout duration is set to a minimum of 60',
     	UserImpact = 'Low'
     )]

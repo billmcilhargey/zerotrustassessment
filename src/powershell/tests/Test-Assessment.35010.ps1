@@ -32,6 +32,7 @@ function Test-Assessment-35010 {
     	SfiPillar = 'Protect tenants and production systems',
     	TenantType = ('Workforce'),
     	TestId = 35010,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Double Key Encryption labels are configured',
     	UserImpact = 'High'
     )]

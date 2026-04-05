@@ -13,6 +13,7 @@ function Test-Assessment-21813{
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 21813,
+    	RequiredScopes = "RoleManagement.Read.All",
     	Title = 'High Global Administrator to privileged user ratio',
     	UserImpact = 'Low'
     )]

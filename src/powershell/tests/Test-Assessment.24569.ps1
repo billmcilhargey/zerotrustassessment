@@ -13,6 +13,7 @@ function Test-Assessment-24569 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 24569,
+    	RequiredScopes = ("DeviceManagementConfiguration.Read.All", "Directory.Read.All"),
     	Title = 'FileVault encryption protects data on macOS devices',
     	UserImpact = 'Medium'
     )]

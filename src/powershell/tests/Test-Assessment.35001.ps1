@@ -14,6 +14,7 @@ function Test-Assessment-35001 {
         SfiPillar = '',
         TenantType = ('Workforce','External'),
         TestId = 35001,
+        RequiredScopes = ("Directory.Read.All", "NetworkAccess.Read.All", "Policy.Read.All"),
         Title = 'Conditional Access policies don''t exclude Rights Management workloads',
         UserImpact = 'Low'
     )]

@@ -13,6 +13,7 @@ function Test-Assessment-21844{
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 21844,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Block legacy Azure AD PowerShell module',
     	UserImpact = 'Low'
     )]

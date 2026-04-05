@@ -22,9 +22,7 @@
             name = "AppEvents"
             time = $timestamp
             iKey = $instrumentationKey
-            tags = @{
-                #"ai.cloud.roleInstance" = $hostname
-            }
+            tags = @{}
             data = @{
                 baseType = "EventData"
                 baseData = @{

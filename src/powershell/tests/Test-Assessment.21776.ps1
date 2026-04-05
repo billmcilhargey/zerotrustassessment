@@ -13,6 +13,7 @@ function Test-Assessment-21776 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21776,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'User consent settings are restricted',
     	UserImpact = 'High'
     )]

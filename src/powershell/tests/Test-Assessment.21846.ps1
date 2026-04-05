@@ -13,6 +13,7 @@ function Test-Assessment-21846{
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21846,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Restrict Temporary Access Pass to Single Use',
     	UserImpact = 'Low'
     )]

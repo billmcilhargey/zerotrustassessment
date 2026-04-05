@@ -23,6 +23,7 @@ function Test-Assessment-25396 {
         SfiPillar = 'Protect identities and secrets',
         TenantType = ('Workforce'),
         TestId = 25396,
+        RequiredScopes = ("Directory.Read.All", "NetworkAccess.Read.All", "Policy.Read.All"),
         Title = 'Conditional Access policies enforce strong authentication for private apps',
         UserImpact = 'Medium'
     )]

@@ -24,6 +24,7 @@ function Test-Assessment-35011 {
     	SfiPillar = 'Protect tenants and production systems',
     	TenantType = ('Workforce','External'),
     	TestId = 35011,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Super user membership is configured for Microsoft Purview Information Protection',
     	UserImpact = 'Low'
     )]

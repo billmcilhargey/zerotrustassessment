@@ -16,6 +16,7 @@
 *.ps1xml text
 
 # ── Web / config / data files ────────────────────────────────────────────────
+*.html text
 *.json text
 *.js   text
 *.jsx  text
@@ -28,6 +29,7 @@
 *.csv  text
 *.toml text
 *.ini  text
+*.xml  text
 
 # ── Programming languages ────────────────────────────────────────────────────
 *.py   text
@@ -62,3 +64,8 @@
 *.woff2 binary
 *.eot   binary
 *.ttf   binary
+
+# ── Generated files (hide from GitHub diffs & language stats) ────────────────
+src/powershell/assets/ReportTemplate.html  linguist-generated=true
+package-lock.json                          linguist-generated=true
+src/react/package-lock.json                linguist-generated=true

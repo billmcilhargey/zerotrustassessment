@@ -13,6 +13,7 @@ function Test-Assessment-21886 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21886,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Applications are configured for automatic user provisioning',
     	UserImpact = 'Low'
     )]

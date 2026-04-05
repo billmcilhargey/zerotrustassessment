@@ -17,6 +17,7 @@ $script:__ZtSession = @{
 	TestStatistics = Set-PSFDynamicContentObject -Name "ZtAssessment.TestStatistics" -Dictionary -PassThru
 	TenantInfo = Set-PSFDynamicContentObject -Name "ZtAssessment.TenantInfo" -Dictionary -PassThru
 	ModuleVersion = $moduleVersion
+	CloudEnvironment = $null
 }
 
 $script:__ZtThrottling = Set-PSFDynamicContentObject -Name "ZtAssessment.Throttles" -Dictionary -PassThru
@@ -35,15 +36,49 @@ $script:WindowsOnlyServices = @('AipService')
 # Services that do not support device code authentication flow.
 $script:NoDeviceCodeServices = @('SecurityCompliance')
 
+# Services that do not support client-secret app-only authentication.
+$script:NoClientSecretServices = @('ExchangeOnline', 'SecurityCompliance')
+
+# Services that require a custom Entra ID app registration (no built-in/first-party app).
+# The PnP Management Shell multi-tenant app was permanently deleted Sep 2024.
+# https://github.com/pnp/powershell/issues/4250
+$script:RequiresCustomAppServices = @('SharePoint')
+
 # Tracks which services are currently connected. Managed by Add-ZtConnectedService / Remove-ZtConnectedService.
 # Must be initialized as an array to avoid string-concatenation when using +=.
 $script:ConnectedService = @()
 
+# Cached result of Test-ZtGsaEnabled (Global Secure Access activation check).
+# Set to $null so the first call queries the API; subsequent calls return the cached value.
+$script:__ZtGsaEnabled = $null
+
 # Tracks detected license SKUs for the tenant. Set during Connect-ZtAssessment.
 [string[]] $script:CurrentLicense = @()
 
-# Cached service plan IDs for license checks. Populated on first call to Get-ZtLicense/Get-ZtLicenseInformation.
+# Cached service plan IDs for license checks. Populated on first call to Get-ZtActiveServicePlanId.
 $script:__ZtLicensePlanIds = $null
+
+# ── License Constants ─────────────────────────────────────────────────────
+# Canonical service plan ID → friendly name mapping. Referenced by Get-ZtLicense / Get-ZtLicenseInformation.
+$script:ZtServicePlanIds = @{
+	EntraIDGovernance = 'e866a266-3cff-43a3-acca-0c90a7e00c8b'
+	EntraIDP2         = 'eec0eb4f-6444-4f95-aba0-50c24d67f998'
+	EntraIDP1         = '41781fb2-bc02-4b7c-bd55-b576c07bb09d'
+	WorkloadIDP1      = '84c289f0-efcb-486f-8581-07f44fc9efad'
+	WorkloadIDP2      = '7dc0e92d-bf15-401d-907e-0884efe7c760'
+	IntuneP1          = 'c1ec4a95-1f05-45b3-a911-aa3fa01094f5'
+	IntuneP1Education = 'da24caf9-af8e-485c-b7c8-e73336da2693'
+}
+
+# Maps MinimumLicense tier names (from test metadata) → Get-ZtLicense product parameter values.
+# Used by license-skip counting in Invoke-ZtTests, Invoke-ZtAssessment, Start-ZtAssessment.
+$script:ZtLicenseTierToProduct = @{
+	'P1'         = 'EntraIDP1'
+	'P2'         = 'EntraIDP2'
+	'Governance' = 'EntraIDGovernance'
+	'Intune'     = 'Intune'
+	'Workload'   = 'EntraWorkloadID'
+}
 
 # DuckDB native library version — authoritative value lives in PSFConfig 'DuckDB.Version'.
 # This variable is a convenience alias read from config at module load time.
@@ -55,7 +90,8 @@ $script:_DatabaseConnection = $null
 
 # Load the graph scope risk mapping. Used in Get-GraphPermissionRisk.
 $graphPermissionsTable = Import-Csv -Path (Join-Path -Path $Script:ModuleRoot -ChildPath 'assets/aadconsentgrantpermissiontable.csv') -Delimiter ','
-$Script:_GraphPermissions = @{}
+# Use ConcurrentDictionary for thread safety — parallel test runspaces write to this cache.
+$Script:_GraphPermissions = [System.Collections.Concurrent.ConcurrentDictionary[string, string]]::new([System.StringComparer]::Ordinal)
 $script:_GraphPermissionsHash = @{}
 foreach ($perm in $graphPermissionsTable) {
 	$key = $perm.Type + $perm.Permission

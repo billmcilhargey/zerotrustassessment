@@ -27,6 +27,7 @@ function Test-Assessment-35026 {
     	SfiPillar = 'Protect tenants and production systems',
     	TenantType = ('Workforce','External'),
     	TestId = 35026,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Microsoft Purview Message Encryption is configured with simplified client access',
     	UserImpact = 'Medium'
     )]

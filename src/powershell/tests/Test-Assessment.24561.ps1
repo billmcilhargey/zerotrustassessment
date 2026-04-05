@@ -13,6 +13,7 @@ function Test-Assessment-24561 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 24561,
+    	RequiredScopes = ("DeviceManagementConfiguration.Read.All", "Directory.Read.All"),
     	Title = 'Local administrator credentials on macOS are protected during enrollment by macOS LAPS',
     	UserImpact = 'Low'
     )]

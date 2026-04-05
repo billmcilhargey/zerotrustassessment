@@ -22,6 +22,7 @@ function Test-Assessment-35018 {
         SfiPillar = 'Protect tenants and production systems',
         TenantType = ('Workforce'),
         TestId = 35018,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Users must provide justification to downgrade sensitivity labels',
         UserImpact = 'Medium'
     )]

@@ -13,6 +13,7 @@ function Test-Assessment-21819 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 21819,
+    	RequiredScopes = ("Directory.Read.All", "RoleManagement.Read.All"),
     	Title = 'Activation alert for Global Administrator role assignments',
     	UserImpact = 'Low'
     )]

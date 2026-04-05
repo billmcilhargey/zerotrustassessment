@@ -14,6 +14,7 @@ function Test-Assessment-21860 {
     	SfiPillar = 'Monitor and detect cyberthreats',
     	TenantType = ('Workforce','External'),
     	TestId = 21860,
+    	RequiredScopes = ("AuditLog.Read.All", "Directory.Read.All", "NetworkAccess.Read.All"),
     	Title = 'Diagnostic settings are configured for all Microsoft Entra logs',
     	UserImpact = 'Low'
     )]

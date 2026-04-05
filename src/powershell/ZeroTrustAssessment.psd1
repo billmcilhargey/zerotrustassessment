@@ -108,7 +108,7 @@ PrivateData = @{
         @{ModuleName = 'Microsoft.Graph.Beta.Teams'; GUID = 'e264919d-7ae2-4a89-ba8b-524bd93ddc08'; ModuleVersion = '2.35.0'; },
         @{ModuleName = 'Az.Accounts'; GUID = '17a2feff-488b-47f9-8729-e2cec094624c'; ModuleVersion = '4.0.2'; },
         @{ModuleName = 'ExchangeOnlineManagement'; GUID = 'b5eced50-afa4-455b-847a-d8fb64140a22'; RequiredVersion = '3.9.0'; },
-        @{ModuleName = 'PnP.PowerShell'; GUID = '0b0430ce-d799-4f3b-a565-f96f2d94c32b'; ModuleVersion = '2.12.0'; }
+        @{ModuleName = 'PnP.PowerShell'; GUID = '0b0430ce-d799-4f3b-a565-f0dca1f31e17'; ModuleVersion = '3.0.0'; }
     )
 
     ServiceToRequiredModuleMap = @{

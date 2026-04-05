@@ -13,6 +13,7 @@ function Test-Assessment-24840 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce'),
     	TestId = 24840,
+    	RequiredScopes = ("DeviceManagementConfiguration.Read.All", "Directory.Read.All"),
     	Title = 'Secure Wi-Fi profiles protect Android devices from unauthorized network access',
     	UserImpact = 'Low'
     )]

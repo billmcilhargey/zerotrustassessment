@@ -13,6 +13,7 @@ function Test-Assessment-21824 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce'),
     	TestId = 21824,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Guests don''t have long lived sign-in sessions',
     	UserImpact = 'Medium'
     )]
@@ -29,8 +30,8 @@ function Test-Assessment-21824 {
     $activity = "Checking Guests don't have long lived sign-in sessions"
     Write-ZtProgress -Activity $activity -Status "Getting policy"
 
-    # Query for CA policies that are enabled and include guests or external users
-    $allCAPolicies = Invoke-ZtGraphRequest -RelativeUri "identity/conditionalAccess/policies" -ApiVersion 'v1.0'
+    # Query for CA policies that are enabled and include guests or external users (via shared helper)
+    $allCAPolicies = Get-ZtConditionalAccessPolicy
 
     $filteredCAPolicies = $allCAPolicies | Where-Object {
         ($null -ne $_.conditions.users.includeGuestsOrExternalUsers) -and

@@ -18,6 +18,7 @@
 function Test-Assessment-27003 {
     [ZtTest(
     	Category = 'Global Secure Access',
+        CloudEnvironment = ('Global'),
     	ImplementationCost = 'Medium',
     	MinimumLicense = ('Entra_Premium_Internet_Access'),
     	CompatibleLicense = ('Entra_Premium_Internet_Access'),
@@ -26,6 +27,7 @@ function Test-Assessment-27003 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce'),
     	TestId = 27003,
+    	RequiredScopes = ("Directory.Read.All", "NetworkAccess.Read.All"),
     	Title = 'TLS inspection failure rate is below 1%',
     	UserImpact = 'Medium'
     )]
@@ -76,11 +78,16 @@ function Test-Assessment-27003 {
     #region Data Collection
     Write-PSFMessage '🟦 Start TLS inspection failure rate evaluation' -Tag Test -Level VeryVerbose
 
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
+        return
+    }
+
     $activity = 'Checking TLS inspection failure rate'
     Write-ZtProgress -Activity $activity -Status 'Checking connections'
 
-    # Check Azure connection and cloud environment first to avoid unnecessary API calls
-    # in sovereign clouds (this test is only applicable to the Global/AzureCloud environment)
+    # Check Azure connection and cloud environment
     Write-ZtProgress -Activity $activity -Status 'Checking Azure connection'
 
     $azContext = Get-AzContext -ErrorAction SilentlyContinue
@@ -90,9 +97,8 @@ function Test-Assessment-27003 {
         return
     }
 
-    if ($azContext.Environment.Name -ne 'AzureCloud') {
-        Write-PSFMessage 'This test is only applicable to the AzureCloud environment.' -Tag Test -Level VeryVerbose
-        Add-ZtTestResultDetail -SkippedBecause NotSupported
+    if (-not (Test-ZtCloudEnvironment -SupportedCloudType 'Global')) {
+        Add-ZtTestResultDetail -SkippedBecause NotSupportedEnvironment
         return
     }
 

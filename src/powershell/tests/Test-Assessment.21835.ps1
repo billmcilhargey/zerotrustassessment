@@ -21,6 +21,7 @@ function Test-Assessment-21835 {
     	SfiPillar = 'Protect engineering systems',
     	TenantType = ('Workforce'),
     	TestId = 21835,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Emergency access accounts are configured appropriately',
     	UserImpact = 'Low'
     )]

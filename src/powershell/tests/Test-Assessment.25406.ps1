@@ -14,6 +14,7 @@ function Test-Assessment-25406 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce'),
     	TestId = 25406,
+    	RequiredScopes = ("Directory.Read.All", "NetworkAccess.Read.All"),
     	Title = 'Internet access forwarding profile is enabled',
     	UserImpact = 'Medium'
     )]

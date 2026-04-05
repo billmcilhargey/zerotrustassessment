@@ -13,6 +13,7 @@ function Test-Assessment-21874 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce','External'),
     	TestId = 21874,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Guest access is limited to approved tenants',
     	UserImpact = 'Medium'
     )]

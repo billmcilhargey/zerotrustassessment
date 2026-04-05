@@ -13,6 +13,7 @@ function Test-Assessment-21954{
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce','External'),
     	TestId = 21954,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Restrict nonadministrator users from recovering the BitLocker keys for their owned devices',
     	UserImpact = 'Low'
     )]

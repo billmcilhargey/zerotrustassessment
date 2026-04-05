@@ -13,6 +13,7 @@ function Test-Assessment-21797{
     	SfiPillar = 'Accelerate response and remediation',
     	TenantType = ('Workforce','External'),
     	TestId = 21797,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Restrict access to high risk users',
     	UserImpact = 'High'
     )]
@@ -29,11 +30,11 @@ function Test-Assessment-21797{
     Write-ZtProgress -Activity $activity -Status "Getting policies"
 
     # Query 1: Authentication methods policy for passwordless authentication methods
-    $authMethodsPolicy = Invoke-ZtGraphRequest -RelativeUri "policies/authenticationMethodsPolicy" -ApiVersion 'v1.0'
+    $authMethodsPolicy = Get-ZtAuthenticationMethodsPolicy
 
     # Query for all CA policies instead of multiple filtered queries
     Write-ZtProgress -Activity $activity -Status "Getting conditional access policies"
-    $allCAPolicies = Invoke-ZtGraphRequest -RelativeUri "identity/conditionalAccess/policies" -ApiVersion 'v1.0'
+    $allCAPolicies = Get-ZtConditionalAccessPolicy
 
     # Local filtering for password change policies - only consider enabled policies
     $caPasswordChangePolicies = $allCAPolicies | Where-Object {

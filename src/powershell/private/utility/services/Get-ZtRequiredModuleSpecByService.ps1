@@ -17,12 +17,11 @@ function Get-ZtRequiredModuleSpecByService {
     # for the modules required to connect to Azure and Graph.
 
     .NOTES
-    Different pillars use different combinations of modules. For example:
-    - Identity: uses graph, 1 or 2 use azure, one needs teams module
-    - Devices: (intune), all based on Graph
-    - Network: (25xxx 27xxx, but don't rely on number) most based on Graph, some based on Azure (i.e. application gateway) Invoke-AzRestMethod/Invoke-AzMGGraph/Invoke-ZtAzureRessourceGraphRequest/Invoke-ZtAzureRequestCache
-    - Data: at least 2 using pure Graph, using SecurityCompliance (exo), Exchange (exo), SharePoint (spo), AipService (aip), maybe some using those with a mix of Graph
-    #TODO: clean up notes here
+    Different pillars use different combinations of modules:
+    - Identity: Graph, some Azure
+    - Devices: Graph (Intune)
+    - Network: Graph, Azure (application gateway, resource graph)
+    - Data: Graph, SecurityCompliance, Exchange, SharePoint, AipService
 
     #>
     [CmdletBinding()]

@@ -13,6 +13,7 @@ function Test-Assessment-24542 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce'),
     	TestId = 24542,
+    	RequiredScopes = ("DeviceManagementConfiguration.Read.All", "Directory.Read.All"),
     	Title = 'Compliance policies protect macOS devices',
     	UserImpact = 'Medium'
     )]

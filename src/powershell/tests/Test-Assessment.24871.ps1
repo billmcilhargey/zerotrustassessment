@@ -13,6 +13,7 @@ function Test-Assessment-24871 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce'),
     	TestId = 24871,
+    	RequiredScopes = ("DeviceManagementConfiguration.Read.All", "Directory.Read.All"),
     	Title = 'Defender for Endpoint automatic enrollment is enforced to reduce risk from unmanaged Android threats',
     	UserImpact = 'Low'
     )]

@@ -13,6 +13,7 @@ function Test-Assessment-21788 {
         SfiPillar = 'Protect engineering systems',
         TenantType = ('Workforce'),
         TestId = 21788,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Global Administrators don''t have standing access to Azure subscriptions',
         UserImpact = 'Low'
     )]

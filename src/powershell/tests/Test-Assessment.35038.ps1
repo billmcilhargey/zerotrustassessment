@@ -23,6 +23,7 @@ function Test-Assessment-35038 {
         SfiPillar = 'Protect tenants and production systems',
         TenantType = ('Workforce'),
         TestId = 35038,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Insider Risk Management policies are enabled for risky AI usage',
         UserImpact = 'Medium'
     )]

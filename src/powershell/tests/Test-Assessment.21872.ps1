@@ -13,6 +13,7 @@ function Test-Assessment-21872 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 21872,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Require multifactor authentication for device join and device registration using user action',
     	UserImpact = 'Medium'
     )]
@@ -28,8 +29,8 @@ function Test-Assessment-21872 {
     $activity = "Checking Require multifactor authentication for device join and device registration using user action"
     Write-ZtProgress -Activity $activity -Status "Getting conditional access policies"
 
-    # Query all Conditional Access policies
-    $caps = Invoke-ZtGraphRequest -RelativeUri 'identity/conditionalAccess/policies' -ApiVersion 'v1.0'
+    # Query all Conditional Access policies (via shared helper)
+    $caps = Get-ZtConditionalAccessPolicy
 
     # Get device settings to check if MFA is required at device settings level
     Write-ZtProgress -Activity $activity -Status "Getting device settings"

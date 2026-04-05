@@ -52,17 +52,16 @@ order by spsi.lastSignInActivity.lastSignInDateTime
         return @()
     }
 
-    # Enrich each app with permissions and risk classification (using Test-21770 pattern)
+    # Bulk-enrich all items with permissions in two queries (instead of per-item N+1)
+    $Items = @($results)
+    $Items = Add-DelegatePermissions -Items $Items -Database $Database
+    $Items = Add-AppPermissions -Items $Items -Database $Database
+
+    # Enrich each app with risk classification and owner count
     $enrichedApps = @()
 
-    foreach ($item in $results) {
+    foreach ($item in $Items) {
         try {
-            # Add delegate permissions
-            $item = Add-DelegatePermissions -item $item -Database $Database
-
-            # Add application permissions
-            $item = Add-AppPermissions -item $item -Database $Database
-
             # Add risk classification
             $item = Add-GraphRisk $item
 

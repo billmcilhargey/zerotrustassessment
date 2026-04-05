@@ -26,6 +26,7 @@ function Test-Assessment-25395 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce'),
     	TestId = 25395,
+    	RequiredScopes = ("Directory.Read.All", "NetworkAccess.Read.All", "Policy.Read.All"),
     	Title = 'Entra Private Access Application segments are defined to enforce least-privilege access',
     	UserImpact = 'Medium'
     )]

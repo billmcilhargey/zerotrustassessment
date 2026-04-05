@@ -18,6 +18,7 @@ function Test-Assessment-25420 {
 
     [ZtTest(
         Category = 'Global Secure Access',
+        CloudEnvironment = ('Global'),
         ImplementationCost = 'Low',
         MinimumLicense = ('AAD_PREMIUM', 'Entra_Premium_Internet_Access', 'Entra_Premium_Private_Access'),
         CompatibleLicense = ('Entra_Premium_Private_Access','Entra_Premium_Internet_Access'),
@@ -26,6 +27,7 @@ function Test-Assessment-25420 {
         SfiPillar = 'Monitor and detect cyberthreats',
         TenantType = ('Workforce'),
         TestId = 25420,
+        RequiredScopes = ("AuditLog.Read.All", "Directory.Read.All", "NetworkAccess.Read.All"),
         Title = 'Network access logs are retained for security analysis and compliance requirements',
         UserImpact = 'Low'
     )]
@@ -49,6 +51,13 @@ function Test-Assessment-25420 {
     #region Data Collection
 
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
+        return
+    }
+
     $activity = 'Evaluating network access log retention configuration'
 
     # Check if connected to Azure
@@ -61,12 +70,9 @@ function Test-Assessment-25420 {
         return
     }
 
-    # Check the supported environment, 'AzureCloud' in (Get-AzContext).Environment.Name maps to 'Global' in (Get-MgContext).Environment
-    Write-ZtProgress -Activity $activity -Status 'Checking Azure environment'
-
-    if ($azContext.Environment.Name -ne 'AzureCloud') {
-        Write-PSFMessage 'This test is only applicable to the AzureCloud environment.' -Tag Test -Level VeryVerbose
-        Add-ZtTestResultDetail -SkippedBecause NotSupported
+    # Check the supported cloud environment
+    if (-not (Test-ZtCloudEnvironment -SupportedCloudType 'Global')) {
+        Add-ZtTestResultDetail -SkippedBecause NotSupportedEnvironment
         return
     }
 

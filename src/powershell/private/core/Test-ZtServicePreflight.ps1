@@ -90,23 +90,53 @@ function Test-ZtServicePreflight {
 	})
 	if (-not $graphOk) { $allPassed = $false }
 
+	# ── 3a. Cloud environment detection ──────────────────────────────────────
+	# Detect the cloud environment (Commercial, GCC, GCC High, DoD, China, Germany)
+	# early so tests and the report can use it. This is informational — does not block the run.
+	$cloudEnvDetail = $null
+	$cloudEnv = $null
+	if ($graphOk) {
+		try {
+			$cloudEnv = Get-ZtCloudEnvironment -Force
+			$cloudEnvDetail = '{0} (detected from {1})' -f $cloudEnv.DisplayName, $cloudEnv.DetectedFrom
+		}
+		catch {
+			$cloudEnvDetail = "Unable to detect cloud environment: $($_.Exception.Message)"
+		}
+	}
+	else {
+		$cloudEnvDetail = 'Skipped (no Graph context)'
+	}
+	$checks.Add([PSCustomObject]@{
+		Check            = 'CloudEnvironment'
+		Passed           = $null -ne $cloudEnv -and $cloudEnv.CloudType -ne 'Unknown'
+		Detail           = $cloudEnvDetail
+		CloudEnvironment = $cloudEnv
+	})
+	# Cloud environment detection is informational — does not block the run
+
 	# ── 3b. Licensing ────────────────────────────────────────────────────────
 	# Detect tenant licenses early so per-test checks can use the cache.
 	# This is a warning only — missing licenses don't block the run.
 	$licenseDetail = $null
 	$licenseTier = 'Unknown'
+	$licenseProducts = @{}
 	if ($graphOk) {
 		try {
 			$null = Get-ZtCurrentLicense -Force
-			# Also prime the plan ID cache used by Get-ZtLicense / Get-ZtLicenseInformation
-			if (-not $script:__ZtLicensePlanIds) {
-				$script:__ZtLicensePlanIds = Invoke-ZtGraphRequest -RelativeUri "subscribedSkus" |
-					Select-Object -ExpandProperty servicePlans |
-					Where-Object { $_.capabilityStatus -ne 'Deleted' } |
-					Select-Object -ExpandProperty servicePlanId
-			}
+			# Prime the plan ID cache used by Get-ZtLicense / Get-ZtLicenseInformation
+			$null = Get-ZtActiveServicePlanId -Force
 			$licenseTier = Get-ZtLicenseInformation -Product EntraID
-			$licenseDetail = "Entra ID: $licenseTier"
+			# Detect all product licenses for pre-filtering decisions
+			$licenseProducts = @{
+				EntraID    = $licenseTier
+				Intune     = Get-ZtLicenseInformation -Product Intune
+				WorkloadID = Get-ZtLicenseInformation -Product EntraWorkloadID
+			}
+			$parts = @("Entra ID: $licenseTier")
+			if ($licenseProducts.Intune) { $parts += "Intune: $($licenseProducts.Intune)" }
+			if ($licenseProducts.WorkloadID) { $parts += "Workload ID: $($licenseProducts.WorkloadID)" }
+			$licenseDetail = $parts -join '  |  '
 		}
 		catch {
 			$licenseDetail = "Unable to detect licenses: $($_.Exception.Message)"
@@ -116,12 +146,44 @@ function Test-ZtServicePreflight {
 		$licenseDetail = 'Skipped (no Graph context)'
 	}
 	$checks.Add([PSCustomObject]@{
-		Check       = 'Licensing'
-		Passed      = $licenseTier -in @('P1', 'P2', 'Governance')
-		Detail      = $licenseDetail
-		LicenseTier = $licenseTier
+		Check           = 'Licensing'
+		Passed          = $licenseTier -in @('P1', 'P2', 'Governance')
+		Detail          = $licenseDetail
+		LicenseTier     = $licenseTier
+		LicenseProducts = $licenseProducts
 	})
 	# Licensing gaps are a warning, not a hard failure
+
+	# ── 3c. Global Secure Access ─────────────────────────────────────────────
+	# Detect whether GSA is activated so the summary shows skip count context.
+	# This primes the cache used by individual GSA tests.
+	$gsaDetail = $null
+	$gsaActive = $false
+	if ($graphOk) {
+		$gsaSkipOverride = Get-PSFConfigValue -FullName 'ZeroTrustAssessment.Assessment.SkipGlobalSecureAccess' -Fallback $false
+		if ($gsaSkipOverride) {
+			$gsaDetail = 'Skipped by user configuration (Assessment.SkipGlobalSecureAccess = $true)'
+		}
+		else {
+			try {
+				$gsaActive = Test-ZtGsaEnabled -Force
+				$gsaDetail = if ($gsaActive) { 'Enabled (at least one forwarding profile active)' } else { 'Not configured — GSA tests will be skipped' }
+			}
+			catch {
+				$gsaDetail = "Unable to detect: $($_.Exception.Message)"
+			}
+		}
+	}
+	else {
+		$gsaDetail = 'Skipped (no Graph context)'
+	}
+	$checks.Add([PSCustomObject]@{
+		Check     = 'GlobalSecureAccess'
+		Passed    = $gsaActive
+		Detail    = $gsaDetail
+		GsaActive = $gsaActive
+	})
+	# GSA status is informational — does not block the run
 
 	# ── 4. Service health ────────────────────────────────────────────────────
 	$healthResults = Test-ZtServiceHealth
@@ -145,6 +207,8 @@ function Test-ZtServicePreflight {
 	$coverageParams = @{}
 	if ($Tests) { $coverageParams.Tests = $Tests }
 	if ($Pillar) { $coverageParams.Pillar = $Pillar }
+	# Detect auth mode so classification reasons propagate to coverage gaps
+	if (Get-ZtEffectiveDeviceCode) { $coverageParams.UseDeviceCode = $true }
 	$coverage = Test-ZtServiceCoverage @coverageParams
 
 	$checks.Add([PSCustomObject]@{
@@ -162,7 +226,7 @@ function Test-ZtServicePreflight {
 	# We don't set $allPassed = $false here
 
 	# ── Build result ─────────────────────────────────────────────────────────
-	$failures = @($checks | Where-Object { -not $_.Passed -and $_.Check -notin 'ServiceCoverage', 'Licensing' })
+	$failures = @($checks | Where-Object { -not $_.Passed -and $_.Check -notin 'ServiceCoverage', 'Licensing', 'CloudEnvironment', 'GlobalSecureAccess' })
 
 	[PSCustomObject]@{
 		Passed        = $allPassed

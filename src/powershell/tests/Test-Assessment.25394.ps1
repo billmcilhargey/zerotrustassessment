@@ -33,6 +33,13 @@ function Test-Assessment-25394 {
 
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
+        return
+    }
+
     $activity = 'Checking Quick Access Conditional Access policy protection'
     Write-ZtProgress -Activity $activity -Status 'Querying Quick Access application'
 

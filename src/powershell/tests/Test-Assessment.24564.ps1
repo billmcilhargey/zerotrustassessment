@@ -16,6 +16,7 @@ function Test-Assessment-24564 {
         SfiPillar = 'Protect identities and secrets',
         TenantType = ('Workforce'),
         TestId = 24564,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Local account usage on Windows is restricted to reduce unauthorized access',
         UserImpact = 'Low'
     )]

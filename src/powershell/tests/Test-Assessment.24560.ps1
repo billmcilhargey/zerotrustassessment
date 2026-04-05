@@ -13,6 +13,7 @@ function Test-Assessment-24560 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 24560,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Local administrator credentials on Windows are protected by Windows LAPS',
     	UserImpact = 'Low'
     )]

@@ -16,6 +16,7 @@ function Test-Assessment-24568 {
         SfiPillar = 'Protect tenants and isolate production systems',
         TenantType = ('Workforce'),
         TestId = 24568,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Platform SSO is configured to strengthen authentication on macOS devices',
         UserImpact = 'Medium'
     )]

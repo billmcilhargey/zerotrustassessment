@@ -30,6 +30,7 @@ function Test-Assessment-25401 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce'),
     	TestId = 25401,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Application Proxy applications require preauthentication to block anonymous access',
     	UserImpact = 'Medium'
     )]

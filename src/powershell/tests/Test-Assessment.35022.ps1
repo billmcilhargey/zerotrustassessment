@@ -28,6 +28,7 @@ function Test-Assessment-35022 {
         SfiPillar = 'Protect tenants and production systems',
         TenantType = 'Workforce',
         TestId = 35022,
+        RequiredScopes = "Directory.Read.All",
         Title = 'On-demand scans are configured for sensitive information discovery',
         UserImpact = 'Low'
     )]

@@ -26,6 +26,7 @@ function Test-Assessment-35025 {
         SfiPillar = 'Protect tenants and production systems',
         TenantType = ('Workforce'),
         TestId = 35025,
+        RequiredScopes = "Directory.Read.All",
         Title = 'Internal Rights Management licensing is enabled',
         UserImpact = 'High'
     )]

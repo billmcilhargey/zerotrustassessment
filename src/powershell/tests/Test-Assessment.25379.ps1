@@ -16,13 +16,14 @@ function Test-Assessment-25379 {
     [ZtTest(
     	Category = 'Global Secure Access',
     	ImplementationCost = 'Medium',
-    	MinimumLicense = ('AAD_PREMIUM'),
-    	CompatibleLicense = ('AAD_PREMIUM','AAD_PREMIUM_P2'),
+    	MinimumLicense = ('Entra_Premium_Internet_Access','Entra_Premium_Private_Access'),
+    	CompatibleLicense = ('Entra_Premium_Internet_Access','Entra_Premium_Private_Access'),
     	Pillar = 'Network',
     	RiskLevel = 'Medium',
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce','External'),
     	TestId = 25379,
+    	RequiredScopes = ("Directory.Read.All", "NetworkAccess.Read.All", "Policy.Read.All"),
     	Title = 'Conditional Access policies use compliant network controls',
     	UserImpact = 'Medium'
     )]
@@ -33,10 +34,15 @@ function Test-Assessment-25379 {
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
 
     $activity = 'Checking compliant network controls in Conditional Access'
-    Write-ZtProgress -Activity $activity -Status 'Retrieving Global Secure Access signaling status'
+
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
+        return
+    }
 
     # Q1: Retrieve Global Secure Access Conditional Access signaling status
-    # Query the Global Secure Access settings to determine if Conditional Access signaling is enabled
+    Write-ZtProgress -Activity $activity -Status 'Retrieving Global Secure Access signaling status'
     try {
         $settings = Invoke-ZtGraphRequest -RelativeUri 'networkAccess/settings/conditionalAccess' -ApiVersion beta -ErrorAction Stop
     }
@@ -58,7 +64,7 @@ function Test-Assessment-25379 {
     # Q3: Retrieve enabled Conditional Access policies that use compliant network location
     # Query all enabled Conditional Access policies to find those that reference the compliant network location
     Write-ZtProgress -Activity $activity -Status 'Retrieving enabled Conditional Access policies'
-    $policies = Invoke-ZtGraphRequest -RelativeUri 'identity/conditionalAccess/policies' -Filter "state eq 'enabled'" -ApiVersion beta
+    $policies = Get-ZtConditionalAccessPolicy -Filter "state eq 'enabled'"
     #endregion Data Collection
 
     #region Assessment Logic
@@ -75,9 +81,9 @@ function Test-Assessment-25379 {
         $passed = $false
         $customStatus = $null
         $testResultMarkdown = if (-not $settings) {
-            "❌ **Fail**: Unable to retrieve Global Secure Access signaling settings.`n`n%TestResult%"
+            "❌ **Fail**: Global Secure Access is enabled but Conditional Access signaling settings could not be retrieved. Enable signaling to use compliant network controls.`n`n%TestResult%"
         } else {
-            "❌ **Fail**: Global Secure Access signaling is disabled. Compliant network controls cannot function without this prerequisite.`n`n%TestResult%"
+            "❌ **Fail**: Global Secure Access Conditional Access signaling is disabled. Compliant network controls cannot function without this prerequisite.`n`n%TestResult%"
         }
     }
     elseif (-not $compliantNetworkLocation) {

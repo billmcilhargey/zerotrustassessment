@@ -13,6 +13,7 @@ function Test-Assessment-21884 {
     	SfiPillar = 'Protect tenants and isolate production systems',
     	TenantType = ('Workforce','External'),
     	TestId = 21884,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Conditional Access policies for workload identities based on known networks are configured',
     	UserImpact = 'Low'
     )]

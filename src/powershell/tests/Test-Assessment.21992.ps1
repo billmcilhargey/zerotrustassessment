@@ -13,6 +13,7 @@ function Test-Assessment-21992{
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21992,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Application certificates must be rotated on a regular basis',
     	UserImpact = 'Low'
     )]

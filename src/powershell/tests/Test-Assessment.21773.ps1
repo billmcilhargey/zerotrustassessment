@@ -13,6 +13,7 @@ function Test-Assessment-21773 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21773,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Applications don''t have certificates with expiration longer than 180 days',
     	UserImpact = 'Low'
     )]

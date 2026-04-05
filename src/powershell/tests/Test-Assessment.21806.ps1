@@ -13,6 +13,7 @@ function Test-Assessment-21806 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21806,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Secure the MFA registration (My Security Info) page',
     	UserImpact = 'Low'
     )]
@@ -28,8 +29,8 @@ function Test-Assessment-21806 {
     $activity = "Checking Secure the MFA registration (My Security Info) page"
     Write-ZtProgress -Activity $activity -Status "Getting policy"
 
-    # Query for all CA policies
-    $allCAPolicies = Invoke-ZtGraphRequest -RelativeUri 'identity/conditionalAccess/policies' -ApiVersion 'v1.0'
+    # Query for all CA policies (via shared helper)
+    $allCAPolicies = Get-ZtConditionalAccessPolicy
 
     # Local filtering for security information registration - only consider enabled policies
     $matchedPolicies = $allCAPolicies | Where-Object {

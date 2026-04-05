@@ -21,6 +21,7 @@ function Test-Assessment-25481 {
     	SfiPillar = 'Protect networks',
     	TenantType = ('Workforce','External'),
     	TestId = 25481,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'All Private Access apps have user or group assignments',
     	UserImpact = 'Medium'
     )]
@@ -29,6 +30,13 @@ function Test-Assessment-25481 {
 
     #region Data Collection
     Write-PSFMessage '🟦 Start' -Tag Test -Level VeryVerbose
+
+    # Prerequisite: Global Secure Access must be activated in the tenant.
+    if (-not (Test-ZtGsaEnabled)) {
+        Add-ZtTestResultDetail -SkippedBecause NotApplicable
+        return
+    }
+
     $activity = 'Checking Private Access applications user and group assignments'
     Write-ZtProgress -Activity $activity -Status 'Querying all Private Access applications'
 

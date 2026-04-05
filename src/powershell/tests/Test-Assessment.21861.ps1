@@ -13,6 +13,7 @@ function Test-Assessment-21861 {
     	SfiPillar = 'Monitor and detect cyberthreats',
     	TenantType = ('Workforce','External'),
     	TestId = 21861,
+    	RequiredScopes = ("Directory.Read.All", "IdentityRiskyUser.Read.All"),
     	Title = 'All high-risk users are triaged',
     	UserImpact = 'Low'
     )]

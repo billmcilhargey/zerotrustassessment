@@ -33,9 +33,22 @@ function Test-ZtHeadlessEnvironment {
 		$isHeadless = -not $env:DISPLAY -and -not $env:WAYLAND_DISPLAY
 	}
 
+	# VS Code dev containers / Codespaces expose $env:BROWSER, which uses
+	# VS Code's --openExternal to open URLs on the host machine's browser.
+	# When available, device code URLs can be auto-opened for a better UX.
+	$canLaunchBrowser = $false
+	if ($env:BROWSER -and (Test-Path $env:BROWSER -ErrorAction Ignore)) {
+		$canLaunchBrowser = $true
+	}
+	elseif (-not $isHeadless -and -not $isCodespaces) {
+		# Native desktop with a display server
+		$canLaunchBrowser = $true
+	}
+
 	[PSCustomObject]@{
-		IsCodespaces = $isCodespaces
-		IsHeadless   = $isHeadless
-		IsNonWindows = -not $IsWindows
+		IsCodespaces     = $isCodespaces
+		IsHeadless       = $isHeadless
+		IsNonWindows     = -not $IsWindows
+		CanLaunchBrowser = $canLaunchBrowser
 	}
 }

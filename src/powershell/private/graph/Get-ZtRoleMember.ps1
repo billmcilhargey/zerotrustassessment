@@ -128,7 +128,7 @@ function Get-ZtRoleMember {
 				}
 				catch {
 					if ($_ -match 'AadPremiumLicenseRequired|BadRequest') {
-						Write-PSFMessage "PIM API unavailable (license not active), falling back to non-PIM path" -Level Warning
+						Write-PSFMessage "PIM API unavailable (license not active), falling back to non-PIM path" -Level Verbose
 						$pim = $false
 						$uri = 'roleManagement/directory/roleAssignments'
 						$assignments += Get-UsersInRole -Uri $uri -RoleId $directoryRoleId -RoleAssignmentType Active

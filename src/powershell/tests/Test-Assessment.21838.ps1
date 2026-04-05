@@ -13,6 +13,7 @@ function Test-Assessment-21838 {
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21838,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Security key authentication method enabled',
     	UserImpact = 'Low'
     )]

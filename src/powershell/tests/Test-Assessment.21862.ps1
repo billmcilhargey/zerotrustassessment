@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Checks if all risky workload identities are triaged
 #>
@@ -13,6 +13,7 @@ function Test-Assessment-21862{
     	SfiPillar = 'Monitor and detect cyberthreats',
     	TenantType = ('Workforce','External'),
     	TestId = 21862,
+    	RequiredScopes = ("Directory.Read.All", "IdentityRiskyServicePrincipal.Read.All"),
     	Title = 'All risky workload identities are triaged',
     	UserImpact = 'Low'
     )]

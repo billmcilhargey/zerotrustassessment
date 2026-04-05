@@ -13,6 +13,7 @@ function Test-Assessment-21953{
     	SfiPillar = 'Protect identities and secrets',
     	TenantType = ('Workforce','External'),
     	TestId = 21953,
+    	RequiredScopes = ("Directory.Read.All", "Policy.Read.All"),
     	Title = 'Local Admin Password Solution is deployed',
     	UserImpact = 'Low'
     )]

@@ -26,6 +26,7 @@ function Test-Assessment-35027 {
     	SfiPillar = 'Protect tenants and production systems',
     	TenantType = ('Workforce'),
     	TestId = 35027,
+    	RequiredScopes = "Directory.Read.All",
     	Title = 'Custom branding templates are configured for Microsoft Purview Message Encryption',
     	UserImpact = 'Low'
     )]
