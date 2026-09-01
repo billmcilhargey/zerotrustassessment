@@ -110,8 +110,15 @@ function Start-ZtProgressServer {
 							$response = $context.Response
 							$localPath = $request.Url.LocalPath
 
-							# CORS headers
-							$response.Headers.Add('Access-Control-Allow-Origin', '*')
+							if (-not [System.Net.IPAddress]::IsLoopback($request.RemoteEndPoint.Address)) {
+								$response.StatusCode = 403
+								$response.Close()
+								continue
+							}
+
+							$response.Headers.Add('Content-Security-Policy', "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
+							$response.Headers.Add('X-Content-Type-Options', 'nosniff')
+							$response.Headers.Add('Referrer-Policy', 'no-referrer')
 							$response.Headers.Add('Cache-Control', 'no-cache, no-store, must-revalidate')
 
 							if ($localPath -eq '/api/progress') {

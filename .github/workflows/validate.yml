@@ -2,14 +2,47 @@
 
 jobs:
   validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            runtime: Windows x64
+          - os: windows-11-arm
+            runtime: Windows ARM64
+          - os: ubuntu-latest
+            runtime: Linux x64
+          - os: ubuntu-24.04-arm
+            runtime: Linux ARM64
+          - os: macos-15-intel
+            runtime: macOS x64
+          - os: macos-15
+            runtime: macOS ARM64
 
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v6
-    - name: Install Prerequisites
-      run: .\build\powershell\Install-Prerequisites.ps1
-      shell: pwsh
-    - name: Validate
-      run: .\code-tests\pester.ps1
-      shell: pwsh
+      - uses: actions/checkout@v6
+      - name: Install Prerequisites
+        run: .\build\powershell\Install-Prerequisites.ps1
+        shell: pwsh
+      - name: Validate
+        run: .\code-tests\pester.ps1
+        shell: pwsh
+
+  validate-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: src/report/package-lock.json
+      - name: Install report dependencies
+        working-directory: ./src/report
+        run: npm ci
+      - name: Build report templates
+        working-directory: ./src/report
+        run: npm run build:templates

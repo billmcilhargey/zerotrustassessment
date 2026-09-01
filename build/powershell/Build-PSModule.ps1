@@ -44,6 +44,8 @@ Import-Module "$PSScriptRoot\CommonFunctions.psm1" -Force -WarningAction Silentl
 [System.IO.DirectoryInfo] $PackagesDirectoryInfo = Get-PathInfo $PackagesDirectory -InputPathType Directory -DefaultDirectory $BaseDirectoryInfo.FullName -ErrorAction SilentlyContinue
 [System.IO.FileInfo] $LicenseFileInfo = Get-PathInfo $LicensePath -DefaultDirectory $BaseDirectoryInfo.FullName -DefaultFilename "LICENSE" -ErrorAction SilentlyContinue
 
+&$PSScriptRoot\Resolve-DuckDbDependencies.ps1 -OutputPath (Join-Path $SourceDirectoryInfo.FullName 'lib')
+
 ## Read Module Manifest
 $ModuleManifest = Import-PowerShellDataFile $ModuleManifestFileInfo.FullName
 [System.IO.DirectoryInfo] $ModuleOutputDirectoryInfo = Join-Path $OutputDirectoryInfo.FullName (Join-Path $ModuleManifestFileInfo.BaseName $ModuleManifest['ModuleVersion'])

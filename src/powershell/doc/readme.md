@@ -29,10 +29,10 @@ The assessment is organized into **pillars**. The current default run includes *
 
 - Uninstall previous versions
   - If you have installed previous versions of the Zero Trust Assessment, [uninstall](#how-can-i-uninstall-previous-versions-of-the-zero-trust-assessment) before continuing.
-  
+
 ## Install the PowerShell modules
 
-Follow these steps to install the assessment and connect to Microsoft Graph and your tenant. 
+Follow these steps to install the assessment and connect to Microsoft Graph and your tenant.
 
 ### Open PowerShell 7
 
@@ -60,28 +60,28 @@ The Zero Trust Assessment connects to several Microsoft cloud services, each of 
 
 > **Important:** The Zero Trust Assessment is **validated and tested only against the exact module versions listed below**. This is why they are bundled together and isolated from your global module set. Having other (conflicting) versions of these modules installed on the same machine can cause assembly/DLL conflicts (for example `Microsoft.Identity.Client.dll`) and lead to sign-in or runtime failures. See [Recommended: use a dedicated clean VM](#recommended-use-a-dedicated-clean-vm).
 
-| Module | Version | Service | Platform |
-|--------|---------|---------|----------|
-| `PSFramework` | 1.13.419 | Logging / framework | All |
-| `Microsoft.Graph.Authentication` | 2.35.0 | Microsoft Graph | All |
-| `Microsoft.Graph.Beta.Teams` | 2.35.0 | Microsoft Graph (Teams beta) | All |
-| `Az.Accounts` | 4.0.2 | Azure | All |
-| `ExchangeOnlineManagement` | 3.9.0 | Exchange Online & Security &amp; Compliance | All |
-| `Microsoft.Online.SharePoint.PowerShell` | 16.0.26914.12004 | SharePoint Online | Windows only |
-| `AipService` | 3.0.0.1 | Azure Information Protection (Purview) | Windows only |
+| Module                                   | Version          | Service                                     | Platform     |
+| ---------------------------------------- | ---------------- | ------------------------------------------- | ------------ |
+| `PSFramework`                            | 1.13.419         | Logging / framework                         | All          |
+| `Microsoft.Graph.Authentication`         | 2.35.0           | Microsoft Graph                             | All          |
+| `Microsoft.Graph.Beta.Teams`             | 2.35.0           | Microsoft Graph (Teams beta)                | All          |
+| `Az.Accounts`                            | 4.0.2            | Azure                                       | All          |
+| `ExchangeOnlineManagement`               | 3.9.0            | Exchange Online & Security &amp; Compliance | All          |
+| `Microsoft.Online.SharePoint.PowerShell` | 16.0.26914.12004 | SharePoint Online                           | Windows only |
+| `AipService`                             | 3.0.0.1          | Azure Information Protection (Purview)      | Windows only |
 
 ## Connect to Microsoft 365 and Azure services
 
 Earlier versions of the assessment connected only to Microsoft Graph and Azure. The assessment now connects to **six** services so it can evaluate all pillars:
 
-| # | Service | Sign-in cmdlet used |
-|---|---------|---------------------|
-| 1 | Microsoft Graph | `Connect-MgGraph` |
-| 2 | Azure | `Connect-AzAccount` |
-| 3 | Azure Information Protection (Purview) | `Connect-AipService` |
-| 4 | SharePoint Online | `Connect-SPOService` |
-| 5 | Exchange Online | `Connect-ExchangeOnline` |
-| 6 | Security &amp; Compliance | `Connect-IPPSSession` |
+| #   | Service                                | Sign-in cmdlet used      |
+| --- | -------------------------------------- | ------------------------ |
+| 1   | Microsoft Graph                        | `Connect-MgGraph`        |
+| 2   | Azure                                  | `Connect-AzAccount`      |
+| 3   | Azure Information Protection (Purview) | `Connect-AipService`     |
+| 4   | SharePoint Online                      | `Connect-SPOService`     |
+| 5   | Exchange Online                        | `Connect-ExchangeOnline` |
+| 6   | Security &amp; Compliance              | `Connect-IPPSSession`    |
 
 > **Expect multiple sign-in prompts.** Each service authenticates separately, so during `Connect-ZtAssessment` you will see **at least one sign-in prompt per service**. SharePoint Online additionally opens your **default system browser** to complete its sign-in. This is expected behavior — see the FAQ entry [Why do I get multiple sign-in prompts?](#why-do-i-get-multiple-sign-in-prompts).
 >
@@ -174,9 +174,9 @@ Invoke-ZtAssessment
 ```
 
 > `Invoke-ZtAssessment` runs against the tenant you are already connected to; it does not take a `-Tenant` parameter. Set the tenant when you call `Connect-ZtAssessment`.
-
+>
 > The assessment may take more than 24 hours to run on large
-tenants. Please do not abort the assessment while it is running (even if warnings and errors are logged)
+> tenants. Please do not abort the assessment while it is running (even if warnings and errors are logged)
 
 If you are only interested in the Devices (Intune) pillar (which takes less than 5 minutes to run), you can use the following command:
 
@@ -203,23 +203,23 @@ Invoke-ZtAssessment -Path C:\MyAssessment01
 
 The most commonly used parameters are described below. All parameters are optional.
 
-| Parameter | Description |
-|-----------|-------------|
-| `-Path <string>` | Folder where the report and exported data are written. Defaults to `./ZeroTrustReport` in the current directory. |
-| `-Pillar <string>` | Which pillar to assess. One of `All` (default), `Identity`, `Devices`, `Network`, `Data`, `Infrastructure`, `SecOps`, or `AI`. |
-| `-Preview` | Enables preview-only pillars when available in future releases. Current pillars do not require this switch. See [Preview-only pillars](#preview-only-pillars-future-use). |
-| `-Resume` | Reuses the data that was already exported to `-Path` on a previous run, skipping data collection and database rebuild, and re-runs only the tests/report. Useful to regenerate the report or re-run tests without re-exporting. The pillar must match the pillar used for the original export. |
-| `-Tests <id[,id...]>` | Runs only the specified test ID(s) (exact match, no wildcards). If omitted, all tests for the selected pillar run. Example: `-Tests 21770, 21771`. |
-| `-Days <1-30>` | Number of days of sign-in logs to query (1-30, default 30). |
-| `-MaximumSignInLogQueryTime <minutes>` | Maximum time to spend querying sign-in logs (default 60; `0` = no limit). |
-| `-NoBrowser` | Suppresses automatically opening the progress dashboard and the final report in the browser. |
-| `-ShowLog` | Prints a high-level summary of log messages to the console. |
-| `-ExportLog` | Writes the log to a file. |
-| `-ConfigurationFile <path>` | Path to a JSON configuration file. Command-line parameters override values from the file. |
-| `-DisableTelemetry` | Disables telemetry collection (by default only the tenant ID is collected). |
-| `-Timeout <timespan>` | Maximum time to wait for all tests before giving up (default 24 hours). Supports humanized input notation, such as `12h` or `3d`. |
-| `-TestTimeout <minutes/timespan>` | Maximum time a single test may run (default 60; `0` = disabled). Supports humanized input notation, such as `30m`, `2h`, or `'2h 15m'`. |
-| `-ExportThrottleLimit <n>` / `-TestThrottleLimit <n>` | Maximum number of parallel data collectors / tests (default 5 each). |
+| Parameter                                             | Description                                                                                                                                                                                                                                                                                    |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-Path <string>`                                      | Folder where the report and exported data are written. Defaults to `./ZeroTrustReport` in the current directory.                                                                                                                                                                               |
+| `-Pillar <string>`                                    | Which pillar to assess. One of `All` (default), `Identity`, `Devices`, `Network`, `Data`, `Infrastructure`, `SecOps`, or `AI`.                                                                                                                                                                 |
+| `-Preview`                                            | Enables preview-only pillars when available in future releases. Current pillars do not require this switch. See [Preview-only pillars](#preview-only-pillars-future-use).                                                                                                                      |
+| `-Resume`                                             | Reuses the data that was already exported to `-Path` on a previous run, skipping data collection and database rebuild, and re-runs only the tests/report. Useful to regenerate the report or re-run tests without re-exporting. The pillar must match the pillar used for the original export. |
+| `-Tests <id[,id...]>`                                 | Runs only the specified test ID(s) (exact match, no wildcards). If omitted, all tests for the selected pillar run. Example: `-Tests 21770, 21771`.                                                                                                                                             |
+| `-Days <1-30>`                                        | Number of days of sign-in logs to query (1-30, default 30).                                                                                                                                                                                                                                    |
+| `-MaximumSignInLogQueryTime <minutes>`                | Maximum time to spend querying sign-in logs (default 60; `0` = no limit).                                                                                                                                                                                                                      |
+| `-NoBrowser`                                          | Suppresses automatically opening the progress dashboard and the final report in the browser.                                                                                                                                                                                                   |
+| `-ShowLog`                                            | Prints a high-level summary of log messages to the console.                                                                                                                                                                                                                                    |
+| `-ExportLog`                                          | Writes the log to a file.                                                                                                                                                                                                                                                                      |
+| `-ConfigurationFile <path>`                           | Path to a JSON configuration file. Command-line parameters override values from the file.                                                                                                                                                                                                      |
+| `-DisableTelemetry`                                   | Disables telemetry collection (by default only the tenant ID is collected).                                                                                                                                                                                                                    |
+| `-Timeout <timespan>`                                 | Maximum time to wait for all tests before giving up (default 24 hours). Supports humanized input notation, such as `12h` or `3d`.                                                                                                                                                              |
+| `-TestTimeout <minutes/timespan>`                     | Maximum time a single test may run (default 60; `0` = disabled). Supports humanized input notation, such as `30m`, `2h`, or `'2h 15m'`.                                                                                                                                                        |
+| `-ExportThrottleLimit <n>` / `-TestThrottleLimit <n>` | Maximum number of parallel data collectors / tests (default 5 each).                                                                                                                                                                                                                           |
 
 ### Preview-only pillars (future use)
 
@@ -309,7 +309,7 @@ This error happens when you have conflicting versions of Microsoft Graph PowerSh
 
 To fix this error we recommend uninstalling all Microsoft Graph PowerShell modules installed on your system. You can use a helper module like [uninstall-graph.merill.net](https://uninstall-graph.merill.net/) to run the cleanup.
 
-When uninstalling Microsoft Graph you should also uninstall versions of Zero Trust Assessment, restart PowerShell and then try a fresh install. 
+When uninstalling Microsoft Graph you should also uninstall versions of Zero Trust Assessment, restart PowerShell and then try a fresh install.
 
 This is the order of running the cmdlets.
 
@@ -319,6 +319,7 @@ Uninstall-PSResource ZeroTrustAssessment -Version '*'
 Uninstall-PSResource ZeroTrustAssessmentv2 -Version '*'
 Uninstall-Graph
 ```
+
 Close all open PowerShell windows.
 
 Start a new PowerShell session.
@@ -381,7 +382,7 @@ Inner exception: Unable to load DLL 'duckdb' or one of its dependencies: The spe
 Inner exception type: DllNotFoundException
 ```
 
-This error occurs because you are running on a system that does not include Microsoft Visual C++ 2015-2022 Redistributable (x64) - Microsoft.VCRedist.2015+.x64.
+The assessment includes DuckDB libraries for Windows x64 and ARM64, Linux x64 and ARM64, and macOS. The module selects the native library that matches the current process architecture. This error can occur when the matching native asset cannot load or when Windows does not include the Microsoft Visual C++ 2015-2022 Redistributable for the current architecture.
 
 VCRedist is usually installed when you install Microsoft products like Microsoft Office or Entra Connect Sync. If this is a new device you may need to manually install this component using the link below.
 

@@ -63,6 +63,12 @@ function Initialize-Dependencies {
 
     Write-Verbose -Message "=== Initialize-Dependencies.ps1 Starting ==="
 
+    $duckDbEnginePath = Join-Path $PSScriptRoot 'private' 'db' 'engine'
+    . (Join-Path $duckDbEnginePath 'Get-ZtDuckDbRuntimeIdentifier.ps1')
+    . (Join-Path $duckDbEnginePath 'Import-ZtDuckDbNativeLibrary.ps1')
+    $duckDbNativeLibrary = Import-ZtDuckDbNativeLibrary -ModuleRoot $PSScriptRoot
+    Write-Verbose -Message "Loaded DuckDB native library for $($duckDbNativeLibrary.RuntimeIdentifier) from $($duckDbNativeLibrary.Path)."
+
     #region Prepend $Env:PSModulePath with ~\AppData|.cache\ZeroTrustAssessment\Modules
     Write-Verbose -Message ("Setting $Env:PSModulePath to include the {0} for module dependencies..." -f $RequiredModulesPath)
     if (-not (Test-Path -Path $RequiredModulesPath -PathType Container))

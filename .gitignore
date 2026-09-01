@@ -407,3 +407,14 @@ ZeroTrustReport
 /src/powershell/export
 ZeroTrustReport
 /code-tests/TestResults
+
+# Legacy DuckDB 1.0.1 layout. Native assets are resolved from lib/runtimes/<rid>/native.
+/src/powershell/lib/duckdb.dll
+/src/powershell/lib/DuckDB.NET.Bindings.dll
+/src/powershell/lib/DuckDB.NET.Data.dll
+/src/powershell/lib/libduckdb.dylib
+
+# Generated from DuckDB.Dependencies.csproj and packages.lock.json.
+/src/powershell/lib/duckdb/
+/src/powershell/lib/runtimes/
+/src/powershell/lib/obj/

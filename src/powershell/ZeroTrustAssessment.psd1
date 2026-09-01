@@ -56,7 +56,7 @@ RequiredModules = @(
 )
 
 # Assemblies that must be loaded prior to importing this module
-RequiredAssemblies = 'lib\DuckDB.NET.Data.dll'
+RequiredAssemblies = 'lib\duckdb\1.2.1\DuckDB.NET.Data.dll'
 
 # Script files (.ps1) that are run in the caller's environment prior to importing this module.
 ScriptsToProcess = @('Initialize-Dependencies.ps1')

@@ -28,6 +28,8 @@ param (
 
 Write-Host "Starting Tests"
 
+& "$PSScriptRoot\..\build\powershell\Resolve-DuckDbDependencies.ps1"
+
 $global:__testData = @{
 	TestRoot = $PSScriptRoot
 	ModuleName = $ModuleName

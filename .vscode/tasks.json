@@ -1,125 +1,119 @@
 {
-    "version": "2.0.0",
-    "_runner": "terminal",
-    "windows": {
-        "options": {
-            "shell": {
-                "executable": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
-                "args": [
-                    "-NoProfile",
-                    "-ExecutionPolicy",
-                    "Bypass",
-                    "-Command"
-                ]
-            }
-        }
-    },
-    "linux": {
-        "options": {
-            "shell": {
-                "executable": "/usr/bin/pwsh",
-                "args": [
-                    "-NoProfile",
-                    "-Command"
-                ]
-            }
-        }
-    },
-    "osx": {
-        "options": {
-            "shell": {
-                "executable": "/usr/local/bin/pwsh",
-                "args": [
-                    "-NoProfile",
-                    "-Command"
-                ]
-            }
-        }
-    },
-    "tasks": [
+  "version": "2.0.0",
+  "_runner": "terminal",
+  "windows": {
+    "options": {
+      "shell": {
+        "executable": "pwsh.exe",
+        "args": ["-NoProfile", "-Command"]
+      }
+    }
+  },
+  "linux": {
+    "options": {
+      "shell": {
+        "executable": "/usr/bin/pwsh",
+        "args": ["-NoProfile", "-Command"]
+      }
+    }
+  },
+  "osx": {
+    "options": {
+      "shell": {
+        "executable": "/usr/local/bin/pwsh",
+        "args": ["-NoProfile", "-Command"]
+      }
+    }
+  },
+  "tasks": [
+    {
+      "label": "install prerequisites",
+      "type": "shell",
+      "command": "& '${workspaceFolder}/build/powershell/Install-Prerequisites.ps1'",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "new",
+        "clear": false
+      },
+      "runOptions": {
+        "runOn": "default"
+      },
+      "problemMatcher": [
         {
-            "label": "build",
-            "type": "shell",
-            "command": "&${cwd}/src/powershell/ZeroTrustAssessment/build.ps1",
-            "args": ["-Tasks", "build"],
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": true,
-                "panel": "new",
-                "clear": false
+          "owner": "powershell",
+          "fileLocation": ["absolute"],
+          "severity": "error",
+          "pattern": [
+            {
+              "regexp": "^\\s*(\\[-\\]\\s*.*?)(\\d+)ms\\s*$",
+              "message": 1
             },
-            "runOptions": {
-                "runOn": "default"
+            {
+              "regexp": "(.*)",
+              "code": 1
             },
-            "problemMatcher": [
-                {
-                    "owner": "powershell",
-                    "fileLocation": [
-                        "absolute"
-                    ],
-                    "severity": "error",
-                    "pattern": [
-                        {
-                            "regexp": "^\\s*(\\[-\\]\\s*.*?)(\\d+)ms\\s*$",
-                            "message": 1
-                        },
-                        {
-                            "regexp": "(.*)",
-                            "code": 1
-                        },
-                        {
-                            "regexp": ""
-                        },
-                        {
-                            "regexp": "^.*,\\s*(.*):\\s*line\\s*(\\d+).*",
-                            "file": 1,
-                            "line": 2
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "label": "test",
-            "type": "shell",
-            "command": "&${cwd}/src/powershell/ZeroTrustAssessment/build.ps1",
-            "args": ["-AutoRestore","-Tasks","test"],
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": true,
-                "panel": "dedicated",
-                "showReuseMessage": true,
-                "clear": false
+            {
+              "regexp": ""
             },
-            "problemMatcher": [
-                {
-                    "owner": "powershell",
-                    "fileLocation": [
-                        "absolute"
-                    ],
-                    "severity": "error",
-                    "pattern": [
-                        {
-                            "regexp": "^\\s*(\\[-\\]\\s*.*?)(\\d+)ms\\s*$",
-                            "message": 1
-                        },
-                        {
-                            "regexp": "(.*)",
-                            "code": 1
-                        },
-                        {
-                            "regexp": ""
-                        },
-                        {
-                            "regexp": "^.*,\\s*(.*):\\s*line\\s*(\\d+).*",
-                            "file": 1,
-                            "line": 2
-                        }
-                    ]
-                }
-            ]
+            {
+              "regexp": "^.*,\\s*(.*):\\s*line\\s*(\\d+).*",
+              "file": 1,
+              "line": 2
+            }
+          ]
         }
-    ]
+      ]
+    },
+    {
+      "label": "test",
+      "type": "shell",
+      "command": "& '${workspaceFolder}/code-tests/pester.ps1'",
+      "dependsOn": "install prerequisites",
+      "dependsOrder": "sequence",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [
+        {
+          "owner": "powershell",
+          "fileLocation": ["absolute"],
+          "severity": "error",
+          "pattern": [
+            {
+              "regexp": "^\\s*(\\[-\\]\\s*.*?)(\\d+)ms\\s*$",
+              "message": 1
+            },
+            {
+              "regexp": "(.*)",
+              "code": 1
+            },
+            {
+              "regexp": ""
+            },
+            {
+              "regexp": "^.*,\\s*(.*):\\s*line\\s*(\\d+).*",
+              "file": 1,
+              "line": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "build report templates",
+      "type": "shell",
+      "command": "npm ci; npm run build:templates",
+      "options": {
+        "cwd": "${workspaceFolder}/src/report"
+      },
+      "problemMatcher": []
+    }
+  ]
 }
