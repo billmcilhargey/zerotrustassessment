@@ -599,7 +599,7 @@ $titleLine
 	Write-Host
 	Write-Host
 	if (-not $NoBrowser -and -not $isCI) {
-		Invoke-Item $htmlReportPath | Out-Null
+		$null = Open-ZtReport -Path $htmlReportPath
 	}
 
 	if ($ExportLog) {

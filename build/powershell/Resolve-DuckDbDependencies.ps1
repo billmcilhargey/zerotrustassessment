@@ -24,9 +24,20 @@ $restoreRoot = Join-Path ([IO.Path]::GetTempPath()) "ZeroTrustAssessment/DuckDB/
 $packagesPath = Join-Path $restoreRoot 'packages'
 $intermediatePath = Join-Path $restoreRoot 'obj/'
 
-dotnet restore $projectFile --locked-mode --force --packages $packagesPath -p:BaseIntermediateOutputPath=$intermediatePath
+foreach ($attempt in 1..2) {
+    dotnet restore $projectFile --locked-mode --force --packages $packagesPath -p:BaseIntermediateOutputPath=$intermediatePath
+    if ($LASTEXITCODE -eq 0) {
+        break
+    }
+
+    if ($attempt -eq 1) {
+        Write-Warning 'DuckDB.NET restore failed; retrying with a clean temporary package cache.'
+        Remove-Item -LiteralPath $restoreRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
 if ($LASTEXITCODE -ne 0) {
-    throw "Failed to restore DuckDB.NET.Data.Full $version."
+    throw "Failed to restore DuckDB.NET.Data.Full $version after retrying with a clean cache."
 }
 Write-Host "Restored DuckDB.NET.Data.Full $version from the locked dependency graph."
 
