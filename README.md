@@ -17,6 +17,12 @@ Connect-ZtAssessment
 Invoke-ZtAssessment
 ```
 
+From a Linux or macOS source checkout, use the Bash wrapper to run the local module with PowerShell 7:
+
+```bash
+./ZeroTrustAssessment.sh Invoke-ZtAssessment -Path ./reports -NoBrowser
+```
+
 By default, `Invoke-ZtAssessment` now runs all current pillars: Identity, Devices, Network, Data, Infrastructure, SecOps, and AI. The `-Preview` switch is reserved for future preview-only features.
 
 ## Infrastructure Pillar Scope
