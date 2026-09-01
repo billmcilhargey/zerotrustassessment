@@ -77,7 +77,7 @@
 		}
 		$script:__ztCurrentTest = $null
 
-		$script:logsPath = Join-Path $env:TEMP "zt-invokeztparallel-tests-$(Get-Random)"
+		$script:logsPath = Join-Path ([IO.Path]::GetTempPath()) "zt-invokeztparallel-tests-$(Get-Random)"
 		$null = New-Item -Path $script:logsPath -ItemType Directory -Force
 
 		$script:testResult = [PSCustomObject]@{

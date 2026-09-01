@@ -24,7 +24,7 @@ $restoreRoot = Join-Path ([IO.Path]::GetTempPath()) "ZeroTrustAssessment/DuckDB/
 $packagesPath = Join-Path $restoreRoot 'packages'
 $intermediatePath = Join-Path $restoreRoot 'obj/'
 
-dotnet restore $projectFile --locked-mode --packages $packagesPath -p:BaseIntermediateOutputPath=$intermediatePath
+dotnet restore $projectFile --locked-mode --force --packages $packagesPath -p:BaseIntermediateOutputPath=$intermediatePath
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to restore DuckDB.NET.Data.Full $version."
 }

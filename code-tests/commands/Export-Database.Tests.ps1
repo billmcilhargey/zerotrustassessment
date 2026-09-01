@@ -24,7 +24,7 @@ Describe "Export-Database" {
         # the three role tables) get their schema from those. The three tables below have no
         # model files and need at least one real data file.
         function script:New-TestExportPath ([string]$Suffix) {
-            $path = Join-Path $env:TEMP "zt-test-$Suffix-$(Get-Random)"
+            $path = Join-Path ([IO.Path]::GetTempPath()) "zt-test-$Suffix-$(Get-Random)"
             New-Item -ItemType Directory -Path $path -Force | Out-Null
 
             @(
@@ -44,7 +44,7 @@ Describe "Export-Database" {
                 isPrivileged = $true
                 isBuiltIn    = $true
             }) } | ConvertTo-Json -Depth 5 |
-                Set-Content (Join-Path $path "RoleDefinition\RoleDefinition-0.json")
+                Set-Content (Join-Path $path "RoleDefinition/RoleDefinition-0.json")
 
             # User — minimal (no model file)
             @{ value = @(@{
@@ -52,14 +52,14 @@ Describe "Export-Database" {
                 displayName       = 'Test User'
                 userPrincipalName = 'test@contoso.com'
             }) } | ConvertTo-Json -Depth 3 |
-                Set-Content (Join-Path $path "User\User-0.json")
+                Set-Content (Join-Path $path "User/User-0.json")
 
             # ServicePrincipal — minimal (no model file)
             @{ value = @(@{
                 id          = 'sp-00000001'
                 displayName = 'TestServicePrincipal'
             }) } | ConvertTo-Json -Depth 3 |
-                Set-Content (Join-Path $path "ServicePrincipal\ServicePrincipal-0.json")
+                Set-Content (Join-Path $path "ServicePrincipal/ServicePrincipal-0.json")
 
             return $path
         }
@@ -88,7 +88,7 @@ Describe "Export-Database" {
                     displayName   = 'TestServicePrincipal'
                 }
             }) } | ConvertTo-Json -Depth 5 |
-                Set-Content (Join-Path $script:testPath1 "RoleAssignment\RoleAssignment-0.json")
+                Set-Content (Join-Path $script:testPath1 "RoleAssignment/RoleAssignment-0.json")
 
             # RoleAssignmentScheduleInstance — SP-only
             @{ value = @(@{
@@ -102,7 +102,7 @@ Describe "Export-Database" {
                     displayName   = 'TestServicePrincipal'
                 }
             }) } | ConvertTo-Json -Depth 5 |
-                Set-Content (Join-Path $script:testPath1 "RoleAssignmentScheduleInstance\RoleAssignmentScheduleInstance-0.json")
+                Set-Content (Join-Path $script:testPath1 "RoleAssignmentScheduleInstance/RoleAssignmentScheduleInstance-0.json")
 
             # RoleEligibilityScheduleInstance — SP-only
             @{ value = @(@{
@@ -116,7 +116,7 @@ Describe "Export-Database" {
                     displayName   = 'TestServicePrincipal'
                 }
             }) } | ConvertTo-Json -Depth 5 |
-                Set-Content (Join-Path $script:testPath1 "RoleEligibilityScheduleInstance\RoleEligibilityScheduleInstance-0.json")
+                Set-Content (Join-Path $script:testPath1 "RoleEligibilityScheduleInstance/RoleEligibilityScheduleInstance-0.json")
         }
 
         AfterAll {
@@ -164,7 +164,7 @@ Describe "Export-Database" {
                     userPrincipalName = 'test@contoso.com'
                 }
             }) } | ConvertTo-Json -Depth 5 |
-                Set-Content (Join-Path $script:testPath2 "RoleAssignment\RoleAssignment-0.json")
+                Set-Content (Join-Path $script:testPath2 "RoleAssignment/RoleAssignment-0.json")
 
             # RoleEligibilityScheduleInstance — group-only principals.
             # Groups have 'uniqueName' but NOT 'userPrincipalName'.
@@ -182,7 +182,7 @@ Describe "Export-Database" {
                     uniqueName    = 'testgroup@contoso.com'
                 }
             }) } | ConvertTo-Json -Depth 5 |
-                Set-Content (Join-Path $script:testPath2 "RoleEligibilityScheduleInstance\RoleEligibilityScheduleInstance-0.json")
+                Set-Content (Join-Path $script:testPath2 "RoleEligibilityScheduleInstance/RoleEligibilityScheduleInstance-0.json")
 
             # RoleAssignmentScheduleInstance — group-only
             @{ value = @(@{
@@ -197,7 +197,7 @@ Describe "Export-Database" {
                     uniqueName    = 'testgroup@contoso.com'
                 }
             }) } | ConvertTo-Json -Depth 5 |
-                Set-Content (Join-Path $script:testPath2 "RoleAssignmentScheduleInstance\RoleAssignmentScheduleInstance-0.json")
+                Set-Content (Join-Path $script:testPath2 "RoleAssignmentScheduleInstance/RoleAssignmentScheduleInstance-0.json")
 
             # Create the database ONCE and share it across all tests in this context
             # to avoid file-lock errors from repeated Export-Database calls on the same path.
@@ -266,7 +266,7 @@ where "@odata.type" = '#microsoft.graph.user'
                     displayName   = 'TestServicePrincipal'
                 }
             }) } | ConvertTo-Json -Depth 5 |
-                Set-Content (Join-Path $script:testPath3 "RoleAssignmentScheduleInstance\RoleAssignmentScheduleInstance-0.json")
+                Set-Content (Join-Path $script:testPath3 "RoleAssignmentScheduleInstance/RoleAssignmentScheduleInstance-0.json")
 
             # RoleAssignment — stub; RoleAssignment-model.json provides the schema.
             # In P2 mode the view reads from RoleAssignmentScheduleInstance, so the
@@ -282,7 +282,7 @@ where "@odata.type" = '#microsoft.graph.user'
                     displayName   = 'TestServicePrincipal'
                 }
             }) } | ConvertTo-Json -Depth 5 |
-                Set-Content (Join-Path $script:testPath3 "RoleAssignment\RoleAssignment-0.json")
+                Set-Content (Join-Path $script:testPath3 "RoleAssignment/RoleAssignment-0.json")
 
             # RoleEligibilityScheduleInstance — SP-only
             @{ value = @(@{
@@ -296,7 +296,7 @@ where "@odata.type" = '#microsoft.graph.user'
                     displayName   = 'TestServicePrincipal'
                 }
             }) } | ConvertTo-Json -Depth 5 |
-                Set-Content (Join-Path $script:testPath3 "RoleEligibilityScheduleInstance\RoleEligibilityScheduleInstance-0.json")
+                Set-Content (Join-Path $script:testPath3 "RoleEligibilityScheduleInstance/RoleEligibilityScheduleInstance-0.json")
         }
 
         AfterAll {
@@ -341,7 +341,7 @@ where "@odata.type" = '#microsoft.graph.user'
                     uniqueName    = 'testgroup@contoso.com'
                 }
             }) } | ConvertTo-Json -Depth 5 |
-                Set-Content (Join-Path $script:testPath4 "RoleAssignment\RoleAssignment-0.json")
+                Set-Content (Join-Path $script:testPath4 "RoleAssignment/RoleAssignment-0.json")
 
             # RoleAssignmentScheduleInstance — group-only
             @{ value = @(@{
@@ -356,7 +356,7 @@ where "@odata.type" = '#microsoft.graph.user'
                     uniqueName    = 'testgroup@contoso.com'
                 }
             }) } | ConvertTo-Json -Depth 5 |
-                Set-Content (Join-Path $script:testPath4 "RoleAssignmentScheduleInstance\RoleAssignmentScheduleInstance-0.json")
+                Set-Content (Join-Path $script:testPath4 "RoleAssignmentScheduleInstance/RoleAssignmentScheduleInstance-0.json")
 
             # RoleEligibilityScheduleInstance — group-only
             @{ value = @(@{
@@ -371,7 +371,7 @@ where "@odata.type" = '#microsoft.graph.user'
                     uniqueName    = 'testgroup@contoso.com'
                 }
             }) } | ConvertTo-Json -Depth 5 |
-                Set-Content (Join-Path $script:testPath4 "RoleEligibilityScheduleInstance\RoleEligibilityScheduleInstance-0.json")
+                Set-Content (Join-Path $script:testPath4 "RoleEligibilityScheduleInstance/RoleEligibilityScheduleInstance-0.json")
         }
 
         AfterAll {
@@ -416,7 +416,7 @@ where "@odata.type" = '#microsoft.graph.user'
                     uniqueName    = 'testgroup@contoso.com'
                 }
             }) } | ConvertTo-Json -Depth 5 |
-                Set-Content (Join-Path $script:testPath5 "RoleAssignmentScheduleInstance\RoleAssignmentScheduleInstance-0.json")
+                Set-Content (Join-Path $script:testPath5 "RoleAssignmentScheduleInstance/RoleAssignmentScheduleInstance-0.json")
 
             # RoleAssignment — stub; RoleAssignment-model.json provides the schema.
             @{ value = @(@{
@@ -431,7 +431,7 @@ where "@odata.type" = '#microsoft.graph.user'
                     uniqueName    = 'testgroup@contoso.com'
                 }
             }) } | ConvertTo-Json -Depth 5 |
-                Set-Content (Join-Path $script:testPath5 "RoleAssignment\RoleAssignment-0.json")
+                Set-Content (Join-Path $script:testPath5 "RoleAssignment/RoleAssignment-0.json")
 
             # RoleEligibilityScheduleInstance — group-only
             @{ value = @(@{
@@ -446,7 +446,7 @@ where "@odata.type" = '#microsoft.graph.user'
                     uniqueName    = 'testgroup@contoso.com'
                 }
             }) } | ConvertTo-Json -Depth 5 |
-                Set-Content (Join-Path $script:testPath5 "RoleEligibilityScheduleInstance\RoleEligibilityScheduleInstance-0.json")
+                Set-Content (Join-Path $script:testPath5 "RoleEligibilityScheduleInstance/RoleEligibilityScheduleInstance-0.json")
         }
 
         AfterAll {
@@ -490,7 +490,7 @@ where "@odata.type" = '#microsoft.graph.user'
                     displayName   = 'TestServicePrincipal'
                 }
             }) } | ConvertTo-Json -Depth 5 |
-                Set-Content (Join-Path $script:testPath6 "RoleAssignment\RoleAssignment-0.json")
+                Set-Content (Join-Path $script:testPath6 "RoleAssignment/RoleAssignment-0.json")
 
             # RoleEligibilityScheduleInstance — SP-only principals; no userPrincipalName or
             # uniqueName in the data. The model must supply those fields to avoid SQL errors.
@@ -505,7 +505,7 @@ where "@odata.type" = '#microsoft.graph.user'
                     displayName   = 'TestServicePrincipal'
                 }
             }) } | ConvertTo-Json -Depth 5 |
-                Set-Content (Join-Path $script:testPath6 "RoleEligibilityScheduleInstance\RoleEligibilityScheduleInstance-0.json")
+                Set-Content (Join-Path $script:testPath6 "RoleEligibilityScheduleInstance/RoleEligibilityScheduleInstance-0.json")
 
             # RoleAssignmentScheduleInstance — SP-only
             @{ value = @(@{
@@ -519,7 +519,7 @@ where "@odata.type" = '#microsoft.graph.user'
                     displayName   = 'TestServicePrincipal'
                 }
             }) } | ConvertTo-Json -Depth 5 |
-                Set-Content (Join-Path $script:testPath6 "RoleAssignmentScheduleInstance\RoleAssignmentScheduleInstance-0.json")
+                Set-Content (Join-Path $script:testPath6 "RoleAssignmentScheduleInstance/RoleAssignmentScheduleInstance-0.json")
         }
 
         AfterAll {

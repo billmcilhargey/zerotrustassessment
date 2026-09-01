@@ -20,7 +20,7 @@ Describe "Export-ZtGraphEntity" {
 
     Context "Add-GraphProperty — guard skips batch when page is empty" {
         BeforeAll {
-            $script:exportPath = Join-Path $env:TEMP "zt-test-graphentity-$(Get-Random)"
+            $script:exportPath = Join-Path ([IO.Path]::GetTempPath()) "zt-test-graphentity-$(Get-Random)"
             New-Item -ItemType Directory -Path $script:exportPath -Force | Out-Null
         }
 
