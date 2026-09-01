@@ -3,103 +3,96 @@ set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly MODULE_MANIFEST="${SCRIPT_DIR}/src/powershell/ZeroTrustAssessment.psd1"
-readonly MIN_PWSH_MAJOR=7
-readonly SAFE_COMMANDS=(Get-Command Get-Help Get-Module)
 
 usage() {
     cat <<'USAGE'
-Usage: ./ZeroTrustAssessment.sh <command> [arguments]
+Usage: ./ZeroTrustAssessment.sh [--install-pwsh] '<PowerShell command>'
 
 Examples:
-  ./ZeroTrustAssessment.sh Connect-ZtAssessment
-  ./ZeroTrustAssessment.sh Invoke-ZtAssessment -Path ./reports -NoBrowser
-  ./ZeroTrustAssessment.sh Get-Help Invoke-ZtAssessment -Detailed
+  ./ZeroTrustAssessment.sh 'Connect-ZtAssessment'
+  ./ZeroTrustAssessment.sh 'Invoke-ZtAssessment -Path ./reports -NoBrowser'
+  ./ZeroTrustAssessment.sh 'Get-Help Invoke-ZtAssessment -Detailed'
+  ./ZeroTrustAssessment.sh --install-pwsh 'Connect-ZtAssessment'
 
-Invoke-ZtAssessment automatically runs Connect-ZtAssessment first in the same PowerShell session.
-PowerShell 7 or later must already be installed and available as 'pwsh'.
+When pwsh is missing, an interactive terminal offers to install PowerShell as a
+per-user .NET global tool. Use --install-pwsh to approve this noninteractively.
 USAGE
 }
 
-fail() {
-    printf 'ZeroTrustAssessment.sh: %s\n' "$1" >&2
-    exit 1
+install_pwsh() {
+    if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
+        printf '%s\n' 'Refusing to install PowerShell as root. Run this script as a regular user.' >&2
+        exit 1
+    fi
+
+    command -v dotnet >/dev/null 2>&1 || {
+        printf '%s\n' 'Automatic installation requires the .NET SDK.' >&2
+        printf '%s\n' 'Install PowerShell: https://learn.microsoft.com/powershell/scripting/install/installing-powershell' >&2
+        exit 1
+    }
+
+    PWSH="$HOME/.dotnet/tools/pwsh"
+    if [[ -e "$PWSH" ]]; then
+        dotnet tool update --global PowerShell
+    else
+        dotnet tool install --global PowerShell
+    fi
+    export PATH="$PATH:$HOME/.dotnet/tools"
+}
+
+is_pwsh7() {
+    [[ -x "${PWSH:-}" ]] || return 1
+
+    local major
+    major="$($PWSH -NoProfile -Command '$PSVersionTable.PSVersion.Major' 2>/dev/null || true)"
+    [[ "$major" =~ ^[0-9]+$ ]] && (( major >= 7 ))
 }
 
 ensure_pwsh() {
-    command -v pwsh >/dev/null 2>&1 || fail "PowerShell 7 or later is required. Install PowerShell and ensure 'pwsh' is on PATH."
+    PWSH="$(command -v pwsh 2>/dev/null || true)"
+    [[ -n "$PWSH" ]] || PWSH="$HOME/.dotnet/tools/pwsh"
+    is_pwsh7 && return
 
-    local major
-    major="$(pwsh -NoProfile -Command '$PSVersionTable.PSVersion.Major')"
-    [[ "$major" =~ ^[0-9]+$ ]] || fail 'Unable to determine PowerShell version.'
-    (( major >= MIN_PWSH_MAJOR )) || fail "PowerShell $MIN_PWSH_MAJOR or later is required. Found major version $major."
-}
-
-is_safe_command() {
-    local command_name="$1"
-    local safe_command
-
-    for safe_command in "${SAFE_COMMANDS[@]}"; do
-        [[ "$command_name" == "$safe_command" ]] && return 0
-    done
-
-    return 1
-}
-
-validate_command() {
-    local command_name="$1"
-
-    is_safe_command "$command_name" && return 0
-
-    pwsh -NoProfile -Command '& {
-        param([string] $ModuleManifest, [string] $CommandName)
-        $ErrorActionPreference = "Stop"
-        Import-Module -Name $ModuleManifest -Force
-        $command = Get-Command -Name $CommandName -Module ZeroTrustAssessment -ErrorAction SilentlyContinue
-        if (-not $command) {
-            throw "Command ''$CommandName'' is not exported by the ZeroTrustAssessment module."
-        }
-    }' "$MODULE_MANIFEST" "$command_name" >/dev/null
-}
-
-run_command() {
-    local command_name="$1"
-    shift || true
-
-    local connect_first='false'
-    if [[ "$command_name" == 'Invoke-ZtAssessment' ]]; then
-        connect_first='true'
+    if [[ "${INSTALL_PWSH:-0}" -ne 1 && -t 0 ]]; then
+        read -r -p 'PowerShell 7 is missing. Install it for this user? [y/N] ' reply
+        [[ "$reply" =~ ^[Yy]$ ]] || exit 1
+    elif [[ "${INSTALL_PWSH:-0}" -ne 1 ]]; then
+        printf '%s\n' "PowerShell 7 is required. Re-run with --install-pwsh to install it." >&2
+        exit 1
     fi
 
-    pwsh -NoProfile -Command '& {
-        param(
-            [string] $ModuleManifest,
-            [string] $CommandName,
-            [string] $ConnectFirst,
-            [string[]] $CommandArguments
-        )
-
-        $ErrorActionPreference = "Stop"
-        Import-Module -Name $ModuleManifest -Force
-
-        if ([System.Convert]::ToBoolean($ConnectFirst)) {
-            Connect-ZtAssessment
-        }
-
-        & $CommandName @CommandArguments
-    }' "$MODULE_MANIFEST" "$command_name" "$connect_first" "$@"
+    install_pwsh
+    is_pwsh7 || {
+        printf '%s\n' 'PowerShell 7 installation could not be verified.' >&2
+        exit 1
+    }
 }
 
 main() {
-    if [[ $# -eq 0 || "${1:-}" == '-h' || "${1:-}" == '--help' ]]; then
-        usage
-        exit 0
+    INSTALL_PWSH=0
+    if [[ "${1:-}" == '--install-pwsh' ]]; then
+        INSTALL_PWSH=1
+        shift
     fi
 
-    [[ -f "$MODULE_MANIFEST" ]] || fail "Cannot find module manifest at '$MODULE_MANIFEST'. Run this script from a source checkout."
+    if [[ $# -ne 1 || "$1" == '-h' || "$1" == '--help' ]]; then
+        usage
+        [[ $# -eq 1 ]] && exit 0
+        exit 2
+    fi
+
+    [[ -f "$MODULE_MANIFEST" ]] || {
+        printf '%s\n' "Module manifest not found: $MODULE_MANIFEST" >&2
+        exit 1
+    }
 
     ensure_pwsh
-    validate_command "$1"
-    run_command "$@"
+
+    ZTA_MODULE_MANIFEST="$MODULE_MANIFEST" ZTA_COMMAND="$1" exec "$PWSH" -NoProfile -Command '& {
+        $ErrorActionPreference = "Stop"
+        Import-Module -Name $env:ZTA_MODULE_MANIFEST -Force
+        & ([scriptblock]::Create($env:ZTA_COMMAND))
+    }'
 }
 
 main "$@"
