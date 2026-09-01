@@ -191,6 +191,17 @@ The results are created in the current working folder as two files:
 
 After the assessment completes, the default/new report is automatically opened in the default browser.
 
+### Containers and headless environments
+
+Use device-code authentication when a container or remote session cannot open a host browser or receive a localhost callback. Suppress automatic browser opening during the assessment, then open the generated HTML report from the host or through your platform's authenticated file/port-sharing feature.
+
+```powershell
+Connect-ZtAssessment -UseDeviceCode
+Invoke-ZtAssessment -NoBrowser
+```
+
+For unattended automation, use the certificate-based parameters documented by `Get-Help Connect-ZtAssessment -Full`. Do not intercept authorization URLs, replace browser commands on `PATH`, or modify `/etc/hosts`; these changes can expose authentication metadata or alter the host/container outside the assessment's read-only scope.
+
 You can use the `-Path` parameter to provide a custom location to
 store the assessment reports. For example, the following command produces reports in the folder
 `C:\MyAssessment01\` as `ZeroTrustAssessmentReport.html` and `ZeroTrustAssessmentReport-classic.html`.
